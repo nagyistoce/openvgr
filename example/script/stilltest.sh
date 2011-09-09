@@ -1,17 +1,10 @@
 #!/bin/sh
 TERMOPT=--window-with-profile="Default"
 # コンポーネント起動
-if test -r /usr/bin/gnome-terminal
-then
-  gnome-terminal -t "Recognition Progress" -e ./substill/comup.sh --geometry 80x24+0+530 $TERMOPT &
-else
-  echo "gnome-terminal がありません"
-  echo "スクリプトを継続する場合は"
-  echo "別ターミナルで substill/comup.sh を実行し"
-  echo "その後 enter キーを押してください"
-  read dummy
-fi
-# コンポーネント接続
+gnome-terminal -t "Recognition Progress" -e ./substill/comup.sh --geometry 80x24+0+530 $TERMOPT &
+# コンポーネントの起動を待つ　待ち時間は必要に応じて変更する
+sleep 1
+# 接続
 ./substill/comcon.sh
 lnum=`wc -l testlist.txt | awk '{ print $1 }' -`
 i=0

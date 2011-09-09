@@ -28,7 +28,6 @@ setDefaultRecogParameter(Parameters& param)
   memset(&(param.feature2D), 0x0, sizeof(ParametersFeature2D));
   memset(&(param.stereo), 0x0, sizeof(ParametersStereo));
   memset(&(param.match), 0x0, sizeof(ParametersMatch));
-  memset(&(param.paramEIW), 0x0, sizeof(ParamEllipseIW));
 
   // デバッグ用パラメータのクリア
   param.dbgtext = 0; // テキスト情報生成
@@ -104,13 +103,6 @@ setDefaultRecogParameter(Parameters& param)
   param.match.interval = intervalParam;
   param.match.search = searchParam;
   param.match.edge = edgeParam;
-
-  param.paramEIW.Condition = DEF_PARAME_CONDITION;
-  param.paramEIW.MinLength = DEF_PARAME_MIN_LENGTH;
-  param.paramEIW.MinShortRad = DEF_PARAME_MIN_SHORT_RAD;
-  param.paramEIW.ThMeanError = DEF_PARAME_TH_MEAN_ERROR;
-  param.paramEIW.ThMaxError = DEF_PARAME_TH_MAX_ERROR;
-  param.paramEIW.OffsetMode = DEF_PARAME_OFFSET_MODE;
 }
 
 enum paramKey
@@ -137,14 +129,7 @@ enum paramKey
   eStereoError,
   eMatchEdge,
 
-  eIwCondition,
-  eIwMinLength,
-  eIwMinShortRad,
-  eIwThMeanError,
-  eIwThMaxError,
-  eIwOffsetMode,
-
-  eParamSentinel
+  eParamSentinel,
 };
 
 static const char* paramKeyString[] = {
@@ -169,13 +154,6 @@ static const char* paramKeyString[] = {
 
   "StereoError",
   "MatchEdge",
-
-  "IW_Condition",
-  "IW_MinLength",
-  "IW_MinShortRad",
-  "IW_ThMeanError",
-  "IW_ThMaxError",
-  "IW_OffsetMode"
 };
 
 //
@@ -308,25 +286,6 @@ loadRecogParameter(char* path, Parameters& param)
             case eMatchEdge:
               // 認識評価時のエッジ強度閾値
               param.match.edge = atoi(p);
-              break;
-
-            case eIwCondition:
-              param.paramEIW.Condition = (atoi(p) != 0 ? ELLIPSE_CONDITION_MAX : ELLIPSE_CONDITION_MEAN);
-              break;
-            case eIwMinLength:
-              param.paramEIW.MinLength = atof(p);
-              break;
-            case eIwMinShortRad:
-              param.paramEIW.MinShortRad = atof(p);
-              break;
-            case eIwThMeanError:
-              param.paramEIW.ThMeanError = atof(p);
-              break;
-            case eIwThMaxError:
-              param.paramEIW.ThMaxError = atof(p);
-              break;
-            case eIwOffsetMode:
-              param.paramEIW.OffsetMode = (atoi(p) != 0 ? ELLIPSE_OFFSET_STATIC : ELLIPSE_OFFSET_DYNAMIC);
               break;
 
             default:

@@ -34,10 +34,8 @@ convertCameraIntrinsicParameterToCvMat(const Img::CameraIntrinsicParameter& intr
       return VISION_MALLOC_ERROR;
     }
   *distortion_coeffs = cvCreateMat(1, 5, CV_32FC1);
-  if (*distortion_coeffs == (CvMat*) NULL)
+  if (*intrinsic_matrix == (CvMat*) NULL)
     {
-      cvReleaseMat(intrinsic_matrix);
-      *intrinsic_matrix = (CvMat*)NULL;
       return VISION_MALLOC_ERROR;
     }
 
@@ -95,23 +93,7 @@ createUndistortionMap(int width, int height,
   *mapx = cvCreateImage(cvSize(width, height), IPL_DEPTH_32F, 1);
   *mapy = cvCreateImage(cvSize(width, height), IPL_DEPTH_32F, 1);
 
-  if (*mapx && *mapy)
-    {
-      cvInitUndistortMap(intrinsic_matrix, distortion_coeffs, *mapx, *mapy);
-      ret = 0;
-    }
-  else
-    {
-      if (*mapx)
-        {
-          cvReleaseImage(mapx);
-        }
-      if (*mapy)
-        {
-          cvReleaseImage(mapy);
-        }
-      ret =  VISION_MALLOC_ERROR;
-    }
+  cvInitUndistortMap(intrinsic_matrix, distortion_coeffs, *mapx, *mapy);
 
   cvReleaseMat(&intrinsic_matrix);
   cvReleaseMat(&distortion_coeffs);
@@ -157,7 +139,7 @@ createUndistortionMapFromTimedMultiCameraImage(const Img::TimedMultiCameraImage&
     }
 
   int ret;
-  int i, j;
+  int i;
   for (i = 0; i < imageNum; i++)
     {
       ret = createUndistortionMap(imageWidth, imageHeight,
@@ -165,13 +147,6 @@ createUndistortionMapFromTimedMultiCameraImage(const Img::TimedMultiCameraImage&
                                   *mapx + i, *mapy + i);
       if (ret != 0)
         {
-          for (j = 0; j < i; j++)
-            {
-              cvReleaseImage(*mapx + i);
-              cvReleaseImage(*mapy + i);
-            }
-          free(*mapx);
-          free(*mapy);
           return ret;
         }
     }
@@ -393,6 +368,7 @@ convertTimedMultiCameraImageToIplImage(const Img::TimedMultiCameraImage& frame)
               cvReleaseImage(resultImage + j);
             }
           free(resultImage);
+
           return NULL;
         }
 
@@ -463,10 +439,6 @@ convertTimedMultiCameraImageToRecogImage(const Img::TimedMultiCameraImage& frame
   if (channelNum == 3)
     {
       colorImage = constructImage(imageWidth, imageHeight, 3);
-      if (colorImage == NULL)
-        {
-          return NULL;
-        }
     }
 
   int i, j;
@@ -482,7 +454,12 @@ convertTimedMultiCameraImageToRecogImage(const Img::TimedMultiCameraImage& frame
               destructImage(*(resultImage + j));
             }
           free(resultImage);
-          destructImage(colorImage);
+
+          if (colorImage != NULL)
+            {
+              destructImage(colorImage);
+            }
+
           return NULL;
         }
 
@@ -490,13 +467,19 @@ convertTimedMultiCameraImageToRecogImage(const Img::TimedMultiCameraImage& frame
       if (channelNum == 3)
         {
           // カラー画像
-          for (j = 0; j < imageSize; j++)
+          for (j = 0; j < imageSize; j += 3)
             {
               colorImage->pixel[j] =
+                (unsigned char) frame.data.image_seq[i].image.raw_data[j + 2];
+              colorImage->pixel[j + 1] =
+                (unsigned char) frame.data.image_seq[i].image.raw_data[j + 1];
+              colorImage->pixel[j + 2] =
                 (unsigned char) frame.data.image_seq[i].image.raw_data[j];
             }
+
           // グレー画像に変換する。
           rgb2grayImage(*(resultImage + i), colorImage);
+
         }
       else if (channelNum == 1)
         {
@@ -509,24 +492,10 @@ convertTimedMultiCameraImageToRecogImage(const Img::TimedMultiCameraImage& frame
         }
     }
 
-  destructImage(colorImage);
+  if (colorImage != NULL)
+    {
+      destructImage(colorImage);
+    }
 
   return resultImage;
-}
-
-//
-//! convertTimedMultiCameraImageToRecogImage によって
-//! 確保されたメモリを開放する
-//
-void
-freeConvertedRecogImage(RecogImage** recogImage, int imageNum)
-{
-  if (recogImage)
-    {
-      for (int i = 0; i < imageNum; i++)
-        {
-          destructImage(*(recogImage + i));
-        }
-      free(recogImage);
-    }
 }

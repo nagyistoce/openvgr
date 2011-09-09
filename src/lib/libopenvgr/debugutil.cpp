@@ -15,7 +15,6 @@
 #include "vectorutil.h"
 #include "visionErrorCode.h"
 #include "modelpoints.h"
-#include "circle.h"
 
 static inline int
 roundoff( double d )
@@ -119,7 +118,7 @@ drawEdgeImage(const uchar* edge, const Parameters& parameters)
 }
 
 int
-drawDetectedLines(const uchar* edge, const Features2D_old* lineFeatures, const Parameters& parameters)
+drawDetectedLines(const uchar* edge, const Features2D* lineFeatures, const Parameters& parameters)
 {  
   // 直線検出結果カラー表示・保存
   // 背景表示画像配列変数名：edge
@@ -140,7 +139,7 @@ drawDetectedLines(const uchar* edge, const Features2D_old* lineFeatures, const P
   CvScalar red   = CV_RGB(255, 0, 0);
   CvScalar green = CV_RGB(0, 255, 0);
   CvScalar blue  = CV_RGB(0, 0, 255);
-  Feature2D_old* tmpFeature = lineFeatures->feature;
+  Feature2D* tmpFeature = lineFeatures->feature;
   int i, ii, f, cx, cy, istart, iend;
 
   for (f = 0; f < lineFeatures->nFeature; f++)
@@ -188,7 +187,7 @@ drawDetectedLines(const uchar* edge, const Features2D_old* lineFeatures, const P
 }
 
 int
-drawDetectedVertices(const Features2D_old* features, const Parameters& parameters)
+drawDetectedVertices(const Features2D* features, const Parameters& parameters)
 {
   // 頂点特徴抽出結果カラー表示・保存
   // 背景表示画像なし
@@ -202,7 +201,7 @@ drawDetectedVertices(const Features2D_old* features, const Parameters& parameter
       return VISION_MALLOC_ERROR;
     }
 
-  Feature2D_old* tmpFeature = features->feature;
+  Feature2D* tmpFeature = features->feature;
   CvPoint  pt1, pt2, pt3;
   CvScalar green = CV_RGB(0, 255, 0);
   CvScalar white = CV_RGB(255, 255, 255);
@@ -232,7 +231,7 @@ drawDetectedVertices(const Features2D_old* features, const Parameters& parameter
 }
 
 int
-drawTrackPoints(const Features2D_old* features, const Parameters& parameters)
+drawTrackPoints(const Features2D* features, const Parameters& parameters)
 {  
   int i, f, n, cx, cy;
   int* pt = NULL;
@@ -326,7 +325,7 @@ getEllipseProperty(const double coef[6],   // 楕円係数（入力）
 }
 
 int
-drawDetectedEllipses(const uchar* edge, const Features2D_old* features, const Parameters& parameters)
+drawDetectedEllipses(const uchar* edge, const Features2D* features, const Parameters& parameters)
 {
   // 楕円検出結果カラー表示・保存
   // 背景表示画像配列変数名：edge
@@ -335,15 +334,13 @@ drawDetectedEllipses(const uchar* edge, const Features2D_old* features, const Pa
   bool color = true;
   IplImage* cvColorImage = createDebugImage(parameters, color, edge);
 
-  const double ellipse_axis_max = 10000.0; // 表示する楕円の軸の長さの最大値
-
   if (cvColorImage == NULL)
     {
       return VISION_MALLOC_ERROR;
     }
 
   // 検出結果の描画
-  Feature2D_old* tmpFeature;
+  Feature2D* tmpFeature;
   int f, cx, cy;
 
   for (f = 0; f < features->nFeature; f ++)
@@ -365,13 +362,6 @@ drawDetectedEllipses(const uchar* edge, const Features2D_old* features, const Pa
       double axis[2] = {0};
       // 楕円形状を得る
       getEllipseProperty( coef, cent, rot, axis );
-      // 大きな楕円を描画する場合への対策
-      if (axis[1] > ellipse_axis_max)
-        {
-          fprintf(stderr, "Warning: ellipse size error %f %f.\n", axis[0], axis[1]);
-          continue;
-        }
-
       pt = cvPoint(cent[0], cent[1]);
       // 左上原点なので角度の符号を反転させる（上下が逆）
       double angle = -atan2(rot[1][0], rot[0][0])*180/M_PI;
@@ -403,7 +393,7 @@ drawStereoCorrespondence(const StereoData& stereo, int pairing, const Parameters
 
   CvPoint  pt;
   CvScalar white = CV_RGB(255, 255, 255);
-  Feature2D_old* Lfeature;
+  Feature2D* Lfeature;
   int ix,iy;
 
   // 特徴点の描画
@@ -537,7 +527,6 @@ drawStereoCircles(const uchar* edge,
       pt = cvPoint(ix, iy);
       cvLine(cvColorImage, pt, pt, green);
 
-#if 0
       // 円の始点座標計算
       sts = getPointOnCircle(circle->normal, circle->radius, genP);
       // 始点計算ができないときは次の円へ
@@ -560,29 +549,6 @@ drawStereoCircles(const uchar* edge,
           // 円周の描画
           cvLine(cvColorImage, pt, pt, green);
         }
-#else
-      double axis[2][3];
-
-      calc_3d_axes_of_circle(axis[0], axis[1], circle->normal, NULL);
-      for (d = 0; d < ndiv; ++d)
-        {
-          int j;
-          double theta = (double)d / (double)(ndiv - 1) * M_PI * 2.0;
-          for (j = 0; j < 3; ++j)
-            {
-              dst[j] = circle->radius * (axis[0][j] * cos(theta) + axis[1][j] * sin(theta)) + circle->center[j];
-            }
-
-          projectXYZ2LR(&iPos, dst, (CameraParam*)cameraParam);
-
-          ix = roundoff(iPos.col);
-          iy = roundoff(iPos.row);
-          pt = cvPoint(ix, iy);
-          // 円周の描画
-          cvLine(cvColorImage, pt, pt, green);
-        }
-#endif
-
     }
 
   outDebugImage(cvColorImage, "circles3D", pairing, parameters.dbgdisp);
@@ -656,7 +622,6 @@ printStereoCircles(const StereoData& stereo, int pairing)
           continue;
         }
 
-#if 0
       // 円の始点座標計算
       sts = getPointOnCircle(circle->normal, circle->radius, genP);
       // 始点計算ができないときは次の円へ
@@ -682,124 +647,8 @@ printStereoCircles(const StereoData& stereo, int pairing)
           addV3(genP, circle->center, dst);
           fprintf(fp, "%f %f %f\n", dst[0], dst[1], dst[2]);
         }
-#else
-      double axis[2][3];
-
-      calc_3d_axes_of_circle(axis[0], axis[1], circle->normal, NULL);
-      for (d = 0; d < ndiv; ++d)
-        {
-          int j;
-          double theta = (double)d / (double)(ndiv - 1) * M_PI * 2.0;
-          for (j = 0; j < 3; ++j)
-            {
-              dst[j] = circle->radius * (axis[0][j] * cos(theta) + axis[1][j] * sin(theta)) + circle->center[j];
-            }
-          fprintf(fp, "%f %f %f\n", dst[0], dst[1], dst[2]);
-        }
-#endif
     }
   fclose(fp);
-
-  return 0;
-}
-
-// CircleCandidate の描画
-int
-drawCircleCandidate(const uchar* edge,
-                    const std::vector<CircleCandidate>& candidates,
-                    int pairing,
-                    const Parameters& parameters,
-                    const CameraParam* cameraParam)
-{
-  // 画像メモリを確保して背景エッジを白で描く
-  bool color = true;
-  IplImage* cvColorImage = createDebugImage(parameters, color, edge);
-
-  if (cvColorImage == NULL)
-    {
-      return VISION_MALLOC_ERROR;
-    }
-
-  int ndiv = 360; // 分割数
-  double step = 2.0 * M_PI / ndiv;
-  quaternion_t q;
-  double genP[3];
-  double dst[3];  // 円上の点（開始は３次元円周上の一点）
-  Data_2D iPos;
-  int sts, d;
-  int ix, iy;
-  CvPoint pt;
-  CvScalar green = CV_RGB(0, 255, 0);
-  CircleCandidate circle;
-  size_t i;
-
-  FILE *fp;
-  char fname[100];
-  sprintf(fname, "center%d.txt", pairing);
-  fp = fopen(fname, "w");
-
-  // 円の描画
-  for (i = 0; i < candidates.size(); i++)
-    {
-      circle = candidates[i];
-
-      // 円中心の描画
-      projectXYZ2LR(&iPos, circle.center, (CameraParam*)cameraParam);
-      ix = roundoff(iPos.col);
-      iy = roundoff(iPos.row);
-      pt = cvPoint(ix, iy);
-      cvLine(cvColorImage, pt, pt, green);
-      
-      fprintf(fp, "%f %f %f\n", circle.center[0], circle.center[1], circle.center[2]);
-#if 0
-      // 円の始点座標計算
-      sts = getPointOnCircle(circle.normal, circle.radius, genP);
-      // 始点計算ができないときは次の円へ
-      if (sts)
-        {
-          continue;
-        }
-
-      // 回転を表す単位クォータニオンの計算
-      quaternion_rotation(q, -step, circle.normal);
-      for (d = 0; d < ndiv; d++)
-        {
-          // 円中心からの法線を回転軸にして円の点列座標を計算する
-          quat_rot(genP, q, genP);
-          addV3(genP, circle.center, dst);
-          projectXYZ2LR(&iPos, dst, (CameraParam*)cameraParam);
-          ix = roundoff(iPos.col);
-          iy = roundoff(iPos.row);
-          pt = cvPoint(ix, iy);
-          // 円周の描画
-          cvLine(cvColorImage, pt, pt, green);
-        }
-#else
-      double axis[2][3];
-
-      calc_3d_axes_of_circle(axis[0], axis[1], circle.normal, NULL);
-      for (d = 0; d < ndiv; ++d)
-        {
-          int j;
-          double theta = (double)d / (double)(ndiv - 1) * M_PI * 2.0;
-          for (j = 0; j < 3; ++j)
-            {
-              dst[j] = circle.radius * (axis[0][j] * cos(theta) + axis[1][j] * sin(theta)) + circle.center[j];
-            }
-
-          projectXYZ2LR(&iPos, dst, (CameraParam*)cameraParam);
-
-          ix = roundoff(iPos.col);
-          iy = roundoff(iPos.row);
-          pt = cvPoint(ix, iy);
-          // 円周の描画
-          cvLine(cvColorImage, pt, pt, green);
-        }
-#endif
-    }
-
-  fclose(fp);
-  outDebugImage(cvColorImage, "circles3D", pairing, parameters.dbgdisp);
 
   return 0;
 }

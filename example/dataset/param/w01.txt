@@ -24,15 +24,15 @@ OutputCandNum		20
 #
 # エッジ検出アルゴリズム
 #
-EdgeDetectFunction	1
+EdgeDetectFunction	0
 #
 # 検出するエッジの最低微分強度
 #
-EdgeStrength		300
+EdgeStrength		80
 #
 # 直線を当てはめるときの最大誤差
 #
-MaxErrorOfLineFit	1.2
+MaxErrorOfLineFit	0.6
 #
 # 二次曲線を当てはめるときの最大誤差
 #
@@ -40,15 +40,11 @@ MaxErrorOfConicFit	0.8
 #
 # 直線、双曲線の特徴点を抽出する区間の重複可能な最大比率
 #
-OverlapRatioLine	0.2
+OverlapRatioLine	0.8
 #
 # 楕円の特徴点を抽出する区間の重複可能な最大比率
 #
-OverlapRatioCircle	0.1
-#
-# 頂点を構成する二次元直線の最小長
-#
-MinLengthLine2D       60
+OverlapRatioCircle	0.3
 #
 # 端点間距離の閾値
 #
@@ -65,15 +61,15 @@ AMin			89
 #
 # 頂点、線分のなす角度最大値
 #
-AMax			91
+AMax			90
 #
 # 頂点と端点の距離最小値
 #
-LMin			50
+LMin			20
 #
 # 頂点と端点の距離最大値
 #
-LMax			303
+LMax			60
 #
 # ステレオ対応誤差
 #
@@ -86,11 +82,5 @@ StereoError		1.0
 #
 # 認識評価時のエッジ強度閾値
 #
-MatchEdge		300
+MatchEdge		30
 
-IW_Condition   0
-IW_MinLength   20
-IW_MinShortRad 2.0
-IW_ThMeanError 0.5
-IW_ThMaxError  2.0
-IW_OffsetMode  0

@@ -46,9 +46,7 @@ class CameraCaptureServiceSVC_impl
 
    // attributes and operations
    void take_one_frame();
-   void take_multi_frames(CORBA::Long num);
-   void start_continuous();
-   void stop_continuous();
+
 };
 
 

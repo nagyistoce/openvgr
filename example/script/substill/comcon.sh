@@ -1,9 +1,4 @@
 #!/bin/bash
-# コンポーネントの起動を待つ
-./comwait.sh RecognitionResultViewer0.rtc
-./comwait.sh Recognition0.rtc
-./comwait.sh SendImage0.rtc
-./comwait.sh SetModelID0.rtc
 source /usr/local/share/rtshell/shell_support
 # rtshell でのコンポーネントパスを取得
 # 全コンポーネントが同じ場所にあること

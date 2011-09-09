@@ -4,7 +4,7 @@
  Copyright (c) 2011 AIST  All Rights Reserved.
  Eclipse Public License v1.0 (http://www.eclipse.org/legal/epl-v10.html)
 
- Written by Satoshi KAWABATA <kawabata.aist@gmail.com>
+ Written by Satoshi KAWABATA <satoshi.kawabata@aist.go.jp>
 
  $Date::                            $
 */
@@ -13,8 +13,6 @@
 #define LOCAL_H
 
 #include <math.h>
-
-#define USE_INFINITESIMAL_ROTATION
 
 inline static double s_dot3 (const double x[3], const double y[3]);
 inline static void s_cross3 (double result[3], const double x[3], const double y[3]);

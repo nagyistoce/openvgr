@@ -23,7 +23,7 @@ static const char* recognitionresultviewer_spec[] = {
   "description", "Image Viewer for Result of Recognition",
   "version", "1.0.0",
   "vendor", "AIST",
-  "category", "Recognition Result Viewer",
+  "category", "Recongition Result Viewer",
   "activity_type", "PERIODIC",
   "kind", "DataFlowComponent",
   "max_instance", "0",

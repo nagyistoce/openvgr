@@ -80,7 +80,7 @@ typedef struct RTVertexCircleModel
   RTVCM_Vertex* vertex;         //!< 頂点列
   int ncircle;                  //!< 円数
   RTVCM_Circle* circle;         //!< 円列
-  int nbox;                     //!< 直方体数
+  int nvox;                     //!< 直方体数
   RTVCM_Box* box;               //!< 直方体列（表示用）
   int ncylinder;                //!< 円筒数
   RTVCM_Cylinder* cylinder;     //!< 円筒列（表示用）

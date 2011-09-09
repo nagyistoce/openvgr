@@ -1,10 +1,10 @@
-// -*-C++-*-
 /*
  VisionSVC_impl.cpp
 
  Copyright (c) 2011 AIST  All Rights Reserved.
  Eclipse Public License v1.0 (http://www.eclipse.org/legal/epl-v10.html)
 */
+// -*-C++-*-
 /*!
  * @file  VisionSVC_impl.cpp
  * @brief Service implementation code of Vision.idl

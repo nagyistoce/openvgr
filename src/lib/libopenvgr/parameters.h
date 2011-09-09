@@ -14,7 +14,6 @@
 #define _PARAMETERS_H
 
 #include "common.h"
-#include "paramEllipseIW.h"
 
 //! ２次元特徴抽出用パラメータ
 typedef struct ParametersFeature2D
@@ -115,7 +114,6 @@ typedef struct Parameters
   ParametersStereo stereo;
   ParametersMatch match;
   StereoPairing pairing;
-  ParamEllipseIW paramEIW;
 
   //! 出力候補数
   int outputCandNum;

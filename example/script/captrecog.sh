@@ -6,25 +6,26 @@ TERMOPT=--window-with-profile="Default"
 ./MultiDispComp &
 ./RecognitionResultViewerComp &
 ./RecognitionComp &
-
-if test -r /usr/bin/gnome-terminal
-then
-  gnome-terminal -t "SetModelID" -e ./SetModelIDComp --geometry 80x24+0+530 $TERMOPT &
-else
-  echo "gnome-terminal がありません"
-  echo "スクリプトを継続する場合は"
-  echo "別ターミナルで SetModelIDComp を実行し"
-  echo "その後 enter キーを押してください"
-  read dummy
-fi
+gnome-terminal -t "SetModelID" -e ./SetModelIDComp --geometry 80x24+600+530 $TERMOPT &
 
 # コンポーネントの起動完了を待つ
-./comwait.sh MultiCamera0.rtc
-./comwait.sh MultiDisp0.rtc
-./comwait.sh Measure3D0.rtc
-./comwait.sh SetModelID0.rtc
-./comwait.sh Recognition0.rtc
-./comwait.sh RecognitionResultViewer0.rtc
+function wait_comp() {
+  for ((cnt=0; cnt < 10; ++cnt)); do
+    found=`rtfind / -n $1`
+    if test -n "$found"; then
+      echo "$1 launched."
+      break
+    fi
+    sleep 1
+  done
+}
+
+wait_comp MultiCamera0.rtc
+wait_comp MultiDisp0.rtc
+wait_comp Measure3D0.rtc
+wait_comp SetModelID0.rtc
+wait_comp Recognition0.rtc
+wait_comp RecognitionResultViewer0.rtc
 
 # rtshell でのコンポーネントパスを取得
 # 全コンポーネントが同じ場所にあること

@@ -1,10 +1,10 @@
-// -*- mode: C++; coding: utf-8 -*-
 /*
  Recognition.cpp
 
  Copyright (c) 2011 AIST  All Rights Reserved.
  Eclipse Public License v1.0 (http://www.eclipse.org/legal/epl-v10.html)
 */
+// -*- C++ -*-
 /*!
  * @file  Recognition.cpp
  * @brief 3D Recognition by Model
@@ -221,28 +221,13 @@ RTC::ReturnCode_t Recognition::onExecute(RTC::UniqueId ec_id)
       // 現在の認識設定値の取得
       m_Recognition.getCurrentRecogParameter(&param);
 
-#ifdef RECOGNITION_TEST
-      printf( "Recognition::onExecute:StereoPair=%d\n", param.pairing);
-      printf( "Recognition::onExecute:OutputCandNum=%d\n", param.outputCandNum);
-      printf( "Recognition::onExecute:EdgeDetectFunction=%d\n", param.feature2D.edgeDetectFunction);
-      printf( "Recognition::onExecute:EdgeStrength=%f\n", param.feature2D.edgeStrength);
-      printf( "Recognition::onExecute:MaxErrorOfLineFit=%f\n", param.feature2D.maxErrorofLineFit);
-      printf( "Recognition::onExecute:MaxErrorOfConicFit=%f\n", param.feature2D.maxErrorofConicFit);
-      printf( "Recognition::onExecute:OverlapRatioLine=%f\n", param.feature2D.overlapRatioLine);
-      printf( "Recognition::onExecute:OverlapRatioCircle=%f\n", param.feature2D.overlapRatioCircle);
-      printf( "Recognition::onExecute:HDMax(max_distance_end_points)=%f\n", param.feature2D.max_distance_end_points);
-      printf( "Recognition::onExecute:StereoError=%f\n", param.stereo.ethr);
-      printf( "Recognition::onExecute:MatchEdge=%d\n", param.match.edge);
-      printf( "Recognition::onExecute:MinLengthLine2D=%f\n", param.feature2D.min_length_line);
-#endif //RECOGNITION_TEST
-
       TimedRecognitionResult pos;
       // 認識を実行する。
       int ret = execute3DRecognition(m_stereo3DData.data.mimg,
-                                     m_Recognition.getModelID(),
-                                     m_Recognition.getModelFilePath(),
-                                     param,
-                                     pos);
+				     m_Recognition.getModelID(),
+				     m_Recognition.getModelFilePath(),
+				     param,
+				     pos);
 
       if ((ret != 0) && (ret != VISION_ILLEGAL_IMAGE_SIZE))
         // 画像サイズが 0 の場合は、候補数 0 を出力する。

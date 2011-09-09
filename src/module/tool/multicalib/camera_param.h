@@ -4,7 +4,7 @@
  Copyright (c) 2011 AIST  All Rights Reserved.
  Eclipse Public License v1.0 (http://www.eclipse.org/legal/epl-v10.html)
 
- Written by Satoshi KAWABATA <kawabata.aist@gmail.com>
+ Written by Satoshi KAWABATA <satoshi.kawabata@aist.go.jp>
 
  $Date::                            $
 */
@@ -56,23 +56,23 @@ typedef struct tag_camera_param
  */
 
 /* result = A * x */
-void cp_mult_intrinsic (double result[3], const intrinsic_param_t *intr, const double x[3], double (*dx)[3], double (*dp)[3]);
+void cp_mult_intrinsic (double result[3], const intrinsic_param_t *intr, const double x[3]);
 /* result = A^(-1) * x */
 void cp_mult_intrinsic_inv (double result[3], const intrinsic_param_t *intr, const double x[3]);
 
 /* result = R(q)*x + t */
-void cp_mult_extrinsic (double result[3], const extrinsic_param_t *ext, const double x[3], double (*dx)[3], double (*dp)[3]);
+void cp_mult_extrinsic (double result[3], const extrinsic_param_t *ext, const double x[3]);
 /* result = R(q)^(-1) (x - t) */
 void cp_mult_extrinsic_inv (double result[3], const extrinsic_param_t *ext, const double x[3]);
 
 /* result = distorted point of (nc[0], nc[1], 1.0) */
-void cp_distort (double result[2], const distortion_param_t *dist, const double nc[2], double (*dx)[3], double (*dp)[2]);
+void cp_distort (double result[2], const distortion_param_t *dist, const double nc[2]);
 /* result = undistorted point of (nc[0], nc[1], 1.0) */
 void cp_undistort (double result[2], const distortion_param_t *dist, const double nc[2]);
 
 
 /* normalized coordinate (divide each element by x[2]) */
-void cp_normalize_point (double result[3], const double x[3], double (*dx)[3]);
+void cp_normalize_point (double result[3], const double x[3]);
 
 /* conversion to a matrix from of an intrinsic parameter */
 /* A(i, j) = A[i + ldim*j] (column major) */

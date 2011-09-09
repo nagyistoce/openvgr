@@ -14,7 +14,7 @@
 #define _STEREO_H
 
 #include "calib.h"
-#include "extractFeature_old.h"
+#include "extractFeature.h"
 #include "match3Dfeature.h"
 
 //! ステレオカメラキャリブレーションデータ
@@ -58,8 +58,8 @@ typedef struct CircleCandidate
 typedef struct StereoConic
 {
   ConicType type;               //!< 二次曲線のタイプ
-  Feature2D_old* featureL;      //!< 左画像の２次元特徴
-  Feature2D_old* featureR;      //!< 右画像の２次元特徴
+  Feature2D* featureL;          //!< 左画像の２次元特徴
+  Feature2D* featureR;          //!< 右画像の２次元特徴
   int valid;                    //!< 有効無効フラグ
   double error;                 //!< ステレオ対応誤差
   double center[3];             //!< 復元円中心、復元頂点の３次元座標
@@ -77,6 +77,11 @@ typedef struct StereoData
   StereoConic* conics;          //!< ２次曲線ステレオ対応データ
 } StereoData;
 
+//! 歪み補正点座標(X', Y')より視線ベクトルを計算する
+void calculateSightVector(double* SightVector,         // 視線ベクトル
+                          Data_2D icPos,               // 歪み補正点座標
+                          CameraParam* cameraParam);   // カメラパラメータ
+
 //! ステレオ対応点から３次元座標を計算する
 //! 戻り値：復元誤差＝２つの視線（エピポーラ線）間の距離
 double calculateLR2XYZ(double position3D[3],    // ３次元座標
@@ -84,14 +89,6 @@ double calculateLR2XYZ(double position3D[3],    // ３次元座標
                        Data_2D posR,            // 右画像上の対応点座標
                        CameraParam* camParamL,  // 左画像のカメラパラメータ
                        CameraParam* camParamR); // 右画像のカメラパラメータ
-
-double calculatePlane3D(double plane3D[4],             // ３次元平面
-                        const double l11[3],           // 左画像上の対応線1
-                        const double l12[3],           // 左画像上の対応線2
-                        const double l21[3],           // 右画像上の対応線1
-                        const double l22[3],           // 右画像上の対応線2
-                        const CameraParam* camParamL,  // 左画像のカメラパラメータ
-                        const CameraParam* camParamR); // 右画像のカメラパラメータ
 
 //! ３次元点の２次元画像上への投影点座標を求める
 void projectXYZ2LR(Data_2D* pos2D,             // ２次元画像上の投影点座標
@@ -105,8 +102,8 @@ void freeStereoData(StereoData* stereo);
 //! 戻り値：ステレオ対応データ
 StereoData StereoCorrespondence(StereoPairing pairing,   // ステレオペア情報
                                 CalibParam calib,        // キャリブレーションデータ
-                                Features2D_old* left,    // 左画像の２次元特徴
-                                Features2D_old* right,   // 右画像の２次元特徴
+                                Features2D* left,        // 左画像の２次元特徴
+                                Features2D* right,       // 右画像の２次元特徴
                                 Parameters parameters);  // 全パラメータ
 
 //! ステレオ処理結果を３次元特徴構造体へセットする
@@ -123,13 +120,5 @@ bool setFeature3D_TBLOR(StereoData& stereoLR, // ＬＲペアのステレオ対�
 bool setFeature3D_TBLAND(StereoData& stereoLR, // ＬＲペアのステレオ対応データ
                          StereoData& stereoLV, // ＬＶペアのステレオ対応データ
                          Features3D& feature); // ３次元特徴データ
-
-//! ステレオ処理結果を旧3次元特徴構造体へセットする
-bool set_circle_to_OldFeature3D(const std::vector<CircleCandidate>& candidates,
-                                Features3D* feature); // ３次元特徴データ
-
-//! 頂点のステレオ処理結果を３次元特徴構造体へセットする
-bool set_vertex_to_OldFeature3D(const std::vector<VertexCandidate>& candidates,
-				Features3D* feature);
 
 #endif // _STEREO_H

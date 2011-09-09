@@ -1,4 +1,4 @@
-/* -*- coding: utf-8 -*-
+/*
  recogImage.h
 
  Copyright (c) 2011 AIST  All Rights Reserved.
@@ -14,7 +14,6 @@
 #define _RECOGIMAGE_H
 
 #include "common.h"
-#include "calib.h"
 
 typedef struct _recogImage
 {
@@ -34,9 +33,4 @@ void destructImage (RecogImage * image);
 // RGB画像からGray画像への変換
 void rgb2grayImage (RecogImage * target, RecogImage * source);
 
-// 歪み補正画像の作成
-void undistortImage(const RecogImage* src, RecogImage* dst, CameraParam* cp);
-
-// 画像メモリのファイル出力　デバッグ用
-void writeRecogImage(const char* filename, const RecogImage* img);
 #endif // _RECOGIMAGE_H

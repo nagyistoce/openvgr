@@ -33,8 +33,14 @@ loadModelFile(char* path, Features3D& model)
 
   // モデル RTVCM データを特徴データ構造体に変換する。
   ret = convertRTVCMtoFeatures3D(rtvcm, model);
+  if (ret != 0)
+    {
+      freeRTVCM(rtvcm);
+
+      return ret;
+    }
 
   freeRTVCM(rtvcm);
 
-  return ret;
+  return 0;
 }

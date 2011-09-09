@@ -230,12 +230,6 @@ class MultiCamera
    */
   // virtual RTC::ReturnCode_t onRateChanged(RTC::UniqueId ec_id);
 
-   enum trigger_mode
-   {
-     trigger_mode_one_shot = 0,
-     trigger_mode_continuous = 1,
-     trigger_mode_multi_shot = 2
-   };
 
  protected:
   // <rtc-template block="protected_attribute">
@@ -266,18 +260,6 @@ class MultiCamera
    * - DefaultValue: 1
    */
   int m_camera_set_id;
-  /*!
-   * 
-   * - Name:  trigger_mode
-   * - DefaultValue: 0
-   */
-  int m_trigger_mode;
-  /*!
-   * 
-   * - Name:  ieee1394b_mode
-   * - DefaultValue: 1
-   */
-  int m_ieee1394b_mode;
   // </rtc-template>
 
   // DataInPort declaration
@@ -317,7 +299,6 @@ class MultiCamera
   // </rtc-template>
 
   bool m_continuous_mode;
-  CORBA::Long m_num_required_images;
 
   capture_t m_cap;
   capture_frame_t *m_frames;
