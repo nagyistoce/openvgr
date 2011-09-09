@@ -1,0 +1,72 @@
+#ifndef VISION_IDL
+#define VISION_IDL
+
+#include <BasicDataType.idl>
+#include "Img.idl"
+
+
+/* point cloud */
+struct PointCloud
+{
+  long id;
+  Img::Mat44 T;
+
+  sequence<Img::Vec3> point;
+  sequence<Img::Vec3> color;
+};
+
+struct TimedPointCloud
+{
+  RTC::Time tm;
+  PointCloud data;
+  long error_code;
+};
+
+
+/* reconstructed 3D data by stereo vision */
+struct Stereo3D
+{
+  TimedPointCloud obj;
+  Img::TimedMultiCameraImage mimg;
+};
+
+struct TimedStereo3D
+{
+  RTC::Time tm;
+  Stereo3D data;
+  long error_code;
+};
+
+
+/* result of localization */
+/*
+  TimedRecognitionResult:
+  Camera Set ID, Object ID, Candidate No., Coordinate system No.,
+  Recognition reliability, Error No., Reserve 1, Reserve 2,
+  r000, r001, r002, t0x,
+  r010, r011, r012, t0y,
+  r020, r021, r022, t0z,
+  Camera ID...
+ */
+
+typedef RTC::TimedDoubleSeq TimedRecognitionResult;
+
+
+/* interfaces */
+/* 3D reconstruction from a set of captured images  */
+interface Reconstruct3DService {
+  oneway void reconstruct();
+};
+
+/* object localization */
+interface RecognitionService {
+  long getModelID();
+  void setModelID(in long ModelID);
+};
+
+/* display */
+interface RecognitionResultViewerService {
+  oneway void display(in Img::TimedMultiCameraImage frame, in TimedRecognitionResult pos);
+};
+
+#endif /* VISION_IDL */

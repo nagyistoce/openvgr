@@ -1,0 +1,37 @@
+/*
+ common.h
+
+ Copyright (c) 2011 AIST  All Rights Reserved.
+ Eclipse Public License v1.0 (http://www.eclipse.org/legal/epl-v10.html)
+*/
+/*!
+ * @file common.h
+ * @brief 各種の共通定義
+ * @date \$Date::                            $
+ */
+
+#ifndef _COMMON_H
+#define _COMMON_H
+#include <math.h>
+
+#define VISION_EPS	1.0e-10 // 収束判定の基準値
+
+#define VISIBLE   1
+#define INVISIBLE 0
+
+typedef struct Data_2D          // ２次元位置
+{
+  double col;
+  double row;
+} Data_2D;
+
+typedef enum StereoPairing     // ステレオの画像の組み合わせ指定
+{
+  DBL_LR,
+  DBL_LV,
+  DBL_RV,
+  TBL_OR,
+  TBL_AND
+} StereoPairing;
+
+#endif // _COMMON_H
