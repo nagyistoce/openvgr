@@ -26,8 +26,11 @@ typedef struct DistortionParam
 //! カメラパラメータ
 typedef struct CameraParam
 {
+  double cx, cy;                //!< レンズの光学的な中心
+  double fx, fy;                //!< 焦点距離(ピクセル単位)
   double Rotation[3][3];        //!< 回転行列
   double Translation[3];        //!< 移動ベクトル
+  double rRotation[3][3];       //!< 回転行列の逆行列(転置行列)
   double Position[3];           //!< カメラ位置(-rR・T)
   DistortionParam Distortion;   //!< 歪みパラメータ
   double intrinsicMatrix[3][3]; //!< 内部パラメータ行列
@@ -50,18 +53,8 @@ void undistortPosition(Data_2D* icPos,             // 歪みなし座標
                        CameraParam* cameraParam);  // カメラパラメータ
 
 // 歪み補正後の理想画像位置→歪みのある実画像位置(X', Y')
-void distortPosition(Data_2D* iPos2D,              // 歪みあり座標
-                     Data_2D icPos2D,              // 歪みなし座標
-                     CameraParam* cameraParam);    // カメラパラメータ
-
-// 画像座標→正規化座標
-void backprojectPoint(Data_2D* icPos,             // 正規化座標
-                      Data_2D iPos,               // 画像座標
-                      CameraParam* cameraParam);  // カメラパラメータ
-
-// 正規化座標→画像座標
-void projectPoint(Data_2D* iPos2D,                // 画像座標
-                  Data_2D icPos2D,                // 正規化座標
-                  CameraParam* cameraParam);      // カメラパラメータ
+void distortPosition (Data_2D* iPos2D,             // 歪みあり座標
+                      Data_2D icPos2D,             // 歪みなし座標
+                      CameraParam* cameraParam);   // カメラパラメータ
 
 #endif // _CALIB_H

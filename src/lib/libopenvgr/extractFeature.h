@@ -1,23 +1,23 @@
 /*
- extractFeature_old.h
+ extractFeature.h
 
  Copyright (c) 2011 AIST  All Rights Reserved.
  Eclipse Public License v1.0 (http://www.eclipse.org/legal/epl-v10.html)
 */
 /*!
- * @file extractFeature_old.h
+ * @file extractFeature.h
  * @brief 2次元特徴抽出関連関数
  * @date \$Date::                            $
  */
 
-#ifndef _EXTRACTFEATURE_OLD_H
-#define _EXTRACTFEATURE_OLD_H
+#ifndef _EXTRACTFEATURE_H
+#define _EXTRACTFEATURE_H
 
 #include "conic.h"
 #include "match3Dfeature.h"
 
 //! 各２次元特徴
-typedef struct Feature2D_old
+typedef struct Feature2D
 {
   ConicType type;               //!< 二次曲線の分類
   double coef[6];               //!< 二次曲線の係数。a x^2 + bxy + c y^2 + d x + e y + f = 0, 
@@ -41,7 +41,7 @@ typedef struct Feature2D_old
   double lineLength1;           //!< 双曲線の線分1の長さ
   double lineLength2;           //!< 双曲線の線分2の長さ
   double lineAngle;             //!< 双曲線の2線分のなす角度
-} Feature2D_old;
+} Feature2D;
 
 //! 輪郭情報
 typedef struct Track
@@ -52,14 +52,14 @@ typedef struct Track
 } Track;
 
 //! ２次元特徴情報
-typedef struct Features2D_old
+typedef struct Features2D
 {
   int nAlloc;                   //!< メモリ確保量
   int nFeature;                 //!< ２次元特徴数
-  Feature2D_old* feature;           //!< ２次元特徴情報
+  Feature2D* feature;           //!< ２次元特徴情報
   int nTrack;                   //!< 輪郭数
   Track* track;                 //!< 輪郭情報
-} Features2D_old;
+} Features2D;
 
 //! 楕円重複除去用グループ情報
 typedef struct EllipseGroup
@@ -70,14 +70,10 @@ typedef struct EllipseGroup
 } EllipseGroup;
 
 //! ２次元特徴情報のメモリ解放
-void destructFeatures(Features2D_old* features);
-
-//! ２次元特徴データのメモリ拡張
-Features2D_old*
-expandFeatures(Features2D_old* features);
+void destructFeatures(Features2D* features);
 
 //! ステレオ画像の一枚から二次元特徴の抽出
-Features2D_old* ImageToFeature2D_old(unsigned char* src, unsigned char* edge,
-                                     Parameters parameters, Features3D model);
+Features2D* ImageToFeature2D(unsigned char* src, unsigned char* edge,
+                             Parameters parameters, Features3D model);
 
-#endif // _EXTRACTFEATURE_OLD_H
+#endif // _EXTRACTFEATURE_H

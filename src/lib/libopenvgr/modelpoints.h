@@ -38,28 +38,7 @@ double traceModelPointsMultiCameras(Features3D* model,      // モデルの３�
                                     StereoPairing& pairing, // ステレオペア情報
                                     double matrix[4][4]);   // 認識結果の位置姿勢変換行列
 
-//! 使用した全画像を用いた２次元評価値計算。距離変換画像の利用
-//! 戻り値：２次元評価値
-double calcEvaluationValue2DMultiCameras(Features3D* model,      // モデルの３次元特徴情報
-                                         StereoPairing& pairing, // ステレオペア情報
-                                         double matrix[4][4],    // 認識結果の位置姿勢変換行列
-                                         const std::vector<cv::Mat>& dstImages); // 距離変換画像
-
-// 座標値が正しい範囲内か確認
-inline int
-isValidPixelPosition(int col, int row, Features3D* finfo)
-{
-  int wlimit = finfo->calib->colsize - 2;
-  int hlimit = finfo->calib->rowsize - 2;
-
-  if (col >= 2 && col < wlimit && row >= 2 && row < hlimit)
-    {
-      return 1;
-    }
-  else
-    {
-      return 0;
-    }
-}
+//! 円の始点座標計算
+int getPointOnCircle(double normal[3], double radius, double point[3]);
 
 #endif // _MODELPOINTS_H

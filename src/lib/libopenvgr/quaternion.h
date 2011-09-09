@@ -4,6 +4,8 @@
  Copyright (c) 2011 AIST  All Rights Reserved.
  Eclipse Public License v1.0 (http://www.eclipse.org/legal/epl-v10.html)
 
+ Written by Satoshi KAWABATA <satoshi.kawabata@aist.go.jp>
+
  $Date::                            $
 */
 

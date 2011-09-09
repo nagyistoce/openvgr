@@ -76,26 +76,3 @@ distortPosition(Data_2D* iPos2D,               // 歪みあり座標
 
   return;
 }
-
-// 画像座標→正規化座標
-void
-backprojectPoint(Data_2D* icPos,              // 正規化座標
-                 Data_2D iPos,                // 画像座標
-                 CameraParam* cameraParam)    // カメラパラメータ
-{
-  double (*intr)[3] = cameraParam->intrinsicMatrix;
-
-  icPos->row = (iPos.row - intr[1][2]) / intr[1][1];
-  icPos->col = (iPos.col - intr[0][2] - intr[0][1] * icPos->row) / intr[0][0];
-}
-
-// 正規化座標→画像座標
-void projectPoint(Data_2D* iPos2D,               // 画像座標
-                  Data_2D icPos2D,               // 正規化座標
-                  CameraParam* cameraParam)      // カメラパラメータ
-{
-  double (*intr)[3] = cameraParam->intrinsicMatrix;
-
-  iPos2D->col = intr[0][0] * icPos2D.col + intr[0][1] * icPos2D.row + intr[0][2];
-  iPos2D->row =                            intr[1][1] * icPos2D.row + intr[1][2];
-}

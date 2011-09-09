@@ -1,10 +1,10 @@
-// -*- C++ -*-
 /*
  Recognition.h
 
  Copyright (c) 2011 AIST  All Rights Reserved.
  Eclipse Public License v1.0 (http://www.eclipse.org/legal/epl-v10.html)
 */
+// -*- C++ -*-
 /*!
  * @file  Recognition.h
  * @brief 3D Recognition by Model

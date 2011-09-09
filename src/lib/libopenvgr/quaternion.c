@@ -4,6 +4,8 @@
  Copyright (c) 2011 AIST  All Rights Reserved.
  Eclipse Public License v1.0 (http://www.eclipse.org/legal/epl-v10.html)
 
+ Written by Satoshi KAWABATA <satoshi.kawabata@aist.go.jp>
+
  $Date::                            $
 */
 
@@ -110,15 +112,25 @@ quat_normalize (quaternion_t q)
 void
 quat_rot (double result[3], const quaternion_t q, const double x[3])
 {
-  double dot, cross[3];
+  double dot, cross[3], temp[3];
+  const double* pos = x;
   int i;
 
-  dot = s_dot3 (&quat_im (q, 0), x);
-  s_cross3 (cross, &quat_im (q, 0), x);
+  if (x == result)
+    {
+      for (i = 0; i < 3; ++i)
+        {
+          temp[i] = x[i];
+        }
+      pos = temp;
+    }
+
+  dot = s_dot3 (&quat_im (q, 0), pos);
+  s_cross3 (cross, &quat_im (q, 0), pos);
 
   for (i = 0; i < 3; ++i)
     {
-      result[i] = 2.0*dot*quat_im (q, i) + 2.0*quat_re (q) * (quat_re (q)*x[i] + cross[i]) - x[i];
+      result[i] = 2.0*dot*quat_im (q, i) + 2.0*quat_re (q) * (quat_re (q)*pos[i] + cross[i]) - pos[i];
     }
 }
 
@@ -126,15 +138,25 @@ quat_rot (double result[3], const quaternion_t q, const double x[3])
 void
 quat_irot (double result[3], const quaternion_t q, const double x[3])
 {
-  double dot, cross[3];
+  double dot, cross[3], temp[3];
+  const double* pos = x;
   int i;
 
-  dot = s_dot3 (&quat_im (q, 0), x);
-  s_cross3 (cross, &quat_im (q, 0), x);
+  if (x == result)
+    {
+      for (i = 0; i < 3; ++i)
+        {
+          temp[i] = x[i];
+        }
+      pos = temp;
+    }
+
+  dot = s_dot3 (&quat_im (q, 0), pos);
+  s_cross3 (cross, &quat_im (q, 0), pos);
 
   for (i = 0; i < 3; ++i)
     {
-      result[i] = 2.0*dot*quat_im (q, i) + 2.0*quat_re (q) * (quat_re (q)*x[i] - cross[i]) - x[i];
+      result[i] = 2.0*dot*quat_im (q, i) + 2.0*quat_re (q) * (quat_re (q)*pos[i] - cross[i]) - pos[i];
     }
 }
 

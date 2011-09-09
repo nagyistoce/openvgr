@@ -412,8 +412,8 @@ outCylinder(FILE* fp,
   // 半径、円の中心座標、法線ベクトル情報
   for (faceNumber = nFace - 1; faceNumber >= 0; faceNumber--)
     {
-      writeCylinderInfo(fp, cylinderParameter,
-                        &center[faceNumber], &normalVector[faceNumber]);
+      writeCylinderlInfo(fp, cylinderParameter,
+                         &center[faceNumber], &normalVector[faceNumber]);
     }
   fprintf(fp, "\n");
 

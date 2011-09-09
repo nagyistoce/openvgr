@@ -55,7 +55,7 @@ typedef struct Vertex
   int label;                    //!< ラベル：可視情報(VISIBLE/INVISIBLE)
   int n;                        //!< 通し番号
   int side;                     //!< 表裏情報
-  //double position[3];           //!< 頂点の3次元位置(mm)
+  double position[3];           //!< 頂点の3次元位置(mm)
   double endpoint1[3];          //!< 辺の端点(mm)
   double endpoint2[3];          //!< 辺の端点(mm)
   double direction1[3];         //!< 辺の方向
@@ -75,7 +75,7 @@ typedef struct Circle
   int n;                        //!< 通し番号
   int side;                     //!< 表裏情報
   double radius;                //!< 半径
-  //double center[3];             //!< 中心位置
+  double center[3];             //!< 中心位置
   double normal[3];             //!< 法線
   double orientation[4][4];     //!< 認識用姿勢行列
   int numOfTracePoints;         //!< 認識評価用のサンプリング点列数
@@ -124,9 +124,6 @@ typedef struct Match3Dresults
 //! 認識結果データのメモリ解除
 void freeMatch3Dresults(Match3Dresults* holder);
 
-//! 不要になった認識結果データの開放
-void shrinkMatch3Dresults(Match3Dresults* Match);
-
 //! ３次元特徴データのメモリ解放
 void freeFeatures3D(Features3D* feature);
 
@@ -141,17 +138,9 @@ Match3Dresults matchFeatures3d(Features3D& scene,    // シーンの３次元特
 
 //! ２円を使った照合
 //! 戻り値：認識結果
-#ifdef USE_DISTANCETRANSFORM
 extern Match3Dresults matchPairedCircles(Features3D& scene,      // シーンの３次元特徴情報
-                                         Features3D& model,      // モデルの３次元特徴情報
-                                         const std::vector<cv::Mat>& dstImages,
-                                         double tolerance,       // 照合の許容値
-                                         StereoPairing& pairing);  // ステレオペアの情報
-#else
-extern Match3Dresults matchPairedCircles(Features3D& scene,      // シーンの３次元特徴情報
-                                         Features3D& model,      // モデルの３次元特徴情報
-                                         double tolerance,       // 照合の許容値
-                                         StereoPairing& pairing);  // ステレオペアの情報
-#endif
+                                          Features3D& model,      // モデルの３次元特徴情報
+                                          double tolerance,       // 照合の許容値
+					 StereoPairing& pairing);  // ステレオペアの情報
 
 #endif // _MATCH3DFEATURE_H

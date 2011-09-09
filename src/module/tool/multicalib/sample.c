@@ -4,7 +4,7 @@
  Copyright (c) 2011 AIST  All Rights Reserved.
  Eclipse Public License v1.0 (http://www.eclipse.org/legal/epl-v10.html)
 
- Written by Satoshi KAWABATA <kawabata.aist@gmail.com>
+ Written by Satoshi KAWABATA <satoshi.kawabata@aist.go.jp>
 
  $Date::                            $
 */
@@ -36,7 +36,6 @@ typedef struct tag_opt
   double pattern_size; /* length of a side of one quadrangle */
 
   method_t method;
-  int ieee1394b_mode;
 
   FILE *fp;
 } opt_t;
@@ -64,14 +63,13 @@ main (int argc, char **argv)
   parse_opt (argc, argv, &opt);
 
   /* setup a camera system */
-  status = capture_init (&cap, 1);
+  status = capture_init (&cap);
   if (status != CAPTURE_SUCCESS)
     {
       fprintf (stderr, "error in capture_init()\n");
       goto on_capture_init_error;
     }
 
-  cap.prefer_bmode = opt.ieee1394b_mode; /* use 1394b mode if the cameras support it */
   status = capture_setup (&cap, "ieee1394board.0");
   if (status != CAPTURE_SUCCESS)
     {
@@ -114,7 +112,7 @@ main (int argc, char **argv)
 static void
 show_help (const char *prog_name)
 {
-  printf ("usage: %s [-w <filename>] [-s <size>] [-g <row>x<col>] [-l]\n", prog_name);
+  printf ("usage: %s [-w <filename>] [-s <size>] [-g <row>x<col>]\n", prog_name);
 
   printf ("\n");
 
@@ -127,12 +125,7 @@ show_help (const char *prog_name)
   printf ("pattern size [mm] (default: 20)\n");
 
   printf ("<row>x<col>:\t");
-  printf ("nunber of points in each row/col (default: 8x8)\n");
-
-  printf ("\n");
-
-  printf ("-l         :\t");
-  printf ("use IEEE 1394 legacy mode (default: IEEE 1394b mode)\n");
+  printf ("nunber of points in each row/col (only for id=1) (default: 8x8)\n");
 
   printf ("\n");
 }
@@ -192,7 +185,7 @@ get_grid (const char *str, int *row, int *col)
 static void
 parse_opt (int argc, char **argv, opt_t *opt)
 {
-  const static char optstr[] = "s:g:lm:w:h";
+  const static char optstr[] = "s:g:m:w:h";
   char ch;
 
   opt->pattern_col  =  8;
@@ -201,7 +194,6 @@ parse_opt (int argc, char **argv, opt_t *opt)
 
   opt->method = METHOD_OPENCV;
 
-  opt->ieee1394b_mode = 1;
   opt->fp = stdout;
 
   while ((ch = getopt (argc, argv, optstr)) != -1)
@@ -220,10 +212,6 @@ parse_opt (int argc, char **argv, opt_t *opt)
         case 'h':
           show_help (argv[0]);
           destroy (EXIT_SUCCESS, opt);
-          break;
-
-        case 'l':
-          opt->ieee1394b_mode = 0;
           break;
 
         case 's':

@@ -4,7 +4,7 @@
  Copyright (c) 2011 AIST  All Rights Reserved.
  Eclipse Public License v1.0 (http://www.eclipse.org/legal/epl-v10.html)
 
- Written by Satoshi KAWABATA <kawabata.aist@gmail.com>
+ Written by Satoshi KAWABATA <satoshi.kawabata@aist.go.jp>
 
  $Date::                            $
 */
@@ -20,7 +20,7 @@ typedef struct tag_multicalib_opt
   char *ifile;
   char *ofile;
 
-  double interval;
+  int interval;
 
   calib_opt_t calib_opt;
 } multicalib_opt_t;

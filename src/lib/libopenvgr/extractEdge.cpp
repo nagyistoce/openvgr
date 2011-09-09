@@ -294,14 +294,16 @@ detectEdge(unsigned int* eStrength2, unsigned char* eDirection,
   int* diffVertical = NULL;
   int* diffHorizontal = NULL;
 
-  if ((diffVertical = (int*) calloc(imgsize, sizeof(int))) == NULL)
+  if ((diffVertical = (int*) malloc(imgsize * sizeof(int))) == NULL)
     {
       goto failed_exit;
     }
-  if ((diffHorizontal = (int*) calloc(imgsize, sizeof(int))) == NULL)
+  if ((diffHorizontal = (int*) malloc(imgsize * sizeof(int))) == NULL)
     {
       goto failed_exit;
     }
+  memset(diffVertical, 0, imgsize * sizeof(int));
+  memset(diffHorizontal, 0, imgsize * sizeof(int));
 
   switch (parameters.feature2D.edgeDetectFunction)
     {
@@ -333,11 +335,17 @@ detectEdge(unsigned int* eStrength2, unsigned char* eDirection,
 
   free(diffVertical);
   free(diffHorizontal);
-  return 0;
+  return 1;
 
 failed_exit:
-  free(diffVertical);
-  free(diffHorizontal);
+  if (diffVertical != NULL)
+    {
+      free(diffVertical);
+    }
+  if (diffHorizontal != NULL)
+    {
+      free(diffHorizontal);
+    }
   return -1;
 }
 
@@ -371,21 +379,20 @@ thinEdge(unsigned char* thin, unsigned char* gray, Parameters parameters)
   unsigned char* eDirection = NULL;
 
   // 各点のエッジ強度の二乗
-  if ((eStrength2 = (unsigned int*) calloc(imgsize, sizeof(unsigned int))) == NULL)
+  if ((eStrength2 = (unsigned int*) malloc(imgsize * sizeof(unsigned int))) == NULL)
     {
       goto failed_exit;
     }
+  memset(eStrength2, 0, imgsize * sizeof(unsigned int));
 
   // 各点のエッジの方向
-  if ((eDirection = (unsigned char*) calloc(imgsize, sizeof(unsigned char))) == NULL)
+  if ((eDirection = (unsigned char*) malloc(imgsize * sizeof(unsigned char))) == NULL)
     {
       goto failed_exit;
     }
+  memset(eDirection, 0, imgsize * sizeof(unsigned char));
 
-  if (detectEdge(eStrength2, eDirection, gray, parameters))
-    {
-      goto failed_exit;
-    }
+  detectEdge(eStrength2, eDirection, gray, parameters);
 
   for (row = 1; row < rowsize - 1; row++)
     {
@@ -517,8 +524,14 @@ thinEdge(unsigned char* thin, unsigned char* gray, Parameters parameters)
   return 0;
 
 failed_exit:
-  free(eStrength2);
-  free(eDirection);
+  if (eStrength2 != NULL)
+    {
+      free(eStrength2);
+    }
+  if (eDirection != NULL)
+    {
+      free(eDirection);
+    }
   return -1;
 }
 
@@ -854,7 +867,7 @@ deleteLid(unsigned char* edge, Parameters parameters)
 }
 
 // エッジ点を検出するプログラム
-int
+void
 extractEdge(unsigned char* edge,       // エッジ画像
             unsigned char* gray,       // 原画像
             const int threshold,       // エッジ閾値
@@ -866,10 +879,7 @@ extractEdge(unsigned char* edge,       // エッジ画像
   int imgsize = parameters.imgsize;
 
   // 非極大細線化
-  if (thinEdge(edge, gray, parameters))
-    {
-      return -1; // メモリ確保失敗
-    }
+  thinEdge(edge, gray, parameters);
 
   // 小断片の除去
   markSmallFragment(edge, parameters);
@@ -882,70 +892,6 @@ extractEdge(unsigned char* edge,       // エッジ画像
   for (i = 0; i < imgsize; i++)
     {
       edge[i] = (edge[i] >= threshold) ? 1 : 0;
-    }
-
-  // 画像の端をゼロリセット
-  // 上辺
-  for (i = 1; i < colsize - 1; i++)
-    {
-      edge[i] = 0;
-    }
-  // 下辺
-  for (i = 1; i < colsize - 1; i++)
-    {
-      edge[(rowsize - 1) * colsize + i] = 0;
-    }
-  // 左辺
-  for (i = 0; i < rowsize; i++)
-    {
-      edge[i * colsize] = 0;
-    }
-  // 右辺
-  for (i = 0; i < rowsize; i++)
-    {
-      edge[i * colsize + colsize - 1] = 0;
-    }
-  return 0;
-}
-
-// エッジ点を検出するプログラム
-void
-extractEdge_new(unsigned char* edge,       // エッジ画像
-                unsigned char* gray,       // 原画像
-                const int threshold,       // エッジ閾値
-                Parameters parameters)     // 全パラメータ
-{
-  int colsize = parameters.colsize;
-  int rowsize = parameters.rowsize;
-
-  int i;
-
-  cv::Mat gray_image(rowsize, colsize, CV_8UC1, gray);
-  cv::Mat edge_image(rowsize, colsize, CV_8UC1, edge);
-
-#if 0
-  cv::namedWindow("image", CV_WINDOW_AUTOSIZE);
-
-  cv::imshow("image", gray_image);
-  cv::waitKey(-1);
-#endif
-
-  cv::Canny(gray_image, edge_image, 60, 30);
-#if 0
-  cv::imshow("image", edge_image);
-  cv::waitKey(-1);  
-#endif
-
-  for (i = 0; i < rowsize; ++i)
-    {
-      int j;
-      for (j = 0; j < colsize; ++j)
-        {
-          if (edge[i*colsize + j] != 0)
-            {
-              edge[i*colsize + j] = 1;
-            }
-        }
     }
 
   // 画像の端をゼロリセット

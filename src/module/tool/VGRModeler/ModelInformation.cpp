@@ -59,9 +59,9 @@ writeGravityInfo(FILE* fp, const Vector* gravity)
 
 //! 円筒の情報を出力
 void
-writeCylinderInfo(FILE* fp, const ModelParameter* circleParameter,
-                  const LinePoint* centerPoint,      // 円の中心座標
-                  const Vector* normalVector)        // 法線ベクトル
+writeCylinderlInfo(FILE* fp, const ModelParameter* circleParameter,
+		   const LinePoint* centerPoint,      // 円の中心座標
+		   const Vector* normalVector)        // 法線ベクトル
 {
   fprintf(fp, "#RTVCML CIRCLE %.3lf %.3lf %.3lf %.3lf %.3lf %.3lf %.3lf\n",
           circleParameter->r, centerPoint->x, centerPoint->y, centerPoint->z,
@@ -79,13 +79,21 @@ writeVertex(FILE* fp, const SquareParameter* faceParameter, const int nSquare)
   for (squareCount = 0; squareCount < nSquare; squareCount++)
     {                           // 6面回す
       vertex = faceParameter[squareCount].squarePoint;
-      for (vertexCount = 0; vertexCount < 4; vertexCount++)
-        {                       // 各面の4頂点分回す
+      for (vertexCount = 0; vertexCount < 2; vertexCount++)
+        {                       // 各面の2頂点分回す
           fprintf(fp, "#RTVCML VERTEX %.3lf %.3lf %.3lf %.3lf %.3lf %.3lf %.3lf %.3lf %.3lf\n",
-                  vertex[vertexCount].x, vertex[vertexCount].y, vertex[vertexCount].z,
-                  vertex[(vertexCount+1) % 4].x, vertex[(vertexCount+1) % 4].y, vertex[(vertexCount+1) % 4].z,
-                  vertex[(vertexCount+2) % 4].x, vertex[(vertexCount+2) % 4].y, vertex[(vertexCount+2) % 4].z);
+                  vertex[vertexCount + 2].x, vertex[vertexCount + 2].y, vertex[vertexCount + 2].z,
+                  vertex[vertexCount + 1].x, vertex[vertexCount + 1].y, vertex[vertexCount + 1].z,
+                  vertex[vertexCount].x, vertex[vertexCount].y, vertex[vertexCount].z);
         }
+      fprintf(fp, "#RTVCML VERTEX %.3lf %.3lf %.3lf %.3lf %.3lf %.3lf %.3lf %.3lf %.3lf\n",
+              vertex[0].x, vertex[0].y, vertex[0].z,
+              vertex[3].x, vertex[3].y, vertex[3].z,
+              vertex[2].x, vertex[2].y, vertex[2].z);
+      fprintf(fp, "#RTVCML VERTEX %.3lf %.3lf %.3lf %.3lf %.3lf %.3lf %.3lf %.3lf %.3lf\n",
+              vertex[1].x, vertex[1].y, vertex[1].z,
+              vertex[0].x, vertex[0].y, vertex[0].z,
+              vertex[3].x, vertex[3].y, vertex[3].z);
     }
   fprintf(fp, "\n");
   return;

@@ -4,7 +4,7 @@
  Copyright (c) 2011 AIST  All Rights Reserved.
  Eclipse Public License v1.0 (http://www.eclipse.org/legal/epl-v10.html)
 
- Written by Satoshi KAWABATA <kawabata.aist@gmail.com>
+ Written by Satoshi KAWABATA <satoshi.kawabata@aist.go.jp>
 
  $Date::                            $
 */
@@ -22,32 +22,11 @@ inline static double s_calc_Hr (double H[3], double r[2], const double d[5], con
 
 /* result = A * x */
 void
-cp_mult_intrinsic (double result[3], const intrinsic_param_t *intr, const double x[3], double (*dx)[3], double (*dp)[3])
+cp_mult_intrinsic (double result[3], const intrinsic_param_t *intr, const double x[3])
 {
   result[0] = intr->alpha * x[0] + intr->gamma * x[1] + intr->c[0] * x[2];
   result[1] =                      intr->beta  * x[1] + intr->c[1] * x[2];
   result[2] =                                                        x[2];
-
-  if (dx != NULL)
-    {
-      cp_mat_intrinsic(dx[0], 3, intr);
-    }
-
-  /* dp[5][3] = alpha, gamma, beta, c[0], c[1] */
-  if (dp != NULL)
-    {
-      int i, j, k;
-      for (i = 0; i < 3; ++i)
-        {
-          for (j = 0; j <= i && j < 2; ++j)
-            {
-              for (k = 0; k < 3; ++k)
-                {
-                  dp[i*(i+1)/2 + j][k] = (j != k) ? 0.0 : x[i];
-                }
-            }
-        }
-    }
 }
 
 /* result = A^(-1) * x */
@@ -61,67 +40,11 @@ cp_mult_intrinsic_inv (double result[3], const intrinsic_param_t *intr, const do
 
 /* result = R(q)*x + t */
 void
-cp_mult_extrinsic (double result[3], const extrinsic_param_t *ext, const double x[3], double (*dx)[3], double (*dp)[3])
+cp_mult_extrinsic (double result[3], const extrinsic_param_t *ext, const double x[3])
 {
   int i;
 
   quat_rot (result, ext->q, x);
-
-  if (dx != NULL)
-    {
-      quat_R_from_q (dx[0], 3, ext->q);
-    }
-
-  if (dp != NULL)
-    {
-#ifdef USE_INFINITESIMAL_ROTATION
-      /* dp[3][3] = w1, w2, w3 */
-      dp[0][0] = 0.0;
-      dp[0][1] = -result[2];
-      dp[0][2] =  result[1];
-
-      dp[1][0] =  result[2];
-      dp[1][1] = 0.0;
-      dp[1][2] = -result[0];
-
-      dp[2][0] = -result[1];
-      dp[2][1] =  result[0];
-      dp[2][2] = 0.0;
-#else
-      /* dp[4][3] = q1, q2, q3, q0 */
-      double dot, cross[3];
-      int j;
-
-      dot = s_dot3 (ext->q, x);
-      s_cross3 (cross, ext->q, x);
-
-      for (i = 0; i < 3; ++i)
-        {
-          for (j = 0; j < 3; ++j)
-            {
-              dp[i][j] = 2.0 * (quat_im (ext->q, j) * x[i]);
-              if (i == j)
-                {
-                  dp[i][j] += 2.0 * dot;
-                }
-            }
-        }
-      dp[0][1] -= 2.0 * quat_re(ext->q) * x[2];
-      dp[1][0] += 2.0 * quat_re(ext->q) * x[2];
-
-      dp[0][2] += 2.0 * quat_re(ext->q) * x[1];
-      dp[2][0] -= 2.0 * quat_re(ext->q) * x[1];
-
-      dp[1][2] -= 2.0 * quat_re(ext->q) * x[0];
-      dp[2][1] += 2.0 * quat_re(ext->q) * x[0];
-
-      for (i = 0; i < 3; ++i)
-        {
-          dp[3][i] = 2.0 * (2.0 * quat_re(ext->q) * x[i] + cross[i]);
-        }
-#endif
-    }
-
   for (i = 0; i < 3; ++i)
     {
       result[i] += ext->t[i];
@@ -145,7 +68,7 @@ cp_mult_extrinsic_inv (double result[3], const extrinsic_param_t *ext, const dou
 
 /* result = distorted point of (nc[0], nc[1], 1.0) */
 void
-cp_distort (double result[2], const distortion_param_t *dist, const double nc[2], double (*dx)[3], double (*dp)[2])
+cp_distort (double result[2], const distortion_param_t *dist, const double nc[2])
 {
   const double r2 = nc[0]*nc[0] + nc[1]*nc[1];
   const int n = dist->dim < 5 ? dist->dim : 5;
@@ -167,41 +90,6 @@ cp_distort (double result[2], const distortion_param_t *dist, const double nc[2]
 
   result[0] = nc[0] * (((d[4]*r2 + d[1])*r2 + d[0])*r2 + 1.0) + 2.0*d[2]*nc[0]*nc[1] + d[3]*(r2 + 2.0*nc[0]*nc[0]);
   result[1] = nc[1] * (((d[4]*r2 + d[1])*r2 + d[0])*r2 + 1.0) + d[2]*(r2 + 2.0*nc[1]*nc[1]) + 2.0*d[3]*nc[0]*nc[1];
-
-  if (dx != NULL)
-    {
-      const double ks = 1.0 + ((d[4] * r2 + d[1]) * r2 + d[0]) * r2;
-      const double dks = d[0] + r2 * (2.0*d[1] + r2 * 3.0*d[4]);
-
-      dx[0][0] = ks + 2.0*nc[0]*nc[0]*dks + 2.0*d[2]*nc[1] + 6.0*d[3]*nc[0];
-      dx[0][1] = 2.0*nc[0]*nc[1]*dks + 2.0*d[2]*nc[1] + 2.0*d[3]*nc[0];
-      dx[0][2] = 0.0;
-
-      dx[1][0] = 2.0*nc[0]*nc[1]*dks + 2.0*d[2]*nc[0] + 2.0*d[3]*nc[1];
-      dx[1][1] = ks + 2.0*nc[1]*nc[1]*dks + 6.0*d[2]*nc[1] + 2.0*d[3]*nc[0];
-      dx[1][2] = 0.0;
-
-      dx[2][0] = dx[2][1] = dx[2][2] = 0.0;
-    }
-
-  /* dp[5][3] = d[0] .. d[4] */
-  if (dp != NULL)
-    {
-      dp[0][0] = nc[0] * r2;
-      dp[0][1] = nc[1] * r2;
-
-      dp[1][0] = nc[0] * r2 * r2;
-      dp[1][1] = nc[1] * r2 * r2;
-
-      dp[2][0] = 2.0 * nc[0] * nc[1];
-      dp[2][1] = r2 + 2.0 * nc[1] * nc[1];
-
-      dp[3][0] = r2 + 2.0 * nc[0] * nc[0];
-      dp[3][1] = 2.0 * nc[0] * nc[1];
-
-      dp[4][0] = nc[0] * r2 * r2 * r2;
-      dp[4][1] = nc[1] * r2 * r2 * r2;
-    }
 }
 
 /* result = undistorted point of (nc[0], nc[1], 1.0) */
@@ -322,27 +210,12 @@ s_calc_Hr (double H[3], double r[2], const double d[5], const double ref[2], con
 
 /* normalized coordinate (divide each element by x[2]) */
 void
-cp_normalize_point (double result[3], const double x[3], double (*dx)[3])
+cp_normalize_point (double result[3], const double x[3])
 {
   int i;
   for (i = 0; i < 3; ++i)
     {
       result[i] = x[i] / x[2];
-    }
-
-  if (dx != NULL)
-    {
-      dx[0][0] = 1.0 / x[2];
-      dx[0][1] = 0.0;
-      dx[0][2] = 0.0;
-
-      dx[1][0] = 0.0;
-      dx[1][1] = 1.0 / x[2];
-      dx[1][2] = 0.0;
-
-      dx[2][0] = - x[0] / x[2] / x[2];
-      dx[2][1] = - x[1] / x[2] / x[2];
-      dx[2][2] = 0.0;
     }
 }
 

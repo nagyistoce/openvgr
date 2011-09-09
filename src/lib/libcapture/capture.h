@@ -22,16 +22,9 @@ typedef struct tag_capture
 
   int num_active;
   dc1394camera_t **cameras;
-
-  int num_buffers;
-
-  int prefer_one_shot;
-  int prefer_bmode;
-
-  int verbose;
 } capture_t;
 
-const static capture_t CAPTURE_INIT_VAL = {0, NULL, NULL, 0, NULL, 4, 0, 0, 1};
+#define CAPTURE_INIT_VAL {0, NULL, NULL, 0, NULL}
 
 
 typedef enum tag_capture_frame_format
@@ -58,7 +51,7 @@ extern "C" {
 #endif
 
 //capture_t *capture_new();  /* memory allocation   */
-int capture_init(capture_t *cap, const int verbose_mode);    /* initialization      */
+int capture_init(capture_t *cap);    /* initialization      */
 int capture_final(capture_t *cap);   /* finalization        */
 //int capture_delete(capture_t **cap); /* memory deallocation */
 

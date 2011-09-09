@@ -13,9 +13,8 @@
 #ifndef _COMMON_H
 #define _COMMON_H
 #include <math.h>
-#include "visionErrorCode.h"
 
-#define VISION_EPS	1.0e-10 // 0と見做す大きさ
+#define VISION_EPS	1.0e-10 // 収束判定の基準値
 
 #define VISIBLE   1
 #define INVISIBLE 0
@@ -34,7 +33,5 @@ typedef enum StereoPairing     // ステレオの画像の組み合わせ指定
   TBL_OR,
   TBL_AND
 } StereoPairing;
-
-#define USE_DISTANCETRANSFORM // Hausdorff distance を用いた対応点評価
 
 #endif // _COMMON_H

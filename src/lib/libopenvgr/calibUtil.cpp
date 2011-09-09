@@ -12,19 +12,10 @@
 
 // ワールド座標系におけるカメラ座標の計算
 static void
-calcCameraPos(double Tr[3], double R[3][3], double T[3])
+calcCameraPos(double Tr[3], double Rr[3][3], double T[3])
 {
-  int i, j;
-
-  for (i = 0; i < 3; ++i)
-    {
-      Tr[i] = 0.0;
-      for (j = 0; j < 3; ++j)
-        {
-          Tr[i] -= R[j][i] * T[j];
-        }
-    }
-
+  mulM33V3(Rr, T, Tr);
+  mulV3S(-1.0, Tr, Tr);
   return;
 }
 
@@ -49,6 +40,11 @@ setCalibFromCameraImage(const Img::CameraImage& image, CameraParam& camera)
   camera.intrinsicMatrix[2][1] = 0.0;
   camera.intrinsicMatrix[2][2] = 1.0;
 
+  camera.fx = camera.intrinsicMatrix[0][0];     // 焦点
+  camera.fy = camera.intrinsicMatrix[1][1];     // 焦点
+  camera.cx = camera.intrinsicMatrix[0][2];     // カメラ中心
+  camera.cy = camera.intrinsicMatrix[1][2];     // カメラ中心
+
   for (j = 0; j < 3; j++)
     {
       for (k = 0; k < 3; k++)
@@ -58,8 +54,11 @@ setCalibFromCameraImage(const Img::CameraImage& image, CameraParam& camera)
       camera.Translation[j] = image.extrinsic[j][3];
     }
 
-  // カメラの位置 (-rR・T)
-  calcCameraPos(camera.Position, camera.Rotation, camera.Translation);
+  // 回転行列の逆行列
+  transposeM33(camera.Rotation, camera.rRotation);
+
+  // 左カメラの位置 (-rR・T)
+  calcCameraPos(camera.Position, camera.rRotation, camera.Translation);
 
   // 歪み補正パラメータのセット
   length = image.intrinsic.distortion_coefficient.length();

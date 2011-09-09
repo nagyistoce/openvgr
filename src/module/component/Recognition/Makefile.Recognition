@@ -34,8 +34,6 @@ OPTFLAGS = -O2
 #OPTFLAGS =
 
 CXXFLAGS = -Wall -g $(OPTFLAGS) `rtm-config --cflags` -I. -I$(LIBDIR) -I$(OPENCVINCDIR)
-DEFS =
-#DEFS = -DRECOGNITION_TEST
 LDFLAGS  = `rtm-config --libs` -L$(LIBDIR) -lopenvgr $(OPENCVLIBS)
 SHFLAGS  = -shared
 
@@ -59,7 +57,7 @@ all: Recognition.so RecognitionComp
 
 .cpp.o:
 	rm -f $@
-	$(CXX) $(CXXFLAGS) $(DEFS) -c -o $@ $<
+	$(CXX) $(CXXFLAGS) -c -o $@ $<
 
 .o.so:
 	rm -f $@

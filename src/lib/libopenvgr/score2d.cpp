@@ -27,6 +27,23 @@
 #define EDGE_SEARCH_SIZE  EDGE_SEARCH_MAX
 #define EDGE_SEARCH_2SIZE (((EDGE_SEARCH_SIZE)*2)+1+BOTTOMOFFSET)
 
+// 座標値が正しい範囲内か確認
+inline int
+isValidPixelPosition(int col, int row, Features3D* finfo)
+{
+  int wlimit = finfo->calib->colsize - 2;
+  int hlimit = finfo->calib->rowsize - 2;
+
+  if (col >= 2 && col < wlimit && row >= 2 && row < hlimit)
+    {
+      return 1;
+    }
+  else
+    {
+      return 0;
+    }
+}
+
 // ピクセル値の取得
 static int
 getpixel(int col, int row, int p_camera, Features3D* model)
@@ -261,69 +278,6 @@ tracePoint(Features3D* finfo, // ３次元特徴情報
 }
 
 // 結果の２次元評価値算出
-#ifdef USE_DISTANCETRANSFORM
-void
-getResultScore(MatchResult* results,   // 認識結果情報
-               int numOfResults,       // 認識結果数
-               Features3D* model,      // モデルの３次元特徴情報
-               StereoPairing& pairing, // ステレオ処理ペア情報
-               const std::vector<cv::Mat>& dstImages,
-               double weight)          // 評価値の重みづけ
-{
-  int i, j, num;
-  int status;
-
-  // 認識結果ベクトル（位置＋回転ベクトル）の値でソートする
-  qsort(results, numOfResults, sizeof(MatchResult), compareResultScore);
-
-  num = 0;
-  // 完全に同じ位置姿勢の結果には評価不要の印をつける
-  for (i = 0; i < numOfResults; i++)
-    {
-      // 既に不要となった結果はスキップ
-      if (results[i].score == -1)
-        {
-          continue;
-        }
-
-      for (j = i + 1; j < numOfResults; j++)
-        {
-          // 既に不要となった結果はスキップ
-          if (results[j].score == -1)
-            {
-              continue;
-            }
-          // 認識結果が全く同じ場合は評価値に -1 を入れて評価不要とする
-          status = comparePropertyVector(results[i].vec, results[j].vec);
-          if (status == 0)
-            {
-              results[j].score = -1;
-            }
-        }
-
-      ++num;
-    }
-
-  // 評価する結果を先頭に集める
-  qsort(results, numOfResults, sizeof(MatchResult), compareResultScore);
-
-  // 評価
-#ifdef _OPENMP
-#pragma omp parallel for
-#endif
-  for (i = 0; i < num; i++)
-    {
-      // 距離変換画像を用いた評価値計算
-      results[i].score = 
-        calcEvaluationValue2DMultiCameras(model, pairing, results[i].mat, dstImages) * weight;
-    }
-
-  // 評価値でソート
-  qsort(results, num, sizeof(MatchResult), compareResultScore);
-
-  return;
-}
-#else
 void
 getResultScore(MatchResult* results,   // 認識結果情報
                int numOfResults,       // 認識結果数
@@ -331,7 +285,7 @@ getResultScore(MatchResult* results,   // 認識結果情報
                StereoPairing& pairing, // ステレオ処理ペア情報
                double weight)          // 評価値の重みづけ
 {
-  int i, j, num;
+  int i, j;
   int status;
 
   // 認識結果ベクトル（位置＋回転ベクトル）の値でソートする
@@ -366,7 +320,6 @@ getResultScore(MatchResult* results,   // 認識結果情報
   qsort(results, numOfResults, sizeof(MatchResult), compareResultScore);
 
   // 評価
-  num = 0;
   for (i = 0; i < numOfResults; i++)
     {
       if (results[i].score == -1)
@@ -375,11 +328,10 @@ getResultScore(MatchResult* results,   // 認識結果情報
         }
       // モデルを画像に投影することによって認識結果の評価値計算をする
       results[i].score = traceModelPointsMultiCameras(model, pairing, results[i].mat) * weight;
-      ++num;
     }
 
   // 評価値でソート
-  qsort(results, num, sizeof(MatchResult), compareResultScore);
+  qsort(results, numOfResults, sizeof(MatchResult), compareResultScore);
   return;
 }
-#endif
+

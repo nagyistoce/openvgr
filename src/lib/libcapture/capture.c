@@ -14,6 +14,7 @@
 #include <time.h>
 
 #ifdef __cplusplus
+//#warning this code is written for C
 #define __STDC_FORMAT_MACROS
 #endif
 #include <inttypes.h>
@@ -21,7 +22,6 @@
 #include <assert.h>
 
 #include <dc1394/dc1394.h>
-#include <dc1394/linux/control.h>
 
 #include "capture.h"
 
@@ -131,6 +131,10 @@ const static conf_token_t conf_feature[] = {
 
 
 const static size_t s_num_ports_max = 16;
+const static int s_num_buffers = 4;
+
+const static int s_verbose = 1;
+const static int s_prefer_one_shot = 0;
 
 static inline int s_byte_per_packet(const capture_frame_format_t format);
 static int s_read_conf_file(const char *conf_file, conf_param_t *data);
@@ -153,7 +157,7 @@ static dc1394framerate_t s_get_appropriate_framerate(dc1394camera_t *cam, dc1394
 
 //capture_t *capture_new();  /* memory allocation   */
 
-int capture_init(capture_t *cap, const int verbose_mode)
+int capture_init(capture_t *cap)
 {
   dc1394error_t err;
 
@@ -175,16 +179,11 @@ int capture_init(capture_t *cap, const int verbose_mode)
     return CAPTURE_ERROR;
   }
 
-  if (verbose_mode) {
+  if (s_verbose) {
     fprintf(stderr, "%d camers(s) found.\n", cap->camera_list->num);
   }
 
   cap->num_cameras = cap->camera_list->num;
-
-  cap->num_buffers = 4;
-  cap->prefer_one_shot = 0;
-  cap->prefer_bmode = 0;
-  cap->verbose = verbose_mode;
 
   return CAPTURE_SUCCESS;
 }
@@ -223,7 +222,7 @@ int capture_setup(capture_t *cap, const char *conf_file)
   conf_param_t param = CONF_PARAM_INIT_VAL;
   int i, num_found;
 
-  /* read configulation from a specified file */
+  /* read the specified configulation file */
   if (s_read_conf_file(conf_file, &param) < 1) {
     return CAPTURE_ERROR;
   }
@@ -243,43 +242,35 @@ int capture_setup(capture_t *cap, const char *conf_file)
     cap->cameras[num_found] = dc1394_camera_new(cap->dc1394_cxt, param.settings[i].uid);
 
     if (cap->cameras[num_found] == NULL) {
-      if (cap->verbose) {
+      if (s_verbose) {
         fprintf(stderr, "camera 0x%0"PRIx64" not found.\n", param.settings[i].uid);
       }
       continue;
     }
 
-    if (cap->verbose) {
+    if (s_verbose) {
       fprintf(stderr, "GUID[%d]: 0x%0"PRIx64"\n", i, cap->cameras[num_found]->guid);
     }
 
-#if 0
-    {
-      uint32_t port = 42;
-      dc1394_camera_get_linux_port(cap->cameras[num_found], &port);
-      printf("port: %d\n", port);
-    }
-#endif
-
     /* set parameters */
-    if (cap->verbose) {
+    if (s_verbose) {
       fprintf(stderr, "set parameter.\n");
     }
     s_set_parameters(cap, num_found, &param.settings[i]);
 
     /* set up a capture construct */
-    if (cap->verbose) {
+    if (s_verbose) {
       fprintf(stderr, "set up a capture construct.\n");
     }
 
-    err = dc1394_capture_setup(cap->cameras[num_found], cap->num_buffers, DC1394_CAPTURE_FLAGS_DEFAULT);
+    err = dc1394_capture_setup(cap->cameras[num_found], s_num_buffers, DC1394_CAPTURE_FLAGS_DEFAULT);
     DC1394_WRN(err, "Setup capture failed.");
     if (err != DC1394_SUCCESS) {
       continue;
     }
     
     /* set ready to capture */
-    if (cap->verbose) {
+    if (s_verbose) {
       fprintf(stderr, "activate camera.\n");
     }
     s_activate_camera(cap, num_found);
@@ -299,7 +290,7 @@ int capture_single(capture_t *cap, const int index, capture_frame_t *frame)
   dc1394error_t err;
   dc1394video_frame_t *vframe = NULL;
 
-  if (cap->prefer_one_shot && cam->one_shot_capable == DC1394_TRUE) {
+  if (s_prefer_one_shot && cam->one_shot_capable == DC1394_TRUE) {
     err = dc1394_video_set_one_shot(cam, DC1394_ON);
     DC1394_WRN(err, "could not set one shot mode.");
     if (err != DC1394_SUCCESS) {
@@ -337,7 +328,7 @@ int capture_multi(capture_t *cap, capture_frame_t *frames)
   }
 
   for (i = 0; i < cap->num_active; ++i) {
-    if (cap->prefer_one_shot && cap->cameras[i]->one_shot_capable) {
+    if (s_prefer_one_shot && cap->cameras[i]->one_shot_capable) {
       err = dc1394_video_set_one_shot(cap->cameras[i], DC1394_ON);
       DC1394_WRN(err, "could not set one shot mode.");
       if (err != DC1394_SUCCESS) {
@@ -1098,24 +1089,18 @@ static int s_set_parameters(capture_t *cap, const int index, camera_setting_t *s
   dc1394error_t err;
 
   /* set operation mode to 1394b, if possible */
-  if (cam->bmode_capable != 0 && cap->prefer_bmode) {
-    err = dc1394_video_set_operation_mode(cam, DC1394_OPERATION_MODE_1394B);
-    DC1394_WRN(err, "could not set 1394b mode.");
+  err = dc1394_video_set_operation_mode(cam, DC1394_OPERATION_MODE_1394B);
+  DC1394_WRN(err, "could not set 1394b mode.");
+  if (err == DC1394_SUCCESS) {
+    err = dc1394_video_set_iso_speed(cam, DC1394_ISO_SPEED_800);
+    DC1394_WRN(err, "could not set iso mode to S800.");
 
-    if (err == DC1394_SUCCESS) {
-      err = dc1394_video_set_iso_speed(cam, DC1394_ISO_SPEED_800);
-      DC1394_WRN(err, "could not set iso mode to S800.");
-
-      if (err != DC1394_SUCCESS) {
-        err = dc1394_video_set_iso_speed(cam, DC1394_ISO_SPEED_400);
-        DC1394_WRN(err, "could not set iso mode to S400.");
-      }
+    if (err != DC1394_SUCCESS) {
+      err = dc1394_video_set_iso_speed(cam, DC1394_ISO_SPEED_400);
+      DC1394_WRN(err, "could not set iso mode to S400.");
     }
   }
   else {
-    err = dc1394_video_set_operation_mode(cam, DC1394_OPERATION_MODE_LEGACY);
-    DC1394_WRN(err, "could not set 1394-legacy mode.");
-
     err = dc1394_video_set_iso_speed(cam, DC1394_ISO_SPEED_400);
     DC1394_WRN(err, "could not set iso mode to S400.");
   }
@@ -1172,7 +1157,7 @@ static int s_activate_camera(capture_t *cap, const int index)
 {
   s_flush_buffer(cap, index);
 
-  if ((!cap->prefer_one_shot) || cap->cameras[index]->one_shot_capable != DC1394_TRUE) {
+  if ((!s_prefer_one_shot) || cap->cameras[index]->one_shot_capable != DC1394_TRUE) {
     dc1394error_t err;
 
     /* use continuous transmission mode */

@@ -11,10 +11,6 @@
  */
 #include <stdlib.h>
 #include <string.h>
-#include <stdio.h>
-
-#include <cv.h>
-#include <highgui.h>
 
 #include "recogImage.h"
 
@@ -47,11 +43,8 @@ constructImage(const int colsize, const int rowsize, const int bytePerPixel)
 void
 destructImage(RecogImage* image)
 {
-  if (image)
-    {
-      free(image->pixel);
-      free(image);
-    }
+  free(image->pixel);
+  free(image);
   return;
 }
 
@@ -59,47 +52,10 @@ destructImage(RecogImage* image)
 void
 rgb2grayImage(RecogImage* target, RecogImage* source)
 {
-  cv::Mat dimg, simg;
-
   if (target->bytePerPixel == source->bytePerPixel)
     {
       return;
     }
-
-  if (source->bytePerPixel == 1)
-    {
-      simg = cv::Mat(source->rowsize, source->colsize, CV_8UC1, source->pixel);
-    }
-  else
-    {
-      simg = cv::Mat(source->rowsize, source->colsize, CV_8UC3, source->pixel);
-    }
-
-  if (target->bytePerPixel == 1)
-    {
-      dimg = cv::Mat(target->rowsize, target->colsize, CV_8UC1, target->pixel);
-      if (source->bytePerPixel == 1)
-        {
-          dimg = simg;
-        }
-      else
-        {
-          cv::cvtColor(simg, dimg, CV_RGB2GRAY);
-        }
-    }
-  else
-    {
-      dimg = cv::Mat(target->rowsize, target->colsize, CV_8UC3, target->pixel);
-      if (source->bytePerPixel == 1)
-        {
-          cv::cvtColor(simg, dimg, CV_GRAY2RGB);
-        }
-      else
-        {
-          dimg = simg;
-        }
-    }
-#if 0
   if (target->bytePerPixel == 1)
     {                           // RGB->GRAY
       const int size = (target->colsize) * (target->rowsize);
@@ -144,119 +100,5 @@ rgb2grayImage(RecogImage* target, RecogImage* source)
           *(tar++) = c;
         }
     }
-#endif
   return;
-}
-
-void
-undistortImage(const RecogImage* src, RecogImage* dst, CameraParam* cp)
-{
-  double Anew_elem[3][3], dist[5];
-  cv::Mat A(3, 3, CV_64FC1, cp->intrinsicMatrix), Anew(3, 3, CV_64FC1, Anew_elem), distCoeffs(5, 1, CV_64FC1, dist);
-  cv::Mat dimg, img, result;
-
-  int i;
-
-  assert(src->rowsize == dst->rowsize);
-  assert(src->colsize == dst->colsize);
-
-  /* 歪み有り画像データをセット */
-  if (src->bytePerPixel == 1)
-    {
-      dimg = cv::Mat(src->rowsize, src->colsize, CV_8UC1, src->pixel);
-    }
-  else
-    {
-      dimg = cv::Mat(src->rowsize, src->colsize, CV_8UC3, src->pixel);
-    }
-
-  /* 歪みパラメータをセット */
-  dist[0] = cp->Distortion.k1;
-  dist[1] = cp->Distortion.k2;
-  dist[2] = cp->Distortion.p1;
-  dist[3] = cp->Distortion.p2;
-  dist[4] = cp->Distortion.k3;
-
-  /* 歪み補正後の内部パラメータを計算 */
-#if 0
-  Anew = cv::getOptimalNewCameraMatrix(A, distCoeffs, cv::Size(src->rowsize, src->colsize), 0.0);
-#else
-  A.copyTo(Anew);
-#endif
-
-  /* 歪み補正画像を作成 */
-  cv::undistort(dimg, img, A, distCoeffs, Anew);
-
-#if 0
-  cv::namedWindow("original image", CV_WINDOW_AUTOSIZE);
-  cv::imshow("original image", dimg);
-
-  cv::namedWindow("corrected image", CV_WINDOW_AUTOSIZE);
-  cv::imshow("corrected image", img);
-
-  cv::waitKey(-1);
-#endif
-
-  /* 出力先のカラーフォーマットに合わせる */
-  if (src->bytePerPixel == dst->bytePerPixel)
-    {
-      result = img;
-    }
-  else
-    {
-      if (src->bytePerPixel == 1) /* 白黒をカラーに */
-        {
-          cv::cvtColor(img, result, CV_GRAY2RGB);
-        }
-      else /* カラーを白黒に */
-        {
-          cv::cvtColor(img, result, CV_RGB2GRAY);
-        }
-    }
-
-  /* 補正済み画像をコピー */
-  for (i = 0; i < dst->rowsize; ++i)
-    {
-      const int byte_per_row = dst->colsize * dst->bytePerPixel;
-      uchar* uptr = result.ptr<uchar>(i);
-
-      memcpy(dst->pixel + byte_per_row * i, uptr, sizeof(uchar) * byte_per_row);
-    }
-
-  /* 新しいカメラパラメータを設定 */
-  Anew.copyTo(A);
-
-  cp->Distortion.k1 = 0.0;
-  cp->Distortion.k2 = 0.0;
-  cp->Distortion.p1 = 0.0;
-  cp->Distortion.p2 = 0.0;
-  cp->Distortion.k3 = 0.0;
-}
-
-//! 画像メモリのファイル出力　デバッグ用
-void
-writeRecogImage(const char* filename, const RecogImage* img)
-{
-  int width  = img->colsize;
-  int height = img->rowsize;
-  int bytePerPixel = img->bytePerPixel;
-  int size = width * height * bytePerPixel;
-  FILE *fp = fopen(filename, "wb");
-
-  if (fp == NULL)
-    {
-      return;
-    }
-
-  if (bytePerPixel == 1)
-    {
-      fprintf(fp, "P5\n");
-    }
-  else
-    {
-      fprintf(fp, "P6\n");
-    }
-  fprintf(fp, "%d %d\n255\n", width, height);
-  fwrite(img->pixel, 1, size, fp);
-  fclose(fp);
 }

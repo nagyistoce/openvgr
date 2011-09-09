@@ -56,18 +56,29 @@ sortRoot(double root[3], const int nRoot)
 
 
 // 2x2の実対称行列の固有値と固有ベクトルを求める
-// 固有値は大きさの降順、固有ベクトルは横ベクトル
+// 固有値は降順、固有ベクトルは横ベクトル
 static int
 eigenM22(double e[2], double ev[2][2], double m[2][2], const double rankDiag)
 {
   const double b = -(m[0][0] + m[1][1]);
   const double c = m[0][0] * m[1][1] - m[0][1] * m[1][0];
   const double D = pow(m[0][0] - m[1][1], 2) + 4.0 * m[0][1] * m[1][0];
+  double f_norm2 = 0.0;
+  int i, j;
+
+  /* 正規化するためFrobeniusノルムを計算 */
+  for (i = 0; i < 2; ++i)
+    {
+      for (j = 0; j < 2; ++j)
+        {
+          f_norm2 += m[i][j] * m[i][j];
+        }
+    }
 
   //fprintf(stderr, "mat:\n% f % f\n% f % f\n", m[0][0], m[0][1], m[1][0], m[1][1]);
 
-  /* 解なし(複素数) */
-  if (D < 0.0)
+  /* 行列式が0に近い場合は計算しない */
+  if (fabs(c) < rankDiag * sqrt(f_norm2))
     {
       e[0] = e[1] = 0.0;
 
@@ -78,21 +89,6 @@ eigenM22(double e[2], double ev[2][2], double m[2][2], const double rankDiag)
       ev[1][1] = 1.0;
 
       return 0;
-    }
-
-  /* 重根のとき */
-  if (sqrt(D) < rankDiag)
-    {
-      e[0] = e[1] = (m[0][0] + m[1][1]) / 2.0;
-
-      /* 単位行列の定数倍になるため、固有ベクトルは任意 */
-      ev[0][0] = 1.0;
-      ev[0][1] = 0.0;
-
-      ev[1][0] = 0.0;
-      ev[1][1] = 1.0;
-
-      return 1;
     }
 
   /* 固有値を計算 */
@@ -146,6 +142,10 @@ eigenM22(double e[2], double ev[2][2], double m[2][2], const double rankDiag)
 
   //fprintf(stderr, "evec:\n% f % f\n% f % f\n", ev[0][0], ev[1][0], ev[0][1], ev[1][1]);
 
+  if (sqrt(D) < rankDiag) // 重根
+    {
+      return 1;
+    }
   return 2;
 }
 
@@ -345,7 +345,7 @@ clearConicSum(double sum[5][5])        // ２次曲線当てはめ係数行列
 void
 addConicSum(double sum[5][5],  // ２次曲線当てはめ係数行列。sum[ix][iy] = x^{ix} y^{iy}, ix + iy < 5
             int* point,        // 輪郭点座標
-            double* offset)    // 重心のオフセット
+            double* offset)    // 楕円係数計算時のオフセット
 {
   const double x = point[0] - offset[0];
   const double y = point[1] - offset[1];
@@ -367,7 +367,7 @@ addConicSum(double sum[5][5],  // ２次曲線当てはめ係数行列。sum[ix]
 void
 subConicSum(double sum[5][5],  // ２次曲線当てはめ係数行列。sum[ix][iy] = x^{ix} y^{iy}, ix + iy < 5
             int* point,        // 輪郭点座標
-            double* offset)    // 重心のオフセット
+            double* offset)    // 楕円係数計算時のオフセット
 {
   const double x = point[0] - offset[0];
   const double y = point[1] - offset[1];
@@ -522,12 +522,13 @@ getConicProperty(double coef[6],       // 二次曲線係数
   return;
 }
 
+
 // 二次曲線当てはめの微分係数行列から２次曲線係数を計算する
 // 戻り値：固有値の数
 int
 fitConic(double sum[5][5],     // 二次曲線当てはめの微分係数行列
          double coef[3][6],    // 二次曲線係数
-         double* offset)       // 重心のオフセット
+         double* offset)       // 楕円係数計算時のオフセット
 {
   double P00[3][3] = {
     {sum[4][0], sum[3][1], sum[2][2]},
@@ -607,7 +608,7 @@ fitConicAny(double retcoef[6],         // 二次曲線係数
             const int end,             // 当てはめる輪郭点列の終点
             Parameters parameters,     // 全パラメータ
             int line_detect_flag,      // 直線検出フラグ
-            double* offset)            // 重心のオフセット
+            double* offset)            // 楕円係数計算時のオフセット
 {
   *retError = 0.0;
   if (sum[0][0] <= 2.0)

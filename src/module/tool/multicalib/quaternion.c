@@ -4,7 +4,7 @@
  Copyright (c) 2011 AIST  All Rights Reserved.
  Eclipse Public License v1.0 (http://www.eclipse.org/legal/epl-v10.html)
 
- Written by Satoshi KAWABATA <kawabata.aist@gmail.com>
+ Written by Satoshi KAWABATA <satoshi.kawabata@aist.go.jp>
 
  $Date::                            $
 */
@@ -14,9 +14,6 @@
 
 #include "quaternion.h"
 #include "local.h"
-
-const quaternion_t quat_zero = QUAT_INIT_ZERO;
-const quaternion_t quat_one  = QUAT_INIT_ONE;
 
 void
 quat_fprintf (FILE *fp, const char *fmt, const char sep, const quaternion_t q)

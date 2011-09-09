@@ -21,15 +21,15 @@ extern "C" {
                         const RotationAngle* rotation, const Vector* moveBuff);
 
 //! 重心情報を出力
-  void writeGravityInfo(FILE * fp, const Vector * gravity);
+void writeGravityInfo(FILE * fp, const Vector * gravity);
 
 //! 円筒の情報を出力
-  void writeCylinderInfo(FILE * fp, const ModelParameter * circleParameter,
-                         const LinePoint* centerPoint,   // 円の中心座標
-                         const Vector* normalVector);    // 法線ベクトル
+void writeCylinderlInfo(FILE * fp, const ModelParameter * circleParameter,
+                        const LinePoint* centerPoint,   // 円の中心座標
+                        const Vector* normalVector);    // 法線ベクトル
   
 //! 直方体の頂点情報を出力
-  void writeVertex(FILE* fp, const SquareParameter* faceParameter, const int nSquare);
+void writeVertex(FILE* fp, const SquareParameter* faceParameter, const int nSquare);
 
 #ifdef __cplusplus
 }
