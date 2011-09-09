@@ -6,8 +6,6 @@
 
  $Date::                            $
 */
-#include <vector>
-
 #include "execute3DRecognition.h"
 #include "imageUtil.h"
 #include "modelFileio.h"
@@ -16,8 +14,7 @@
 #include "circle.h"
 #include "vertex.h"
 #include "extractEdge.h"
-#include "extractFeature_old.h"
-#include "extractFeature.hpp"
+#include "extractFeature.h"
 #include "visionErrorCode.h"
 #if 0
 #include <fpu_control.h>
@@ -44,7 +41,7 @@ freeEdgeMemory(uchar* edgL, uchar* edgR, uchar* edgV)
 }
 
 static void
-freeFeatures2D(Features2D_old* L, Features2D_old* R, Features2D_old* V)
+freeFeatures2D(Features2D* L, Features2D* R, Features2D* V)
 {
   destructFeatures(L);
   destructFeatures(R);
@@ -58,15 +55,15 @@ freeFeatures2D(Features2D_old* L, Features2D_old* R, Features2D_old* V)
 //! 結果を返す。
 //
 //! 引数:
-//!   Img::TimedMultiCameraImage& frame  :       カメラ画像とキャリブレーションデータ
+//!   Img::TImedMultiCameraImage& frame  :       カメラ画像とキャリブレーションデータ
 //!   char* modelFilePath                :       モデルファイル名
 //!   Parameters& param                  :       認識パラメータ
 //!   TimedRecognitionResult& result     :       認識結果
 //
 int
 execute3DRecognition(Img::TimedMultiCameraImage& frame, int modelID,
-                     char* modelFilePath, Parameters& param,
-                     TimedRecognitionResult& result)
+		     char* modelFilePath, Parameters& param,
+		     TimedRecognitionResult& result)
 {
 #if 0
   // 計算精度の設定
@@ -208,7 +205,7 @@ execute3DRecognition(Img::TimedMultiCameraImage& frame, int modelID,
     }
 
   unsigned char* edgeV = NULL;
-  //if (imageNum > 2)
+  if (imageNum > 2)
     {
       edgeV = (unsigned char*) malloc(colsize * rowsize * sizeof(unsigned char));
       if (edgeV == NULL)
@@ -227,7 +224,7 @@ execute3DRecognition(Img::TimedMultiCameraImage& frame, int modelID,
   model.trace_pdist = param.match.interval;
   model.trace_search = param.match.search;
   model.trace_edge = param.match.edge;
-  //if (imageNum > 2)
+  if (imageNum > 2)
     {
       model.image[2] = recogImage[2]->pixel;
       model.edge[2] = edgeV;
@@ -239,15 +236,9 @@ execute3DRecognition(Img::TimedMultiCameraImage& frame, int modelID,
   stime = GetTickCount();
 
   // 個々の画像から、二次元特徴の抽出を行う。
-  Features2D_old* featuresL = NULL;
-  Features2D_old* featuresR = NULL;
-  Features2D_old* featuresV = NULL;
-
-  ovgr::Features2D fL, fR, fV;
-  ovgr::CorrespondingPair cp_LR, cp_RV, cp_VL;
-  std::vector<const ovgr::CorrespondingPair*> cps;
-  ovgr::CorrespondingSet cs;
-  ovgr::CorrespondenceThresholds cpThs;
+  Features2D* featuresL;
+  Features2D* featuresR;
+  Features2D* featuresV = NULL;
 
   // 画像が 2 枚の時は、強制的に DBL_LR にする。
   StereoPairing pairing = param.pairing;
@@ -262,40 +253,31 @@ execute3DRecognition(Img::TimedMultiCameraImage& frame, int modelID,
   switch (pairing)
     {
     case DBL_LR:
-      featuresL = ImageToFeature2D_old(recogImage[0]->pixel, edgeL, param, model);
-      fL = ovgr::create_new_features_from_old_one(featuresL, recogImage[0]->pixel, &param);
+      featuresL = ImageToFeature2D(recogImage[0]->pixel, edgeL, param, model);
       param.feature2D.id = 1;
-      featuresR = ImageToFeature2D_old(recogImage[1]->pixel, edgeR, param, model);
-      fR = ovgr::create_new_features_from_old_one(featuresR, recogImage[1]->pixel, &param);
+      featuresR = ImageToFeature2D(recogImage[1]->pixel, edgeR, param, model);
       break;
 
     case DBL_LV:
-      featuresL = ImageToFeature2D_old(recogImage[0]->pixel, edgeL, param, model);
-      fL = ovgr::create_new_features_from_old_one(featuresL, recogImage[0]->pixel, &param);
+      featuresL = ImageToFeature2D(recogImage[0]->pixel, edgeL, param, model);
       param.feature2D.id = 1;
-      featuresR = ImageToFeature2D_old(recogImage[2]->pixel, edgeR, param, model);
-      fV = ovgr::create_new_features_from_old_one(featuresR, recogImage[2]->pixel, &param);
+      featuresR = ImageToFeature2D(recogImage[2]->pixel, edgeR, param, model);
       break;
 
     case DBL_RV:
-      featuresL = ImageToFeature2D_old(recogImage[1]->pixel, edgeL, param, model);
-      fR = ovgr::create_new_features_from_old_one(featuresL, recogImage[1]->pixel, &param);
+      featuresL = ImageToFeature2D(recogImage[1]->pixel, edgeL, param, model);
       param.feature2D.id = 1;
-      featuresR = ImageToFeature2D_old(recogImage[2]->pixel, edgeR, param, model);
-      fV = ovgr::create_new_features_from_old_one(featuresR, recogImage[2]->pixel, &param);
+      featuresR = ImageToFeature2D(recogImage[2]->pixel, edgeR, param, model);
       break;
 
     default:
-      featuresL = ImageToFeature2D_old(recogImage[0]->pixel, edgeL, param, model);
-      fL = ovgr::create_new_features_from_old_one(featuresL, recogImage[0]->pixel, &param);
+      featuresL = ImageToFeature2D(recogImage[0]->pixel, edgeL, param, model);
       param.feature2D.id = 1;
-      featuresR = ImageToFeature2D_old(recogImage[1]->pixel, edgeR, param, model);
-      fR = ovgr::create_new_features_from_old_one(featuresR, recogImage[1]->pixel, &param);
+      featuresR = ImageToFeature2D(recogImage[1]->pixel, edgeR, param, model);
       if (imageNum == 3)
         {
           param.feature2D.id = 2;
-          featuresV = ImageToFeature2D_old(recogImage[2]->pixel, edgeV, param, model);
-          fV = ovgr::create_new_features_from_old_one(featuresV, recogImage[2]->pixel, &param);
+          featuresV = ImageToFeature2D(recogImage[2]->pixel, edgeV, param, model);
         }
       break;
     }
@@ -326,134 +308,6 @@ execute3DRecognition(Img::TimedMultiCameraImage& frame, int modelID,
   // ステレオ処理パラメータの設定
 
   // 各ペアで、2次元特徴のすべての組み合わせでステレオ対応を試みる。
-#if 1
-  Features3D scene = { 0 };
-
-  switch (pairing)
-    {
-    case DBL_LR:
-      cp_LR = make_corresponding_pairs(fL, calib.CameraL, fR, calib.CameraR, cpThs);
-      break;
-    case DBL_LV:
-      cp_VL = make_corresponding_pairs(fV, calib.CameraV, fL, calib.CameraL, cpThs);
-      break;
-    case DBL_RV:
-      cp_RV = make_corresponding_pairs(fR, calib.CameraR, fV, calib.CameraV, cpThs);
-      break;
-    case TBL_OR:
-    case TBL_AND:
-      cp_LR = make_corresponding_pairs(fL, calib.CameraL, fR, calib.CameraR, cpThs);
-      cp_RV = make_corresponding_pairs(fR, calib.CameraR, fV, calib.CameraV, cpThs);
-      cp_VL = make_corresponding_pairs(fV, calib.CameraV, fL, calib.CameraL, cpThs);
-      break;
-    }
-
-  if (pairing != TBL_OR && pairing != TBL_AND)
-    {
-      cps.resize(1);
-    }
-  else
-    {
-      cps.resize(3);
-    }
-
-  switch (pairing)
-    {
-    case TBL_OR:
-      cps[0] = &cp_LR;
-      cps[1] = &cp_RV;
-      cps[2] = &cp_VL;
-      cs = ovgr::filter_corresponding_set(cps, ovgr::CorresOr);
-      break;
-    case TBL_AND:
-      cps[0] = &cp_LR;
-      cps[1] = &cp_RV;
-      cps[2] = &cp_VL;        
-      cs = ovgr::filter_corresponding_set(cps, ovgr::CorresAnd);
-      break;
-    case DBL_LV:
-      cps[0] = &cp_VL;
-      cs = ovgr::filter_corresponding_set(cps);
-      break;
-    case DBL_RV:
-      cps[0] = &cp_RV;
-      cs = ovgr::filter_corresponding_set(cps);
-      break;
-    case DBL_LR:
-    default:
-      cps[0] = &cp_LR;
-      cs = ovgr::filter_corresponding_set(cps);
-      break;
-    }
-  printf("# vertex: %d, ellipse: %d\n", cs.vertex.size(), cs.ellipse.size());
-
-  {
-    const uchar* edges[3] = {0};
-    const CameraParam* camParam[3] = {0};
-    std::vector<const ovgr::Features2D*> features;
-    if(pairing != TBL_OR && pairing != TBL_AND)
-      {
-        features.resize(2);
-      }
-    else
-      {
-        features.resize(3);
-      }
-
-    switch (pairing)
-      {
-      case DBL_LV:
-        edges[0] = edgeV;
-        edges[1] = edgeL;
-        camParam[0] = &calib.CameraV;
-        camParam[1] = &calib.CameraL;
-        features[0] = &fV;
-        features[1] = &fL;
-        break;
-      case DBL_RV:
-        edges[0] = edgeR;
-        edges[1] = edgeV;
-        camParam[0] = &calib.CameraR;
-        camParam[1] = &calib.CameraV;
-        features[0] = &fR;
-        features[1] = &fV;
-        break;
-      case TBL_OR:
-      case TBL_AND:
-        edges[0] = edgeL;
-        edges[1] = edgeR;
-        edges[2] = edgeV;
-        camParam[0] = &calib.CameraL;        
-        camParam[1] = &calib.CameraR;
-        camParam[2] = &calib.CameraV;
-        features[0] = &fL;
-        features[1] = &fR;
-        features[2] = &fV;
-        break;
-      case DBL_LR:
-      default:
-        edges[0] = edgeL;
-        edges[1] = edgeR;
-        camParam[0] = &calib.CameraL;
-        camParam[1] = &calib.CameraR;
-        features[0] = &fL;
-        features[1] = &fR;
-        break;
-      }
-
-    // 二次元頂点のステレオデータから三次元頂点情報の復元
-    if (model.numOfVertices > 0)
-      {
-        reconstruct_hyperbola_to_vertex3D(features, cs, camParam, edges, &scene, param);
-      }
-
-    // 二次元楕円のステレオデータから三次元真円情報の復元
-    if (model.numOfCircles > 0)
-      {
-        reconstruct_ellipse2D_to_circle3D(features, cs, camParam, edges, &scene, param);
-      }
-  }
-#else
   StereoData stereo, stereoLV, stereoRV;
 
   switch (pairing)
@@ -564,13 +418,11 @@ execute3DRecognition(Img::TimedMultiCameraImage& frame, int modelID,
     default:
       status = setFeature3D(stereo, scene);
     }
-#endif
 
   // 3D 処理時間計測
   etime = GetTickCount();
   dtime2 = etime - stime;
 
-#if 0
   // 特徴抽出用変数のクリア
   freeStereoData(&stereo);
   if (pairing == TBL_OR)
@@ -591,9 +443,6 @@ execute3DRecognition(Img::TimedMultiCameraImage& frame, int modelID,
       freeEdgeMemory(edgeL, edgeR, edgeV);
       return VISION_MALLOC_ERROR;
     }
-#else
-  freeFeatures2D(featuresL, featuresR, featuresV);
-#endif
 
   // 3 次元特徴とモデルデータのマッチングを行う。
   stime = GetTickCount();

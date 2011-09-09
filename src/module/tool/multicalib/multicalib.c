@@ -4,7 +4,7 @@
  Copyright (c) 2011 AIST  All Rights Reserved.
  Eclipse Public License v1.0 (http://www.eclipse.org/legal/epl-v10.html)
 
- Written by Satoshi KAWABATA <kawabata.aist@gmail.com>
+ Written by Satoshi KAWABATA <satoshi.kawabata@aist.go.jp>
 
  $Date::                            $
 */
@@ -78,7 +78,7 @@ main (int argc, char **argv)
   err = calibrate_cameras (params, &cdata, &opt.calib_opt);
   fprintf (stderr, "error: %g\n", err);
 
-  if (opt.ofile == NULL || opt.calib_opt.verbose_mode)
+  if (opt.calib_opt.verbose_mode)
     {
       output_params (params, cdata.num_cameras);
     }

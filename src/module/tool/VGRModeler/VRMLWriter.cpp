@@ -1,4 +1,4 @@
-/* -*- coding: utf-8 -*-
+/*
  VRMLWriter.cpp
 
  Copyright (c) 2011 AIST  All Rights Reserved.

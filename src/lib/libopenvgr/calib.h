@@ -26,8 +26,11 @@ typedef struct DistortionParam
 //! カメラパラメータ
 typedef struct CameraParam
 {
+  double cx, cy;                //!< レンズの光学的な中心
+  double fx, fy;                //!< 焦点距離(ピクセル単位)
   double Rotation[3][3];        //!< 回転行列
   double Translation[3];        //!< 移動ベクトル
+  double rRotation[3][3];       //!< 回転行列の逆行列(転置行列)
   double Position[3];           //!< カメラ位置(-rR・T)
   DistortionParam Distortion;   //!< 歪みパラメータ
   double intrinsicMatrix[3][3]; //!< 内部パラメータ行列

@@ -345,7 +345,7 @@ clearConicSum(double sum[5][5])        // ２次曲線当てはめ係数行列
 void
 addConicSum(double sum[5][5],  // ２次曲線当てはめ係数行列。sum[ix][iy] = x^{ix} y^{iy}, ix + iy < 5
             int* point,        // 輪郭点座標
-            double* offset)    // 重心のオフセット
+            double* offset)    // 楕円係数計算時のオフセット
 {
   const double x = point[0] - offset[0];
   const double y = point[1] - offset[1];
@@ -367,7 +367,7 @@ addConicSum(double sum[5][5],  // ２次曲線当てはめ係数行列。sum[ix]
 void
 subConicSum(double sum[5][5],  // ２次曲線当てはめ係数行列。sum[ix][iy] = x^{ix} y^{iy}, ix + iy < 5
             int* point,        // 輪郭点座標
-            double* offset)    // 重心のオフセット
+            double* offset)    // 楕円係数計算時のオフセット
 {
   const double x = point[0] - offset[0];
   const double y = point[1] - offset[1];
@@ -527,7 +527,7 @@ getConicProperty(double coef[6],       // 二次曲線係数
 int
 fitConic(double sum[5][5],     // 二次曲線当てはめの微分係数行列
          double coef[3][6],    // 二次曲線係数
-         double* offset)       // 重心のオフセット
+         double* offset)       // 楕円係数計算時のオフセット
 {
   double P00[3][3] = {
     {sum[4][0], sum[3][1], sum[2][2]},
@@ -607,7 +607,7 @@ fitConicAny(double retcoef[6],         // 二次曲線係数
             const int end,             // 当てはめる輪郭点列の終点
             Parameters parameters,     // 全パラメータ
             int line_detect_flag,      // 直線検出フラグ
-            double* offset)            // 重心のオフセット
+            double* offset)            // 楕円係数計算時のオフセット
 {
   *retError = 0.0;
   if (sum[0][0] <= 2.0)

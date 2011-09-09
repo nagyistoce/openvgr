@@ -15,18 +15,11 @@
 
 #include "common.h"
 #include "quaternion.h"
-#include "circle.h"
 #include "stereo.h"
 #include "match3Dfeature.h"
 #include "score2d.h"
 #include "vectorutil.h"
 #include "modelpoints.h"
-#include "drawing.hpp"
-#include "mathmisc.hpp"
-
-//#define PROJECT_DEBUG
-
-using namespace ovgr;
 
 typedef enum
 {
@@ -47,6 +40,40 @@ setOneAtEnd(double v[4])
   v[3] = 1.0;
 }
 
+// 円の始点座標計算
+int
+getPointOnCircle(double normal[3], double radius, double point[3])
+{
+  CvMat avec, nvec, dvec;
+  double data[3], dir[3];
+  int i, sts;
+
+  avec = cvMat(3, 1, CV_64FC1, data);
+  nvec = cvMat(3, 1, CV_64FC1, normal);
+  dvec = cvMat(3, 1, CV_64FC1, dir);
+  for (i = 0; i < 3; i++)
+    {
+      // 基準軸を x, y, z と変えながら試す
+      cvSetZero(&avec);
+      cvmSet(&avec, i, 0, 1.0);
+      // 基準軸と法線に直交する単位方向ベクトルをもとめる
+      sts = getOrthogonalDir(&avec, &nvec, &dvec);
+      // 方向ベクトルが計算できたらループ終了
+      if (sts == 0)
+        {
+          break;
+        }
+    }
+  // 方向ベクトルが計算できなかったらエラー終了
+  if (sts)
+    {
+      return -1;
+    }
+  // 原点を中心とする円上の点をもとめる
+  mulV3S(radius, dir, point);
+  return 0;
+}
+
 // 円の評価点を生成する
 static int
 makeCirclePoints(Circle* cir, double pdist)
@@ -54,10 +81,11 @@ makeCirclePoints(Circle* cir, double pdist)
   Trace* points;
   P3D* transformed;
   P2D* projected;
+  double genP[3];
   double len;
-  int np, i, j;
-  double axis[2][3];
-
+  double theta;
+  quaternion_t q;
+  int np, i, sts;
 
   // 点間隔パラメータが不適当な時は終了
   if (pdist <= 0)
@@ -69,6 +97,14 @@ makeCirclePoints(Circle* cir, double pdist)
   np = (int) (len / pdist) + 1;
   // 点数が少なすぎるときは終了
   if (np < 3)
+    {
+      return VISION_PARAM_ERROR;
+    }
+
+  // 円の始点座標計算
+  sts = getPointOnCircle(cir->normal, cir->radius, genP);
+  // 始点計算ができないときは終了
+  if (sts)
     {
       return VISION_PARAM_ERROR;
     }
@@ -99,15 +135,20 @@ makeCirclePoints(Circle* cir, double pdist)
   cir->transformed = transformed;
   cir->projected = projected;
 
-  calc_3d_axes_of_circle(axis[0], axis[1], cir->normal, NULL);
-  for (i = 0; i < np; ++i)
+  // 点間の回転角度を求める
+  theta = 2.0 * M_PI / (double) (np - 1);
+  // 始点を格納
+  addV3(genP, cir->center, points[0].xyz);
+  setOneAtEnd(points[0].xyz);
+  // 回転を表す単位クォータニオンの計算
+  quaternion_rotation(q, -theta, cir->normal);
+  for (i = 1; i < np; i++)
     {
-      double theta = (double)i / (double)(np - 1) * M_PI * 2.0;
-      for (j = 0; j < 3; ++j)
-        {
-          points[i].xyz[j] = cir->radius * (axis[0][j] * cos(theta) + axis[1][j] * sin(theta));
-        }
-      points[i].xyz[3] = 1.0;
+      // 円中心からの法線を回転軸にして円の点列座標を計算する
+      quat_rot(genP, q, genP);
+      addV3(genP, cir->center, points[i].xyz);
+      // 同次行列乗算のため末尾 1 のベクトルとする
+      setOneAtEnd(points[i].xyz);
     }
 
   return np;
@@ -130,8 +171,8 @@ makeVertexPoints(Vertex* ver, double pdist)
       return VISION_PARAM_ERROR;
     }
 
-  mulV3S(-1.0, ver->endpoint1, ep1);
-  copyV3(ver->endpoint2, ep2);
+  subV3(ver->position, ver->endpoint1, ep1);
+  subV3(ver->endpoint2, ver->position, ep2);
   len1 = getNormV3(ep1);
   len2 = getNormV3(ep2);
   // 分割数をもとめる
@@ -201,10 +242,7 @@ makeVertexPoints(Vertex* ver, double pdist)
       setOneAtEnd(points[i].xyz);
     }
   // 点列の最後が頂点になるようにする
-  for (i = 0; i < 3; ++i)
-    {
-      points[np1 - 1].xyz[i] = 0.0;
-    }
+  copyV3(ver->position, points[np1 - 1].xyz);
   setOneAtEnd(points[np1 - 1].xyz);
 
   // 点間隔毎の位置ベクトル増分値を求める
@@ -213,10 +251,7 @@ makeVertexPoints(Vertex* ver, double pdist)
   dir[1] *= pdist;
   dir[2] *= pdist;
   // position から一定間隔の点列を作る
-  for (i = 0; i < 3; ++i)
-    {
-      points[np1].xyz[i] = 0.0;
-    }
+  copyV3(ver->position, points[np1].xyz);
   setOneAtEnd(points[np1].xyz);
   for (i = np1 + 1; i < np - 1; i++)
     {
@@ -237,86 +272,127 @@ getDirection(double* Curr, double* Prev)
 {
   double dx, dy;
   double theta;
-  int index = -1;
 
   dx = Curr[0] - Prev[0];
   dy = Curr[1] - Prev[1];
 
-  if (isZero(dx*dx + dy*dy))
+  if (isZero(dx))
     {
-      return AZIMUTH_NONE;
+      if (isZero(dy))
+        {
+          return AZIMUTH_NONE;
+        }
+      else
+        {
+          if (dy > 0.0)
+            {
+              return AZIMUTH_S;
+            }
+          else
+            {
+              return AZIMUTH_E;
+            }
+        }
     }
-
-  theta = atan2(dy, dx) * 8.0 / 2.0 / M_PI;
-  index = (int)fmod(theta + 8.5, 8.0); // E:0 S:2 W:4 N:6
+  theta = tan(dy/dx)/M_PI * 180.0;
   
-  return (Azimuth)((8 - index + 2) % 8);
+  if (fabs(theta) <= 22.5 )
+    {
+      return AZIMUTH_E;
+    }
+  if (theta > 0.0)
+    {
+      if (theta < 67.5)
+        {
+          return AZIMUTH_SE;
+        }
+      else
+        {
+          if (theta < 112.5)
+            {
+              return AZIMUTH_S;
+            }
+          else
+            {
+              if (theta < 157.5)
+                {
+                  return AZIMUTH_SW;
+                }
+              else
+                {
+                  return AZIMUTH_W;
+                }
+            }
+        }
+    }
+  else // theta < 0.0
+    {
+      if (theta > -67.5)
+        {
+          return AZIMUTH_NE;
+        }
+      else
+        {
+          if (theta > -112.5 )
+            {
+              return AZIMUTH_N;
+            }
+          else
+            {
+              if (theta > -157.5)
+                {
+                  return AZIMUTH_NW;
+                }
+              else
+                {
+                  return AZIMUTH_W;
+                }
+            }
+        }
+    }
+}
+
+// 回転行列を回転ベクトルに変換
+static void
+getRotationVector(double rotmat[3][3], double rotvec[3])
+{
+  CvMat RotMat, RotVec;
+  RotMat = cvMat(3, 3, CV_64FC1, rotmat);
+  RotVec = cvMat(1, 3, CV_64FC1, rotvec);
+  cvRodrigues2(&RotMat, &RotVec);
+  return;
 }
 
 // 視線ベクトルの計算
 static void
 calcPointDirection(double sight[3], const CameraParam* cp, const double point[3])
 {
-  int i, j;
+  int i;
+  double norm = 0.0;
 
   for (i = 0; i < 3; ++i)
     {
-      sight[i] = cp->Translation[i];
-      for (j = 0; j < 3; ++j)
-        {
-          sight[i] += cp->Rotation[i][j] * point[j];
-        }
+      sight[i] = point[i] - cp->Position[i];
+      norm += sight[i] * sight[i];
     }
-  normalizeV3(sight, sight);
 
+  norm = sqrt(norm);
+  for (i = 0; i < 3; ++i)
+    {
+      sight[i] /= norm;
+    }
   return;
-}
-
-inline static bool
-is_visible(const CameraParam *cp, double matrix[4][4], double pos[3], double normal[3])
-{
-  double vw[3], nw[3], v[3], n[3], dot, norm2;
-  int i, j;
-
-  for (i = 0; i < 3; ++i)
-    {
-      vw[i] = matrix[i][3];
-      nw[i] = 0.0;
-
-      for (j = 0; j < 3; ++j)
-        {
-          vw[i] += matrix[i][j] * pos[j];
-          nw[i] += matrix[i][j] * normal[j];
-        }
-    }
-
-  for (i = 0; i < 3; ++i)
-    {
-      v[i] = cp->Translation[i];
-      n[i] = 0.0;
-
-      for (j = 0; j < 3; ++j)
-        {
-          v[i] += cp->Rotation[i][j] * vw[j];
-          n[i] += cp->Rotation[i][j] * nw[j];
-        }
-    }
-
-  dot = 0.0;
-  norm2 = 0.0;
-  for (i = 0; i < 3; ++i)
-    {
-      dot += v[i] * n[i];
-      norm2 = v[i] * v[i];
-    }
-
-  return dot / sqrt(norm2) < -VISION_EPS;
 }
 
 // 頂点の可視判定
 static void
 setVisibleVertex(Features3D* model, double matrix[4][4], Vertex* vertex, int p_camera)
 {
+  cv::Mat RTmat = cv::Mat(4, 4, CV_64FC1, matrix);
+  double vec[4], psrc[4], pdst[4];
+  cv::Mat src = cv::Mat(4, 1, CV_64FC1, psrc);
+  cv::Mat dst = cv::Mat(4, 1, CV_64FC1, pdst);
+  double dot, len;
   CameraParam* cameraParam;
 
   switch (p_camera)
@@ -335,7 +411,25 @@ setVisibleVertex(Features3D* model, double matrix[4][4], Vertex* vertex, int p_c
       break;
     }
 
-  if (is_visible(cameraParam, matrix, vertex->orientation[3], vertex->orientation[2]))
+  // 法線による可視判定
+  // 視線ベクトル
+  psrc[0] = vertex->position[0];
+  psrc[1] = vertex->position[1];
+  psrc[2] = vertex->position[2];
+  psrc[3] = 1.0;
+  dst = RTmat * src;
+  calcPointDirection(vec, cameraParam, pdst);
+
+  psrc[0] = vertex->orientation[2][0];
+  psrc[1] = vertex->orientation[2][1];
+  psrc[2] = vertex->orientation[2][2];
+  psrc[3] = 0.0;
+  dst = RTmat * src;
+
+  dot = getInnerProductV3(pdst, vec);
+  len = getNormV3(pdst);
+
+  if (dot / len > 0.0) // VISION_EPSを使う？
     {
       vertex->label = VISIBLE;
     }
@@ -382,35 +476,21 @@ projectXYZ2LRwithTrans(Features3D* model, double matrix[4][4], int p_camera,
   dst = RTmat * src;
 
   projectXYZ2LR(&iPos, pdst, cameraParam);
-  colrow->x = floor(iPos.col + 0.5);
-  colrow->y = floor(iPos.row + 0.5);
+  colrow->x = iPos.col;
+  colrow->y = iPos.row;
 
   return;
-}
-
-static void
-mult_orientation(double result[3], double orientation[4][4], const double pos[3])
-{
-  int i, j;
-
-  for (i = 0; i < 3; ++i)
-    {
-      result[i] = orientation[3][i];
-      for (j = 0; j < 3; ++j)
-        {
-          result[i] += orientation[j][i] * pos[j];
-        }
-    }
 }
 
 // 頂点の２線分の評価点の画像投影
 static void
 projectVertexPoint(Features3D* model, double matrix[4][4], Vertex& vertex, int p_camera)
 {
-  int num, i;
-  double pos3d[3];
-  cv::Point pos2d[3];
+  CvMat RTmat, src, dst;
+  double pdata[4];
+  int i, numOfpoints;
   CameraParam* cameraParam;
+  Data_2D iPos;
 
   switch (p_camera)
     {
@@ -428,117 +508,25 @@ projectVertexPoint(Features3D* model, double matrix[4][4], Vertex& vertex, int p
       break;
     }
 
-  num = vertex.numOfTracePoints;
+  numOfpoints = vertex.numOfTracePoints;
 
-  mult_orientation(pos3d, vertex.orientation, vertex.endpoint1);
-  projectXYZ2LRwithTrans(model, matrix, p_camera, pos3d, &pos2d[0]);
+  RTmat = cvMat(4, 4, CV_64FC1, matrix);
 
-  projectXYZ2LRwithTrans(model, matrix, p_camera, vertex.orientation[3], &pos2d[1]);
-
-  mult_orientation(pos3d, vertex.orientation, vertex.endpoint2);
-  projectXYZ2LRwithTrans(model, matrix, p_camera, pos3d, &pos2d[2]);
-
-  for (i = 0; i < num/2; ++i)
+  for (i = 0; i < numOfpoints; i++)
     {
-      double alpha = (double)i / (double)(num / 2);
-
-      vertex.tracepoints[i].colrow[0] = (1.0 - alpha) * pos2d[0].x + alpha * pos2d[1].x;
-      vertex.tracepoints[i].colrow[1] = (1.0 - alpha) * pos2d[0].y + alpha * pos2d[1].y;
+      src = cvMat(4, 1, CV_64FC1, vertex.tracepoints[i].xyz);
+      dst = cvMat(4, 1, CV_64FC1, pdata);
+      cvMatMul(&RTmat, &src, &dst);
+      copyV3(pdata, vertex.transformed[i].xyz);
     }
-  for (i = num/2; i < num; ++i)
+  for (i = 0; i < numOfpoints; i++)
     {
-      double alpha = (double)(i - num/2) / (double)(num - 1 - num/2);
-
-      vertex.tracepoints[i].colrow[0] = (1.0 - alpha) * pos2d[1].x + alpha * pos2d[2].x;
-      vertex.tracepoints[i].colrow[1] = (1.0 - alpha) * pos2d[1].y + alpha * pos2d[2].y;
+      projectXYZ2LR(&iPos, vertex.transformed[i].xyz, cameraParam);
+      vertex.tracepoints[i].colrow[0] = iPos.col;
+      vertex.tracepoints[i].colrow[1] = iPos.row;
     }
 
   return;
-}
-
-// 裏向きの円の観測可能な稜線の範囲算出
-static int
-calc_observable_angle(double angle[2], double matrix[4][4], const Circle& circle, const CameraParam* cp)
-{
-  int i, j, k;
-
-  cv::Mat M(4, 4, CV_64FC1), T(4, 4, CV_64FC1, matrix), model(4, 4, CV_64FC1, const_cast<double (*)[4]>(circle.orientation));
-
-  M = T * model.t(); // モデルの行列は転置されている..
-
-  // 外部パラメータの算出
-  double ext[3][4];
-  for (i = 0; i < 3; ++i)
-    {
-      for (j = 0; j < 3; ++j)
-        {
-          ext[i][j] = 0.0;
-          for (k = 0; k < 3; ++k)
-            {
-              ext[i][j] += cp->Rotation[i][k] * M.at<double>(k, j);
-            }
-        }
-
-      ext[i][3] = cp->Translation[i];
-      for (j = 0; j < 3; ++j)
-        {
-          ext[i][3] += cp->Rotation[i][j] * M.at<double>(j, 3);
-        }
-    }
-
-#if 0
-  for (i = 0; i < 4; ++i)
-    {
-      for (j = 0; j < 4; ++j)
-        {
-          printf("% 10.3g ", T.at<double>(i, j));
-        }
-      printf("\n");
-    }
-  printf("\n");
-#endif
-
-  angle[0] = angle[1] = 0.0;
-
-  // 視線ベクトルと円の法線が直交する角度を計算
-  double a = 0.0, b = 0.0, c[2] = {0.0, 0.0};
-  int num = 0;
-  for (i = 0; i < 3; ++i)
-    {
-      a += ext[i][0] * ext[i][3];
-      b += ext[i][1] * ext[i][3];
-    }
-
-  num = solve_quad_eq(c, a*a + b*b, 2.0*a * circle.radius, circle.radius * circle.radius - b*b);
-
-  if (num < 1)
-    {
-      return num;
-    }
-
-  // sinの符号から角度を一意に決める
-  double s[2] = {0.0, 0.0};
-  for (i = 0; i < num; ++i)
-    {
-      s[i] = -(circle.radius + a*c[i]) / b;
-      angle[i] = (s[i] >= 0.0) ? acos(c[i]) : -acos(c[i]);
-    }
-
-  // angle[0]からangle[1]の間が観測される範囲
-  if (circle.radius - a*s[0] + b*c[0] > 0.0)
-    {
-      double temp = angle[0];
-      angle[0] = angle[1];
-      angle[1] = temp;
-    }
-
-  // angle[0] <= angle[1]となるようにする
-  if ((angle[1] < 0) && (angle[0] > angle[1]))
-    {
-      angle[1] += 2.0 * M_PI;
-    }
-
-  return num;
 }
 
 // 円の評価点の画像投影
@@ -572,7 +560,7 @@ projectCirclePoint(Features3D* model, double matrix[4][4], Circle& circle, int p
   RTmat = cvMat(4, 4, CV_64FC1, matrix);
   for (i = 0; i < numOfpoints; i++)
     {
-      mult_orientation(hvec, circle.orientation, circle.tracepoints[i].xyz);
+      copyV3(circle.tracepoints[i].xyz, hvec);
       hvec[3] = 1.0;
       src = cvMat(4, 1, CV_64FC1, hvec);
       dst = cvMat(4, 1, CV_64FC1, pdata);
@@ -588,7 +576,7 @@ projectCirclePoint(Features3D* model, double matrix[4][4], Circle& circle, int p
 
   // 法線による可視判定
   // カメラ視線ベクトル
-  copyV3(circle.orientation[3], hvec);
+  copyV3(circle.center, hvec);
   setOneAtEnd(hvec);
   src = cvMat(4, 1, CV_64FC1, hvec);
   dst = cvMat(4, 1, CV_64FC1, pdata);
@@ -597,7 +585,7 @@ projectCirclePoint(Features3D* model, double matrix[4][4], Circle& circle, int p
   calcPointDirection(vec, cameraParam, pdata);
 
   // 法線
-  copyV3(circle.orientation[2], hvec);
+  copyV3(circle.normal, hvec);
   hvec[3] = 0.0;
   src = cvMat(4, 1, CV_64FC1, hvec);
   dst = cvMat(4, 1, CV_64FC1, pdata);
@@ -755,17 +743,20 @@ traceModelPoints(Features3D* model, int p_camera, double matrix[4][4])
   return score;
 }
 
-inline static void
-calc_xyz_of_circle(double xyz[3], const Circle& circle, const double angle)
+// 観測可能な点の数の計算
+static int
+count_visible_points(const Circle& circle)
 {
-  int i;
-
-  for (i = 0; i < 3; ++i)
+  int c = 0;
+  for (int i = 0; i < circle.numOfTracePoints; ++i)
     {
-      xyz[i] = circle.radius * (circle.orientation[0][i] * cos(angle)
-                                + circle.orientation[1][i] * sin(angle))
-        + circle.orientation[3][i];
+      if (circle.tracepoints[i].label == VISIBLE)
+        {
+          c++;
+        }
     }
+
+  return c;
 }
 
 // モデル評価点の描画（認識結果確認表示用）
@@ -778,20 +769,26 @@ drawModelPoints(Features3D* model,     // モデルの３次元特徴情報
                 int lineThickness)     // 描画する線の太さ
 {
   Vertex vertex;
-  int i, j;
+  Circle circle;
+  double* curr;
+  double* prev;
+  int i, j, ii, jj;
   cv::Mat cimg;
   cv::Scalar color;
   cv::Point p1, p2, p3;
+  std::vector<cv::Point> CR[2];
 
   color = cv::Scalar(0, 255, 0);
   cimg = cv::Mat(model->calib->rowsize, model->calib->colsize, CV_8UC3, img);
 
   for (i = 0; i < model->numOfVertices; i++)
     {
-      double pos3d[3];
-
       vertex = model->Vertices[i];
       if (vertex.side == M3DF_BACK)
+        {
+          continue;
+        }
+      if (vertex.numOfTracePoints == 0)
         {
           continue;
         }
@@ -802,144 +799,114 @@ drawModelPoints(Features3D* model,     // モデルの３次元特徴情報
           continue;
         }
       // 頂点および端点の投影
-      projectXYZ2LRwithTrans(model, matrix, p_camera, vertex.orientation[3], &p1);
-
-      mult_orientation(pos3d, vertex.orientation, vertex.endpoint1);
-      projectXYZ2LRwithTrans(model, matrix, p_camera, pos3d, &p2);
-
-      mult_orientation(pos3d, vertex.orientation, vertex.endpoint2);
-      projectXYZ2LRwithTrans(model, matrix, p_camera, pos3d, &p3);
-
+      projectXYZ2LRwithTrans(model, matrix, p_camera, vertex.position, &p1);
+      projectXYZ2LRwithTrans(model, matrix, p_camera, vertex.endpoint1, &p2);
+      projectXYZ2LRwithTrans(model, matrix, p_camera, vertex.endpoint2, &p3);
       cv::line(cimg, p1, p2, color, lineThickness, CV_AA);
       cv::line(cimg, p1, p3, color, lineThickness, CV_AA);
     }
 
-  {
-    CameraParam *cp = NULL;
+  for (i = 0; i < model->numOfCircles; i++)
+    {
+      circle = model->Circles[i];
+      if (circle.side == M3DF_BACK)
+        {
+          continue;
+        }
+      if (circle.numOfTracePoints == 0)
+        {
+          continue;
+        }
+      projectCirclePoint(model, matrix, circle, p_camera);
+      ii = (int) (i / 2) % 2;
+      for (j = 0; j < circle.numOfTracePoints; j++)
+        {
+          jj = j - 1;
+          if (j == 0)
+            {
+              jj = circle.numOfTracePoints - 1;
+            }
+          curr = circle.tracepoints[j].colrow;
+          prev = circle.tracepoints[jj].colrow;
+          p1.x = (int) floor(prev[0] + 0.5);
+          p1.y = (int) floor(prev[1] + 0.5);
+          p2.x = (int) floor(curr[0] + 0.5);
+          p2.y = (int) floor(curr[1] + 0.5);
+          if (CR[ii].size() > static_cast<unsigned int>(j))
+            {
+              CR[ii].at(j) = p1;
+            }
+          else
+            {
+              CR[ii].push_back(p1);
+            }
+        }
 
-    switch (p_camera)
-      {
-      case 0:
-        cp = &model->calib->CameraL;
-        break;
-      case 1:
-        cp = &model->calib->CameraR;
-        break;
-      case 2:
-        cp = &model->calib->CameraV;
-        break;
-      default:
-        cp = &model->calib->CameraL;
-        break;
-      }
+      // 円一つの場合
+      if (model->numOfCircles == 2)
+        {
+          int nPoints = circle.numOfTracePoints;
+          for (j = 0; j < nPoints; j++)
+            {
+              jj = j - 1;
+              if (j == 0)
+                {
+                  jj = nPoints - 1;
+                }
+              cv::line(cimg, CR[0][j], CR[0][jj], color, lineThickness, CV_AA);
+            }
+        }
 
-    cv::Point pos[2][2];
-    Circle *circle[2];
-    double angle[2][2];
-    int nangle[2] = {0, 0};
-    int n = 0;
-    for (i = 0; i < model->numOfCircles; i++)
-      {
-        double xyz[4];
+      if (ii % 2 == 1)
+        {
+          // 凸包を計算することにより、遮蔽輪郭部分を描画する
+          std::vector<cv::Point> points;
+          std::vector<int> hull;
+          cv::Point pt;
+          int vpoints1 = 0, vpoints2 = 0;
 
-        circle[n] = &model->Circles[i];
+          // 観測可能な点の数の計算
+          vpoints1 = count_visible_points(circle);
+          vpoints2 = count_visible_points(model->Circles[i - 2]);
 
-        if (circle[n]->side == M3DF_BACK)
-          {
-            continue;
-          }
+          int circle_index = 1;
+          int nPoints = circle.numOfTracePoints;
+          if (vpoints1 < vpoints2)
+            {
+              circle_index = 0;
+              nPoints = model->Circles[i - 2].numOfTracePoints;
+            }
+          for (j = 0; j < nPoints; j++)
+            {
+              jj = j - 1;
+              if (j == 0)
+                {
+                  jj = nPoints - 1;
+                }
+              cv::line(cimg, CR[circle_index][j], CR[circle_index][jj], color, lineThickness, CV_AA);
+            }
 
-        // 遮蔽輪郭線と楕円の交点を求める
-        nangle[n] = calc_observable_angle(angle[n], matrix, *circle[n], cp);
-        for (j = 0; j < 2; ++j)
-          {
-            calc_xyz_of_circle(xyz, *circle[n], angle[n][j]);
-            xyz[3] = 1.0;
-            
-            projectXYZ2LRwithTrans(model, matrix, p_camera, xyz, &pos[n][j]);
-          }
-
-        // 円一つの場合
-        if (model->numOfCircles == 1
-            && is_visible(cp, matrix, circle[n]->orientation[3], circle[n]->orientation[2]))
-          {
-            const int num = circle[n]->numOfTracePoints;
-            cv::Point curve[2];
-            
-            calc_xyz_of_circle(xyz, *circle[n], 0.0);
-            xyz[3] = 1.0;
-            projectXYZ2LRwithTrans(model, matrix, p_camera, xyz, &curve[0]);
-
-            for (j = 1; j <= num; ++j)
-              {
-                double t = 2.0 * M_PI * (double)j / (double)num;
-
-                calc_xyz_of_circle(xyz, *circle[n], t);
-                projectXYZ2LRwithTrans(model, matrix, p_camera, xyz, &curve[j%2]);
-
-                cv::line(cimg, curve[(j+1)%2], curve[j%2], color, lineThickness, CV_AA);
-              }
-          }
+          for (j = 0; j < circle.numOfTracePoints; j++)
+            {
+              points.push_back(CR[1][j]);
+            }
+          circle = model->Circles[i - 2];
+          for (j = 0; j < circle.numOfTracePoints; j++)
+            {
+              points.push_back(CR[0][j]);
+            }
           
-        // 円筒の描画
-        if (n == 1)
-          {
-            for (j = 0; j < 2; ++j)
-              {
-                const int num = circle[j]->numOfTracePoints;
-                cv::Point curve[2];
-                int k;
-                    
-                if (is_visible(cp, matrix, circle[j]->orientation[3], circle[j]->orientation[2]))
-                  {
-                    // 円が見える場合
-                    calc_xyz_of_circle(xyz, *circle[j], 0.0);
-                    xyz[3] = 1.0;
-                    projectXYZ2LRwithTrans(model, matrix, p_camera, xyz, &curve[0]);
-
-                    for (k = 1; k <= num; ++k)
-                      {
-                        double t = 2.0 * M_PI * (double)k / (double)num;
-
-                        calc_xyz_of_circle(xyz, *circle[j], t);
-                        projectXYZ2LRwithTrans(model, matrix, p_camera, xyz, &curve[k%2]);
-
-                        cv::line(cimg, curve[(k+1)%2], curve[k%2], color, lineThickness, CV_AA);
-                      }
-                  }
-                else if (nangle[j] == 2)
-                  {
-                    // 裏向きの場合は手前側の円弧のみ描画する
-                    const double delta = angle[j][1] - angle[j][0];
-                    const int pnum = (int)(ceil((double)num * (delta / 2.0 / M_PI)));
-
-                    calc_xyz_of_circle(xyz, *circle[j], angle[j][0]);
-                    xyz[3] = 1.0;
-                    projectXYZ2LRwithTrans(model, matrix, p_camera, xyz, &curve[0]);
-                    
-                    for (k = 1; k <= pnum; ++k)
-                      {
-                        double t = 2.0 * M_PI * (double)k / (double)num + angle[j][0];
-
-                        calc_xyz_of_circle(xyz, *circle[j], t);
-                        projectXYZ2LRwithTrans(model, matrix, p_camera, xyz, &curve[k%2]);
-
-                        cv::line(cimg, curve[(k+1)%2], curve[k%2], color, lineThickness, CV_AA);
-                      }
-                  }
-              }
-
-            if (nangle[0] == 2 && nangle[1] == 2)
-              {
-                // 遮蔽輪郭線(円筒の側面)を描画
-                cv::line(cimg, pos[0][0], pos[1][1], color, lineThickness, CV_AA);
-                cv::line(cimg, pos[0][1], pos[1][0], color, lineThickness, CV_AA);
-              }
-          }
-
-        n = (n + 1) % 2;
-      }
-  }
+          cv::convexHull(cv::Mat(points), hull, CV_CLOCKWISE);
+          int hullcount = (int) hull.size();
+          cv::Point pt0 = points[hull[hullcount - 1]];
+          for (j = 0; j < hullcount; j++)
+            {
+              cv::Point pt = points[hull[j]];
+              cv::line(cimg, pt0, pt, color, lineThickness, CV_AA);
+              pt0 = pt;
+            }
+        }
+    }
 
   // 元のデータに書き戻す。
   if (filename)
@@ -965,16 +932,11 @@ makeModelPoints(Features3D* model,    // モデルの３次元特徴データ
         {
           continue;
         }
-#ifndef USE_DISTANCETRANSFORM
       count = makeVertexPoints(&model->Vertices[i], pdist);
       if (count < 0)
         {
           return count; // エラーコード
         }
-#else
-      model->Vertices[i].numOfTracePoints = ceil((getNormV3(model->Vertices[i].endpoint1) + getNormV3(model->Vertices[i].endpoint2)) / pdist);
-      count = model->Vertices[i].numOfTracePoints;
-#endif
       totalcount += count;
     }
 
@@ -985,16 +947,11 @@ makeModelPoints(Features3D* model,    // モデルの３次元特徴データ
         {
           continue;
         }
-#ifndef USE_DISTANCETRANSFORM
       count = makeCirclePoints(&model->Circles[i], pdist);
       if (count < 0)
         {
           return count; // エラーコード
         }
-#else
-      model->Circles[i].numOfTracePoints = (int) (model->Circles[i].radius * 2.0 * M_PI / pdist) + 1;
-      count = model->Circles[i].numOfTracePoints;
-#endif
       totalcount += count;
     }
 
@@ -1006,15 +963,31 @@ void
 getPropertyVector(double mat[4][4],            // 合同変換行列
                   double vec[7])               // ７次元ベクトル
 {
-  int i;
+  double Rotation[3][3], len;
+  int i, j;
 
   for (i = 0; i < 3; i++)
     {
+      for (j = 0; j < 3; j++)
+        {
+          // ３ｘ３回転行列をコピー
+          Rotation[i][j] = mat[i][j];
+        }
       // 位置ベクトルをコピー
       vec[i] = mat[i][3];
     }
-
-  quat_q_from_R(&vec[3], mat[0], 4);
+  // 回転行列を回転ベクトルに変換
+  getRotationVector(Rotation, &vec[3]);
+  // 回転角度（ベクトルの大きさ: OpenCV の仕様による）をもとめる
+  len = getNormV3(&vec[3]);
+  if (isZero(len))
+    {
+      vec[6] = 0;
+    }
+  else
+    {
+      vec[6] = len;          // 回転角度
+    }
 
   return;
 }
@@ -1053,276 +1026,6 @@ traceModelPointsMultiCameras(Features3D* model,        // モデルの３次元�
 
     case TBL_AND:
       score = traceModelPoints(model, 0, matrix);
-      break;
-    }
-
-  return score;
-}
-
-static double
-calcEvaluationValue2D_on_line(Features3D* model, const cv::Point& p1, const cv::Point& p2, const cv::Mat& dstImage)
-{
-  ovgr::PointsOnLine points(p1.x, p1.y, p2.x, p2.y);
-  double score = 0.0;
-
-  do
-    {
-      int pcol, prow;
-
-      pcol = points.x();
-      prow = points.y();
-      if (isValidPixelPosition(pcol, prow, model))
-        {
-          float dist_value = dstImage.at<float>(prow, pcol);
-          score += 1.0 / (double) (dist_value + 1.0);
-        }
-    }
-  while (points.next());
-
-  return score;
-}
-
-// 各モデルの評価点を画像に投影して距離変換画像を参照し、２次元評価値を算出する
-static double
-calcEvaluationValue2D(Features3D* model, int p_camera, double matrix[4][4],
-                      const cv::Mat& dstImage)
-{
-  Vertex vertex;
-  double score;
-  int i, j;
-
-#ifdef PROJECT_DEBUG
-  cv::Mat dstImage_norm = 
-    cv::Mat::zeros(cv::Size(model->calib->colsize, model->calib->rowsize), CV_8UC1);
-  cv::normalize(dstImage, dstImage_norm, 0, 1, CV_MINMAX);
-  cv::Mat dstImage_color = 
-    cv::Mat::zeros(cv::Size(model->calib->colsize, model->calib->rowsize), CV_8UC3);
-  cv::cvtColor(dstImage_norm, dstImage_color, CV_GRAY2RGB);
-
-  cv::Scalar color = CV_RGB(0, 255, 0);
-  double lineThickness = 1.0;
-#endif
-
-  score = 0.0;
-
-#ifdef _OPENMP
-#pragma omp parallel for private (vertex, j), reduction (+: score)
-#endif
-  for (i = 0; i < model->numOfVertices; i++)
-    {
-      vertex = model->Vertices[i];
-
-      // 裏側は表側と同じ点列なのでスキップ
-      if (vertex.side == M3DF_BACK)
-        {
-          continue;
-        }
-
-      setVisibleVertex(model, matrix, &vertex, p_camera);
-      if (vertex.label == INVISIBLE)
-        {
-          continue;
-        }
-
-      double pos3d[3];
-      cv::Point pos2d[3];
-
-      mult_orientation(pos3d, vertex.orientation, vertex.endpoint1);
-      projectXYZ2LRwithTrans(model, matrix, p_camera, pos3d, &pos2d[0]);
-
-      projectXYZ2LRwithTrans(model, matrix, p_camera, vertex.orientation[3], &pos2d[1]);
-
-      mult_orientation(pos3d, vertex.orientation, vertex.endpoint2);
-      projectXYZ2LRwithTrans(model, matrix, p_camera, pos3d, &pos2d[2]);
-
-      score += (calcEvaluationValue2D_on_line(model, pos2d[0], pos2d[1], dstImage)
-                + calcEvaluationValue2D_on_line(model, pos2d[1], pos2d[2], dstImage));
-# ifdef PROJECT_DEBUG
-      cv::line(dstImage_color, pos2d[0], pos2d[1], color, lineThickness, CV_AA);
-      cv::line(dstImage_color, pos2d[1], pos2d[2], color, lineThickness, CV_AA);
-# endif
-    }
-
-  {
-    CameraParam *cp = NULL;
-
-    switch (p_camera)
-      {
-      case 0:
-        cp = &model->calib->CameraL;
-        break;
-      case 1:
-        cp = &model->calib->CameraR;
-        break;
-      case 2:
-        cp = &model->calib->CameraV;
-        break;
-      default:
-        cp = &model->calib->CameraL;
-        break;
-      }
-
-    cv::Point pos[2][2];
-    Circle *circle[2];
-    double angle[2][2];
-    int nangle[2] = {0, 0};
-    int n = 0;
-    for (i = 0; i < model->numOfCircles; i++)
-      {
-        double xyz[4];
-
-        circle[n] = &model->Circles[i];
-
-        if (circle[n]->side == M3DF_BACK)
-          {
-            continue;
-          }
-
-        // 遮蔽輪郭線と楕円の交点を求める
-        nangle[n] = calc_observable_angle(angle[n], matrix, *circle[n], cp);
-        for (j = 0; j < 2; ++j)
-          {
-            calc_xyz_of_circle(xyz, *circle[n], angle[n][j]);
-            xyz[3] = 1.0;
-            
-            projectXYZ2LRwithTrans(model, matrix, p_camera, xyz, &pos[n][j]);
-          }
-
-        // 円一つの場合
-        if (model->numOfCircles == 1
-            && is_visible(cp, matrix, circle[n]->orientation[3], circle[n]->orientation[2]))
-          {
-            const int num = circle[n]->numOfTracePoints;
-            cv::Point curve[2];
-            
-            calc_xyz_of_circle(xyz, *circle[n], 0.0);
-            xyz[3] = 1.0;
-            projectXYZ2LRwithTrans(model, matrix, p_camera, xyz, &curve[0]);
-
-            for (j = 1; j <= num; ++j)
-              {
-                double t = 2.0 * M_PI * (double)j / (double)num;
-
-                calc_xyz_of_circle(xyz, *circle[n], t);
-                projectXYZ2LRwithTrans(model, matrix, p_camera, xyz, &curve[j%2]);
-# ifdef PROJECT_DEBUG
-                cv::line(dstImage_color, curve[(j+1)%2], curve[j%2], color, lineThickness, CV_AA);
-# endif
-                score += calcEvaluationValue2D_on_line(model, curve[(j+1)%2], curve[j%2], dstImage);
-              }
-          }
-          
-        // 円筒の評価
-        if (n == 1)
-          {
-            for (j = 0; j < 2; ++j)
-              {
-                const int num = circle[j]->numOfTracePoints;
-                cv::Point curve[2];
-                int k;
-                    
-                if (is_visible(cp, matrix, circle[j]->orientation[3], circle[j]->orientation[2]))
-                  {
-                    // 円が見える場合
-                    calc_xyz_of_circle(xyz, *circle[j], 0.0);
-                    xyz[3] = 1.0;
-                    projectXYZ2LRwithTrans(model, matrix, p_camera, xyz, &curve[0]);
-
-                    for (k = 1; k <= num; ++k)
-                      {
-                        double t = 2.0 * M_PI * (double)k / (double)num;
-
-                        calc_xyz_of_circle(xyz, *circle[j], t);
-                        projectXYZ2LRwithTrans(model, matrix, p_camera, xyz, &curve[k%2]);
-
-# ifdef PROJECT_DEBUG
-                        cv::line(dstImage_color, curve[(k+1)%2], curve[k%2], color, lineThickness, CV_AA);
-# endif
-                        score += calcEvaluationValue2D_on_line(model, curve[(k+1)%2], curve[k%2], dstImage);
-                      }
-                  }
-                else if (nangle[j] == 2)
-                  {
-                    // 裏向きの場合は手前側の円弧のみ評価する
-                    const double delta = angle[j][1] - angle[j][0];
-                    const int pnum = (int)(ceil((double)num * (delta / 2.0 / M_PI)));
-
-                    calc_xyz_of_circle(xyz, *circle[j], angle[j][0]);
-                    xyz[3] = 1.0;
-                    projectXYZ2LRwithTrans(model, matrix, p_camera, xyz, &curve[0]);
-                    
-                    for (k = 1; k <= pnum; ++k)
-                      {
-                        double t = 2.0 * M_PI * (double)k / (double)num + angle[j][0];
-
-                        calc_xyz_of_circle(xyz, *circle[j], t);
-                        projectXYZ2LRwithTrans(model, matrix, p_camera, xyz, &curve[k%2]);
-
-# ifdef PROJECT_DEBUG
-                        cv::line(dstImage_color, curve[(k+1)%2], curve[k%2], color, lineThickness, CV_AA);
-# endif
-                        score += calcEvaluationValue2D_on_line(model, curve[(k+1)%2], curve[k%2], dstImage);
-                      }
-                  }
-              }
-
-            if (nangle[0] == 2 && nangle[1] == 2)
-              {
-# ifdef PROJECT_DEBUG
-                cv::line(dstImage_color, pos[0][0], pos[1][1], color, lineThickness, CV_AA);
-                cv::line(dstImage_color, pos[0][1], pos[1][0], color, lineThickness, CV_AA);
-# endif
-                // 遮蔽輪郭線(円筒の側面)を評価
-                score += calcEvaluationValue2D_on_line(model, pos[0][0], pos[1][1], dstImage);
-                score += calcEvaluationValue2D_on_line(model, pos[0][1], pos[1][0], dstImage);
-              }
-          }
-
-        n = (n + 1) % 2;
-      }
-  }
-
-#ifdef PROJECT_DEBUG
-  cv::namedWindow ("Projection result", CV_WINDOW_AUTOSIZE);
-  cv::imshow ("Projection result", dstImage_color);
-  cv::imwrite("debug.png", dstImage_color);
-  cv::waitKey (0);
-#endif
-
-  return score;
-}
-
-// 使用した全画像を用いた２次元評価値計算。距離変換画像の利用
-// 戻り値：２次元評価値
-double calcEvaluationValue2DMultiCameras(Features3D* model,      // モデルの３次元特徴情報
-                                         StereoPairing& pairing, // ステレオペア情報
-                                         double matrix[4][4],    // 認識結果の位置姿勢変換行列
-                                         const std::vector<cv::Mat>& dstImages)  // 距離変換画像
-{
-  double score = 0.0;
-
-  switch (pairing)
-    {
-    case DBL_LR:
-      score = calcEvaluationValue2D(model, 0, matrix, dstImages[0]);
-      score += calcEvaluationValue2D(model, 1, matrix, dstImages[1]);
-      break;
-
-    case DBL_LV:
-      score = calcEvaluationValue2D(model, 0, matrix, dstImages[0]);
-      score += calcEvaluationValue2D(model, 2, matrix, dstImages[2]);
-      break;
-
-    case DBL_RV:
-      score = calcEvaluationValue2D(model, 1, matrix, dstImages[1]);
-      score += calcEvaluationValue2D(model, 2, matrix, dstImages[2]);
-      break;
-
-    case TBL_OR:
-    case TBL_AND:
-      score = calcEvaluationValue2D(model, 0, matrix, dstImages[0]);
-      score += calcEvaluationValue2D(model, 1, matrix, dstImages[1]);
-      score += calcEvaluationValue2D(model, 2, matrix, dstImages[2]);
       break;
     }
 

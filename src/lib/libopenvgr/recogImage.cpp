@@ -11,7 +11,6 @@
  */
 #include <stdlib.h>
 #include <string.h>
-#include <stdio.h>
 
 #include <cv.h>
 #include <highgui.h>
@@ -59,47 +58,10 @@ destructImage(RecogImage* image)
 void
 rgb2grayImage(RecogImage* target, RecogImage* source)
 {
-  cv::Mat dimg, simg;
-
   if (target->bytePerPixel == source->bytePerPixel)
     {
       return;
     }
-
-  if (source->bytePerPixel == 1)
-    {
-      simg = cv::Mat(source->rowsize, source->colsize, CV_8UC1, source->pixel);
-    }
-  else
-    {
-      simg = cv::Mat(source->rowsize, source->colsize, CV_8UC3, source->pixel);
-    }
-
-  if (target->bytePerPixel == 1)
-    {
-      dimg = cv::Mat(target->rowsize, target->colsize, CV_8UC1, target->pixel);
-      if (source->bytePerPixel == 1)
-        {
-          dimg = simg;
-        }
-      else
-        {
-          cv::cvtColor(simg, dimg, CV_RGB2GRAY);
-        }
-    }
-  else
-    {
-      dimg = cv::Mat(target->rowsize, target->colsize, CV_8UC3, target->pixel);
-      if (source->bytePerPixel == 1)
-        {
-          cv::cvtColor(simg, dimg, CV_GRAY2RGB);
-        }
-      else
-        {
-          dimg = simg;
-        }
-    }
-#if 0
   if (target->bytePerPixel == 1)
     {                           // RGB->GRAY
       const int size = (target->colsize) * (target->rowsize);
@@ -144,7 +106,6 @@ rgb2grayImage(RecogImage* target, RecogImage* source)
           *(tar++) = c;
         }
     }
-#endif
   return;
 }
 
@@ -231,32 +192,4 @@ undistortImage(const RecogImage* src, RecogImage* dst, CameraParam* cp)
   cp->Distortion.p1 = 0.0;
   cp->Distortion.p2 = 0.0;
   cp->Distortion.k3 = 0.0;
-}
-
-//! 画像メモリのファイル出力　デバッグ用
-void
-writeRecogImage(const char* filename, const RecogImage* img)
-{
-  int width  = img->colsize;
-  int height = img->rowsize;
-  int bytePerPixel = img->bytePerPixel;
-  int size = width * height * bytePerPixel;
-  FILE *fp = fopen(filename, "wb");
-
-  if (fp == NULL)
-    {
-      return;
-    }
-
-  if (bytePerPixel == 1)
-    {
-      fprintf(fp, "P5\n");
-    }
-  else
-    {
-      fprintf(fp, "P6\n");
-    }
-  fprintf(fp, "%d %d\n255\n", width, height);
-  fwrite(img->pixel, 1, size, fp);
-  fclose(fp);
 }

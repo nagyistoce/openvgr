@@ -25,9 +25,6 @@ rtconf SendImage0.rtc set ImageFile2 $8
 rtconf SendImage0.rtc set ErrorCode  $9
 # 点群数の設定
 rtconf SendImage0.rtc set OutputPointNum ${10}
-# デバッグ情報出力指定
-#rtconf Recognition0.rtc set DebugText 1
-#rtconf Recognition0.rtc set DebugDisplay 1
 # コンポーネントの活性化
 rtact RecognitionResultViewer0.rtc
 rtact Recognition0.rtc

@@ -4,7 +4,7 @@
  Copyright (c) 2011 AIST  All Rights Reserved.
  Eclipse Public License v1.0 (http://www.eclipse.org/legal/epl-v10.html)
 
- Written by Satoshi KAWABATA <kawabata.aist@gmail.com>
+ Written by Satoshi KAWABATA <satoshi.kawabata@aist.go.jp>
 
  $Date::                            $
 */
@@ -61,9 +61,7 @@ static void trans2D_apply (double y[2], const trans2D_t *t2d, const double x[2])
 static double calib_calc_error (const camera_param_t *camera_params, const extrinsic_param_t *plane_poses, const trans2D_t *t2ds, const cdata_t *cdata, CvMat *JtJ, CvMat *JtF, const double *lambdas, const int flag);
 static void update_camera_params (camera_param_t *camera_params, extrinsic_param_t *plane_poses, double *lambdas, const CvMat *rev, const camera_param_t *camera_params_current, const int ncamera, const extrinsic_param_t *plane_poses_current, const int nobserv, const double *lambdas_current, const int flag);
 
-#ifndef USE_INFINITESIMAL_ROTATION
 static double mod_lambda (CvMat *JtJ, CvMat *JtF, const int pos, const int lpos, const double l, const quaternion_t q);
-#endif
 
 /****************************************************************/
 /* higher level functions for multi-camera calibration */
@@ -209,24 +207,25 @@ individual_calibration (camera_param_t *camera_params, extrinsic_param_t *plane_
 #if 1
 #ifdef _OPENMP
 #  pragma omp critical
+      {
 #endif
-      if (opt->verbose_mode)
+      printf ("camera %d: err = %g\n", i, error);
+      for (j = 0; j < cameraMatrix->rows; ++j)
         {
-          printf ("camera %d: err = %g\n", i, error);
-          for (j = 0; j < cameraMatrix->rows; ++j)
+          for (k = 0; k < cameraMatrix->cols; ++k)
             {
-              for (k = 0; k < cameraMatrix->cols; ++k)
-                {
-                  printf ("% 11.5g ", cvmGet (cameraMatrix, j, k));
-                }
-              printf ("\n");
-            }
-          for (j = 0; j < distCoeffs->rows; ++j)
-            {
-              printf ("% 11.5g ", cvmGet (distCoeffs, j, 0));
+              printf ("% 11.5g ", cvmGet (cameraMatrix, j, k));
             }
           printf ("\n");
         }
+      for (j = 0; j < distCoeffs->rows; ++j)
+        {
+          printf ("% 11.5g ", cvmGet (distCoeffs, j, 0));
+        }
+      printf ("\n");
+#ifdef _OPENMP
+      }
+#endif
 #endif
 
       /* copy the result to camera_params */
@@ -1519,14 +1518,11 @@ update_camera_params (camera_param_t *camera_params, extrinsic_param_t *plane_po
             {
 #ifdef USE_INFINITESIMAL_ROTATION
               quaternion_t q;
-              double norm2 = 0.0;
+              quat_re (q) = 1.0;
               for (j = 0; j < 3; ++j)
                 {
                   quat_im (q, j) = - cvmGet(rev, num_cam_param*ncamera + num_ext_param * (i-1) + j, 0) / 2.0;
-                  norm2 += quat_im (q, j) * quat_im (q, j);
                 }
-              quat_re (q) = sqrt(1.0 - norm2);
-
               quat_mult (new_cam->ext.q, q, old_cam->ext.q);
 #else
               for (j = 0; j < 3; ++j)
@@ -1587,14 +1583,11 @@ update_camera_params (camera_param_t *camera_params, extrinsic_param_t *plane_po
           {
 #ifdef USE_INFINITESIMAL_ROTATION
             quaternion_t q;
-            double norm2 = 0.0;
+            quat_re (q) = 1.0;
             for (j = 0; j < 3; ++j)
               {
                 quat_im (q, j) = - cvmGet(rev, plane_off + num_ext_param*i + j, 0) / 2.0;
-                norm2 += quat_im (q, j) * quat_im (q, j);
               }
-            quat_re (q) = sqrt(1.0 - norm2);
-
             quat_mult (new_plane->q, q, old_plane->q);
 #else
             for (j = 0; j < 3; ++j)

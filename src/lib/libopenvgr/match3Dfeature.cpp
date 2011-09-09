@@ -95,67 +95,77 @@ freeMatch3Dresults(Match3Dresults* holder)
   return;
 }
 
-
-//! 不要になった認識結果データの開放
-void
-shrinkMatch3Dresults(Match3Dresults* Match)
+// 原点から position に移動させる 4x4 行列を求める
+static void
+getMatrixMovingFromOrigin(double position[3], CvMat* T)
 {
-  MatchResult* memory = NULL;
-  int num;
-
-  for (num = 0; num < Match->numOfResults; ++num)
-    {
-      if (Match->Results[num].score < 0.0)
-        {
-          break;
-        }
-      Match->Results[num].n = num;
-    }
-
-  if ((memory = (MatchResult*) realloc(Match->Results, num * sizeof(MatchResult))) == NULL)
-    {
-      return;
-    }
-
-  //fprintf(stderr, "shrank %d -> %d\n", Match->numOfResults, num);
-
-  Match->Results = memory;
-  Match->numOfResults = num;
+  cvSetIdentity(T);
+  cvmSet(T, 0, 3, position[0]);
+  cvmSet(T, 1, 3, position[1]);
+  cvmSet(T, 2, 3, position[2]);
+  return;
 }
 
-// smat : 特徴の元姿勢行列 , dmat : 特徴の現姿勢行列 , matrix : 変換行列
+// positionを原点に移動させる 4x4 行列を求める
 static void
-getRTmatrix(double smat[4][4], double dmat[4][4], double mat[4][4])
+getMatrixMovingToOrigin(double position[3], CvMat* T)
 {
-  int i, j, k;
+  cvSetIdentity(T);
+  cvmSet(T, 0, 3, -position[0]);
+  cvmSet(T, 1, 3, -position[1]);
+  cvmSet(T, 2, 3, -position[2]);
+  return;
+}
 
-  // mat = dmat^T (smat^T)^-1
-  for (i = 0; i < 3; ++i)
-    {
-      for (j = 0; j < 3; ++j)
-        {
-          mat[i][j] = 0.0;
-          for (k = 0; k < 3; ++k)
-            {
-              mat[i][j] += dmat[k][i] * smat[k][j];
-            }
-        }
-    }
+// smat : 特徴の元姿勢行列 , dmat : 特徴の現姿勢行列 , src : 元位置, dst : 現位置, matrix : 変換行列
+static void
+getRTmatrix(double smat[4][4], double dmat[4][4], double src[3],
+            double dst[3], double mat[4][4])
+{
+  CvMat Sr;                     // 元姿勢の逆行列
+  CvMat Dr;                     // 現姿勢の逆行列
+  CvMat W;                      // 作業用行列
+  CvMat R;                      // 回転行列
+  CvMat RT;                     // 4x4 回転平行移動行列
+  CvMat s2o;                    // srcを原点へ移動させる平行移動行列
+  CvMat o2d;                    // 原点からdstへ移動させる平行移動行列
+  double Rdata[4][4];           // 回転行列データ配列
+  double Wdata[4][4];           // 作業用行列データ配列
+  double t1dat[4][4];           // 平行移動行列データ配列
+  double t2dat[4][4];           // 平行移動行列データ配列
 
-  for (i = 0; i < 3; ++i)
-    {
-      mat[i][3] = dmat[3][i];
-      for (j = 0; j < 3; ++j)
-        {
-          mat[i][3] -= mat[i][j] * smat[3][j];
-        }
-    }
+  // smat, dmat は本来の意味の転置行列（逆行列）になっている
+  // 従って元姿勢行列を S, 現姿勢行列を D,
+  // 元姿勢から現姿勢への回転を R とすると
+  // D = R*S だから R = D*inv(S)
+  // D -> inv(Dr), inv(S) -> Sr より 
+  // R = inv(Dr)*Sr
 
-  for (i = 0; i < 4; ++i)
-    {
-      mat[3][i] = (i < 3) ? 0.0 : 1.0;
-    }
+  Sr = cvMat(4, 4, CV_64FC1, smat);
+  Dr = cvMat(4, 4, CV_64FC1, dmat);
+  W = cvMat(4, 4, CV_64FC1, Wdata);
 
+  // dmatの逆行列を求める 回転行列なので転置でよい
+  cvTranspose(&Dr, &W);
+
+  // 元姿勢を現姿勢に変換する回転行列を求める
+  R = cvMat(4, 4, CV_64FC1, Rdata);
+  cvMatMul(&W, &Sr, &R);
+
+  // src を原点に移動させる 4x4 行列を求める
+  s2o = cvMat(4, 4, CV_64FC1, t1dat);
+  getMatrixMovingToOrigin(src, &s2o);
+
+  // 原点から dst に移動させる 4x4 行列を求める
+  o2d = cvMat(4, 4, CV_64FC1, t2dat);
+  getMatrixMovingFromOrigin(dst, &o2d);
+
+  // W = R * s2o  元位置を原点に移動して回転
+  cvMatMul(&R, &s2o, &W);
+
+  // RT = o2d * R * s2o  さらに現位置へ移動
+  RT = cvMat(4, 4, CV_64FC1, mat);
+  cvMatMul(&o2d, &W, &RT);
   return;
 }
 
@@ -177,7 +187,8 @@ matchVertex(Vertex* scene, Vertex* model, double diffrate, double mat[4][4])
       return -1;
     }
 
-  getRTmatrix(model->orientation, scene->orientation, mat);
+  getRTmatrix(model->orientation, scene->orientation, 
+              model->position, scene->position, mat);
 
   return 0;
 }
@@ -196,155 +207,14 @@ matchCircle(Circle* scene, Circle* model, double diffrate, double mat[4][4])
       return -1;
     }
 
-  getRTmatrix(model->orientation, scene->orientation, mat);
+  getRTmatrix(model->orientation, scene->orientation,
+              model->center, scene->center, mat);
 
   return 0;
 }
 
-#ifdef USE_DISTANCETRANSFORM
+
 // 頂点による照合
-static Match3Dresults
-matchVertices(Features3D scene, Features3D model,
-              const std::vector<cv::Mat>& dstImages,
-              double tolerance, StereoPairing pairing)
-{
-  Match3Dresults Match = { 0 };
-  MatchResult* memory = NULL;
-  int i, j, status;
-  size_t k, numOfVerResults;
-  double score_weight = 1.0;    // 2円を差別化するために導入
-  double maxnum = (double)scene.numOfVertices * (double)model.numOfVertices;
-
-  if (maxnum > (double)INT_MAX)
-    {
-      numOfVerResults = INT_MAX/sizeof(MatchResult);
-    }
-  else
-    {
-      numOfVerResults = (size_t)maxnum;
-    }
-
-  if ((memory = (MatchResult*) calloc(numOfVerResults, sizeof(MatchResult))) == NULL)
-    {
-      Match.error = VISION_MALLOC_ERROR;
-      return Match;
-    }
-
-  Match.Results = memory;
-  k = 0;
-  for (j = 0; j < model.numOfVertices; j++)
-    {
-      for (i = 0; i < scene.numOfVertices; i++)
-        {
-          status = matchVertex(&scene.Vertices[i], &model.Vertices[j], tolerance, Match.Results[k].mat);
-          if (status == 0)
-            {
-              Match.Results[k].n = k;
-              Match.Results[k].type = 0;
-              Match.Results[k].score = 0.0;
-              Match.Results[k].scene[0] = scene.Vertices[i].n;
-              Match.Results[k].scene[1] = scene.Vertices[i].side;
-              Match.Results[k].model[0] = model.Vertices[j].n;
-              Match.Results[k].model[1] = model.Vertices[j].side;
-              // 認識結果の行列を７次元のベクトル（位置＋回転）としてもあらわす
-              getPropertyVector(Match.Results[k].mat, Match.Results[k].vec);
-              if (++k >= numOfVerResults)
-              {
-                goto breakout;
-              }
-            }
-        }
-    }
-
-breakout:
-  Match.numOfResults = k;
-
-  if (Match.numOfResults)
-    {
-      // 認識結果の評価値を作成する．完全重複した結果は評価しない．
-      getResultScore(Match.Results, k, &model, pairing, dstImages, score_weight);
-
-      shrinkMatch3Dresults(&Match);
-    }
-  else
-    {
-      freeMatch3Dresults(&Match);
-    }
-
-  return Match;
-}
-
-// 単円による照合
-static Match3Dresults
-matchCircles(Features3D scene, Features3D model,
-             const std::vector<cv::Mat>& dstImages,
-             double tolerance, StereoPairing pairing)
-{
-  Match3Dresults Match = { 0 };
-  MatchResult* memory = NULL;
-  int i, j, status;
-  size_t k, numOfCirResults;
-  double score_weight = 1.0;    // 2円を差別化するために導入
-  double maxnum = (double)scene.numOfCircles * (double)model.numOfCircles;
-
-  if (maxnum > (double)INT_MAX)
-    {
-      numOfCirResults = INT_MAX/sizeof(MatchResult);
-    }
-  else
-    {
-      numOfCirResults = (size_t)maxnum;
-    }
-
-  memory = (MatchResult*) calloc(numOfCirResults, sizeof(MatchResult));
-  if (memory != NULL)
-    {
-      Match.Results = memory;
-      k = 0;
-      for (j = 0; j < model.numOfCircles; j++)
-        {
-          for (i = 0; i < scene.numOfCircles; i++)
-            {
-              status = matchCircle(&scene.Circles[i], &model.Circles[j],
-                                   tolerance, Match.Results[k].mat);
-              if (status == 0)
-                {
-                  Match.Results[k].n = k;
-                  Match.Results[k].type = 1;
-                  Match.Results[k].score = 0.0;
-                  Match.Results[k].scene[0] = scene.Circles[i].n;
-                  Match.Results[k].scene[1] = scene.Circles[i].side;
-                  Match.Results[k].model[0] = model.Circles[j].n;
-                  Match.Results[k].model[1] = model.Circles[j].side;
-                  // 認識結果の行列を７次元のベクトル（位置＋回転）としてもあらわす
-                  getPropertyVector(Match.Results[k].mat, Match.Results[k].vec);
-                  if (++k >= numOfCirResults)
-                    {
-                      goto breakout;
-                    }
-                }
-            }
-        }
-    breakout:
-      Match.numOfResults = k;
-      // 認識結果の評価値を作成する．完全重複した結果は評価しない．
-      getResultScore(memory, k, &model, pairing, dstImages, score_weight);
-
-      shrinkMatch3Dresults(&Match);
-    }
-  else
-    {
-      Match.error = VISION_MALLOC_ERROR;
-    }
-
-  if(Match.numOfResults == 0)
-    {
-      freeMatch3Dresults(&Match);
-    }
-
-  return Match;
-}
-#else
 static Match3Dresults
 matchVertices(Features3D scene, Features3D model,
               double tolerance, StereoPairing pairing)
@@ -416,7 +286,7 @@ breakout:
 // 単円による照合
 static Match3Dresults
 matchCircles(Features3D scene, Features3D model,
-             double tolerance, StereoPairing pairing)
+	     double tolerance, StereoPairing pairing)
 {
   Match3Dresults Match = { 0 };
   MatchResult* memory = NULL;
@@ -480,7 +350,6 @@ matchCircles(Features3D scene, Features3D model,
 
   return Match;
 }
-#endif
 
 // 認識結果のマージ
 static int
@@ -537,59 +406,6 @@ mergeMatch3Dresults(Match3Dresults* base, Match3Dresults* append)
   return VISION_MALLOC_ERROR;
 }
 
-#ifdef USE_DISTANCETRANSFORM
-// 距離変換画像の生成
-static void
-createDistanceTranceformImages(const Features3D& model, 
-                               std::vector<cv::Mat>* dstImages)
-{
-  int numCameras;
-  int i, j;
-
-  cv::Mat src_img = cv::Mat::zeros(cv::Size(model.calib->colsize, model.calib->rowsize), CV_8UC1);
-
-  numCameras = 3;
-  for(i = 0; i < numCameras; i++)
-    {
-      cv::Mat dstImage = 
-        cv::Mat::zeros(cv::Size(model.calib->colsize, model.calib->rowsize), CV_32FC1);
-
-      if (model.edge[i] != NULL)
-        {
-          // エッジを0としてセットする
-          for (j = 0; j < model.calib->rowsize * model.calib->colsize; j++)
-            {
-              if (model.edge[i][j] == 0)
-                {
-                  src_img.data[j] = 1;
-                }
-              else
-                {
-                  src_img.data[j] = 0;
-                }
-            }
-          cv::distanceTransform(src_img, dstImage, CV_DIST_L1, 3);
-        }
-
-      dstImages->push_back(dstImage);
-#if 0
-      cv::Mat src_img_norm = 
-        cv::Mat::zeros(cv::Size(model.calib->colsize, model.calib->rowsize), CV_8UC1);
-      cv::Mat dst_img_norm = 
-        cv::Mat::zeros(cv::Size(model.calib->colsize, model.calib->rowsize), CV_8UC1);
-      cv::normalize((*dstImages)[i], dst_img_norm, 0.0, 1.0, CV_MINMAX);
-      cv::normalize(src_img, src_img_norm, 0.0, 255.0, CV_MINMAX);
-      cv::namedWindow("Source", CV_WINDOW_AUTOSIZE);
-      cv::namedWindow("Distance Image", CV_WINDOW_AUTOSIZE);
-      cv::imshow("Source", src_img_norm);
-      cv::imshow("Distance Image", dst_img_norm);
-      cv::waitKey(0);
-#endif
-    }
-
-  return;
-}
-#endif
 
 // 認識：シーン特徴とモデル特徴の照合
 // 戻り値：認識結果
@@ -607,9 +423,6 @@ matchFeatures3d(Features3D& scene,             // シーンの３次元特徴情
   double tolerance1 = parameters.match.tolerance1;
   double tolerance2 = parameters.match.tolerance2;
   StereoPairing pairing = parameters.pairing;
-#ifdef USE_DISTANCETRANSFORM
-  std::vector<cv::Mat> dstImages; // 距離変換画像
-#endif
   int error;
 
   // 認識結果評価用にモデルサンプル点を生成する
@@ -620,27 +433,14 @@ matchFeatures3d(Features3D& scene,             // シーンの３次元特徴情
       return Match;
     }
 
-#ifdef USE_DISTANCETRANSFORM
-  // 距離変換画像の生成
-  createDistanceTranceformImages(model, &dstImages);
-#endif
-
   if (scene.numOfVertices > 0 && model.numOfVertices > 0)
     {
-#ifdef USE_DISTANCETRANSFORM
-      Match = matchVertices(scene, model, dstImages, tolerance1, pairing);
-#else
       Match = matchVertices(scene, model, tolerance1, pairing);
-#endif
     }
 
-  if (Match.error == 0 && scene.numOfCircles > 0 && model.numOfCircles > 1)
+  if (Match.error == 0 && scene.numOfCircles > 0 && model.numOfCircles > 2)
     {
-#ifdef USE_DISTANCETRANSFORM
-      cir2Match = matchPairedCircles(scene, model, dstImages, tolerance2, pairing);
-#else
       cir2Match = matchPairedCircles(scene, model, tolerance2, pairing);
-#endif
       error = mergeMatch3Dresults(&Match, &cir2Match);
       if (error)
         {
@@ -656,11 +456,7 @@ matchFeatures3d(Features3D& scene,             // シーンの３次元特徴情
 
   if (Match.error == 0 && scene.numOfCircles > 0 && model.numOfCircles > 0)
     {
-#ifdef USE_DISTANCETRANSFORM
-      cir1Match = matchCircles(scene, model, dstImages, tolerance2, pairing);
-#else
       cir1Match = matchCircles(scene, model, tolerance2, pairing);
-#endif
       error = mergeMatch3Dresults(&Match, &cir1Match);
       if (error)
         {

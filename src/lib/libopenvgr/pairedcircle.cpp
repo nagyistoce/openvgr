@@ -90,8 +90,9 @@ makeOrientationDataForCirclePair(Circle* c1, Circle* c2,
 
   for (i = 0; i < 3; i++)
     {
-      mat1[0][i] = c1->orientation[2][i];
-      mat2[0][i] = c2->orientation[2][i];
+      mat1[0][i] = c1->normal[i];
+      mat2[0][i] = c2->normal[i];
+      dir[i] = c1->center[i] - c2->center[i];
     }
 
   axis = cvMat(3, 1, CV_64FC1, dir);
@@ -146,11 +147,11 @@ makeOrientationDataForCirclePair(Circle* c1, Circle* c2,
 
   for (i = 0; i < 3; i++)
     {
-      cv1 = c1->orientation[3][i];
+      cv1 = c1->center[i];
       nv1 = mat1[0][i];
       pv1 = mat1[1][i];
       qv1 = mat1[2][i];
-      cv2 = c2->orientation[3][i];
+      cv2 = c2->center[i];
       nv2 = mat2[0][i];
       pv2 = mat2[1][i];
       qv2 = mat2[2][i];
@@ -630,7 +631,7 @@ makePairTable(Circle* mcir, int** cortbl, int tblen, int* nmodel)
 
           {
             // 中心間距離の計算
-            dist = getDistanceV3(mcir[mc1].orientation[3], mcir[mc2].orientation[3]);
+            dist = getDistanceV3(mcir[mc1].center, mcir[mc2].center);
           }
           pairtbl[k].cdist = dist;
           ++k;
@@ -678,8 +679,8 @@ testNormal(Circle* scir, Circle* mcir, double trans[4][4], double diff)
 
   Rmat = cvMat(3, 3, CV_64FC1, rmat);
 
-  snormal = cvMat(3, 1, CV_64FC1, scir->orientation[2]);
-  mnormal = cvMat(3, 1, CV_64FC1, mcir->orientation[2]);
+  snormal = cvMat(3, 1, CV_64FC1, scir->normal);
+  mnormal = cvMat(3, 1, CV_64FC1, mcir->normal);
   rnormal = cvMat(3, 1, CV_64FC1, rn);
 
   // モデルの法線ベクトルに変換行列の回転部分をかける
@@ -718,183 +719,6 @@ calcTransformationMatrix(Circle* sc1, Circle* sc2,
 
 // ２円を使った照合
 // 戻り値：認識結果
-#ifdef USE_DISTANCETRANSFORM
-Match3Dresults
-matchPairedCircles(Features3D& scene,          // シーンの３次元特徴情報
-                   Features3D& model,          // モデルの３次元特徴情報
-                   const std::vector<cv::Mat>& dstImages,
-                   double tolerance,           // 照合の許容値
-                   StereoPairing& pairing)     // ステレオペアの情報
-{
-  Match3Dresults Match = { 0 };
-  MatchResult* memory = NULL;
-  Circle* scenes = NULL;
-  Circle* models = NULL;
-  PairTable* pairtbl = NULL;
-  int** cortbl = NULL;
-  int i, j, k;
-  int nmc, nsc, nm, ns;
-  int* sc1;
-  int* sc2;
-  int m1, m2, s1, s2;
-  int sts;
-  size_t p;
-  size_t maxResultNum;
-  size_t maxAllocNum;
-  size_t addsize;
-  size_t extended;
-  double mcdist, scdist, ddif, mddif;
-  double normthr;
-  double score_weight = 2.0;    // 単円と2円を差別化するために導入
-
-  nmc = model.numOfCircles;
-  nsc = scene.numOfCircles;
-
-  // 円がないときは終了
-  if (nmc <= 1 || nsc <= 1)
-    {
-      return Match;
-    }
-
-  scenes = scene.Circles;
-  models = model.Circles;
-
-  tolerance /= 100.0;
-
-  // モデル円とシーン円で半径の近いものを見つけて対応表を作成
-  cortbl = makeCorrespondenceTable(scenes, models, nsc, nmc, tolerance, &ns);
-  if (cortbl == NULL)
-    {
-      Match.error = VISION_MALLOC_ERROR;
-      goto ending;
-    }
-
-  // シーン円と対応があるモデル円どうしの組合せを取り、中心間距離順に並べる
-  pairtbl = makePairTable(models, cortbl, nmc, &nm);
-  if (pairtbl == NULL || nm == 0)
-    {
-      Match.error = VISION_MALLOC_ERROR;
-      goto ending;
-    }
-
-  // 結果配列数の指定可能な最大値
-  maxAllocNum  = INT_MAX / sizeof(MatchResult);
-  // 結果配列数初期値
-  maxResultNum = 4096;
-  // 結果配列数の拡張時増分値
-  addsize = 1024;
-
-  memory = (MatchResult*) calloc(maxResultNum, sizeof(MatchResult));
-  if (memory == NULL)
-    {
-      Match.error = VISION_MALLOC_ERROR;
-      goto ending;
-    }
-
-  Match.Results = memory;
-
-  // 認識結果の法線角度許容差閾値
-  normthr = cos(90.0 * tolerance * (M_PI / 180.0));
-
-  p = 0;
-  for (i = 0; i < nm; i++)
-    {
-      // モデル組合せの円番号を取得する
-      m1 = pairtbl[i].mc1;
-      m2 = pairtbl[i].mc2;
-      mcdist = pairtbl[i].cdist;
-      // 許容する距離差
-      mddif = mcdist * tolerance;
-      // モデル円に対応するシーン円番号配列を取り出す
-      sc1 = cortbl[m1];
-      sc2 = cortbl[m2];
-      // シーン円番号の組合せを生成する
-      for (j = 0; sc1[j] != -1; j++)
-        {
-          for (k = 0; sc2[k] != -1; k++)
-            {
-              // 同じシーン円についてはスキップ
-              if (sc1[j] == sc2[k])
-                {
-                  continue;
-                }
-
-              // シーン円番号を得る
-              s1 = sc1[j];
-              s2 = sc2[k];
-              // シーン円の中心間距離を求める
-              scdist = getDistanceV3(scenes[s1].orientation[3], scenes[s2].orientation[3]);
-              // 中心間距離がモデルとシーンで異なるものは除外
-              ddif = fabs (mcdist - scdist);
-              if (ddif >= mddif)
-                {
-                  continue;
-                }
-
-              // モデルとシーンの対応が正しいと思えるので位置姿勢を求める
-              sts = calcTransformationMatrix(&scenes[s1], &scenes[s2],
-                                             &models[m1], &models[m2], normthr,
-                                             Match.Results[p].mat);
-              if (sts != 0)
-                {
-                  continue;
-                }
-              Match.Results[p].n = p;
-              Match.Results[p].type = 2;
-              Match.Results[p].score = 0.0;
-              Match.Results[p].scene[0] = scenes[s1].n;
-              Match.Results[p].scene[1] = scenes[s2].n;
-              Match.Results[p].model[0] = models[m1].n;
-              Match.Results[p].model[1] = models[m2].n;
-              // 認識結果の行列を７次元のベクトル（位置＋回転）としてもあらわす
-              getPropertyVector(Match.Results[p].mat, Match.Results[p].vec);
-              // 結果配列数が不足したら拡張する
-              if (++p >= maxResultNum)
-                {
-                  extended = maxResultNum + addsize;
-                  // 指定可能な最大値を越えるときは拡張中止
-                  if (extended > maxAllocNum)
-                    {
-                      goto outOfLoop;
-                    }
-                  maxResultNum = extended;
-                  extended *= sizeof(MatchResult);
-                  memory = (MatchResult*) realloc(Match.Results, extended);
-                  // 拡張できなかったときはそこまでの結果を出す
-                  if (memory != NULL)
-                    {
-                      Match.Results = memory;
-                    }
-                  else
-                    {
-                      goto outOfLoop;
-                    }
-                }
-            }
-        }
-    }
-
-outOfLoop:
-
-  if (p)
-    {
-      Match.numOfResults = p;
-      // 認識結果の評価値を作成する．完全重複した結果は評価しない．
-      getResultScore(Match.Results, p, &model, pairing, dstImages, score_weight);
-
-      shrinkMatch3Dresults(&Match);
-    }
-  else
-    {
-      freeMatch3Dresults(&Match);
-    }
-
-ending:
-  freeCorrespondenceTable(cortbl, nmc);
-  freePairTable(pairtbl, nm);
-  return Match;
-}
-#else
 Match3Dresults
 matchPairedCircles(Features3D& scene,          // シーンの３次元特徴情報
                    Features3D& model,          // モデルの３次元特徴情報
@@ -998,7 +822,7 @@ matchPairedCircles(Features3D& scene,          // シーンの３次元特徴情
               s1 = sc1[j];
               s2 = sc2[k];
               // シーン円の中心間距離を求める
-              scdist = getDistanceV3(scenes[s1].orientation[3], scenes[s2].orientation[3]);
+              scdist = getDistanceV3(scenes[s1].center, scenes[s2].center);
               // 中心間距離がモデルとシーンで異なるものは除外
               ddif = fabs (mcdist - scdist);
               if (ddif >= mddif)
@@ -1072,4 +896,3 @@ ending:
   freePairTable(pairtbl, nm);
   return Match;
 }
-#endif

@@ -1,9 +1,10 @@
-/* -*- C++ -*-
+/*
  MultiCamera.cpp
 
  Copyright (c) 2011 AIST  All Rights Reserved.
  Eclipse Public License v1.0 (http://www.eclipse.org/legal/epl-v10.html)
 */
+// -*- C++ -*-
 /*!
  * @file  MultiCamera.cpp
  * @brief Output simultaneously captured images
@@ -38,8 +39,6 @@ static const char* multicamera_spec[] =
     "conf.default.camera_setting_file", "ieee1394board.0",
     "conf.default.camera_calib_file", "camera_calib.yaml",
     "conf.default.camera_set_id", "1",
-    "conf.default.trigger_mode", "0",
-    "conf.default.ieee1394b_mode", "1",
     ""
   };
 // </rtc-template>
@@ -55,7 +54,6 @@ MultiCamera::MultiCamera(RTC::Manager* manager)
     m_controlPort("control"),
     m_cmd(*this),
     m_continuous_mode(false),
-    m_num_required_images(0),
     m_frames(NULL)
 
     // </rtc-template>
@@ -91,17 +89,19 @@ RTC::ReturnCode_t MultiCamera::onInitialize()
   // </rtc-template>
 
   // <rtc-template block="bind_config">
-  // Bind native variables and configuration variable
+  // Bind variables and configuration variable
   bindParameter("camera_setting_file", m_camera_setting_file, "ieee1394board.0");
   bindParameter("camera_calib_file", m_camera_calib_file, "camera_calib.yaml");
   bindParameter("camera_set_id", m_camera_set_id, "1");
-  bindParameter("trigger_mode", m_trigger_mode, "0");
-  bindParameter("ieee1394b_mode", m_ieee1394b_mode, "1");
   
   // </rtc-template>
 
   /* initialize m_cap */
-  m_cap = CAPTURE_INIT_VAL;
+  m_cap.num_cameras = 0;
+  m_cap.dc1394_cxt  = NULL;
+  m_cap.camera_list = NULL;
+  m_cap.num_active  = 0;
+  m_cap.cameras     = NULL;
 
   pthread_rwlock_init(&m_rwlock_frames, NULL);
 
@@ -142,12 +142,11 @@ RTC::ReturnCode_t MultiCamera::onActivated(RTC::UniqueId ec_id)
 {
   /* setup camera structures */
   int status;
-  status = capture_init(&m_cap, 1);
+  status = capture_init(&m_cap);
   if (status != CAPTURE_SUCCESS) {
     return RTC::RTC_ERROR;
   }
 
-  m_cap.prefer_bmode = m_ieee1394b_mode;
   status = capture_setup(&m_cap, m_camera_setting_file.c_str());
   if (status != CAPTURE_SUCCESS) {
     std::cerr << "capture_setup() failed." << std::endl;
@@ -221,17 +220,8 @@ RTC::ReturnCode_t MultiCamera::onExecute(RTC::UniqueId ec_id)
 {
   capture();
 
-  switch (m_trigger_mode) {
-  case trigger_mode_multi_shot:
-    if (--m_num_required_images < 1) {
-      break;
-    }
-
-  case trigger_mode_continuous:
+  if (m_continuous_mode) {
     m_imagesOut.write();
-
-  default:
-    ;
   }
   return RTC::RTC_OK;
 }

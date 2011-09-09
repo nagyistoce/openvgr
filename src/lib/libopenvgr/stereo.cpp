@@ -9,7 +9,6 @@
  * @brief ステレオ処理関連関数
  * @date \$Date::                            $
  */
-#include "common.h"
 #include "stereo.h"
 #include "vectorutil.h"
 #include "rtvcm.h"
@@ -21,19 +20,18 @@
 static void
 convertVertexS(VertexCandidate src, Vertex& dst, int num)
 {
-  double vangle, position[3] = {0.0, 0.0, 0.0};
+  double vangle;
   CvMat vec1, vec2;
   CvMat normal, bisector, perpendicular;
   int i;
 
-  for (i = 0; i < 3; ++i)
-    {
-      dst.endpoint1[i] = src.endpoint1[i] - src.position[i];
-      dst.endpoint2[i] = src.endpoint2[i] - src.position[i];
-    }
+  // 元の情報をコピーする
+  copyV3(src.position, dst.position);
+  copyV3(src.endpoint1, dst.endpoint1);
+  copyV3(src.endpoint2, dst.endpoint2);
   // 頂点を構成する線分の単位方向ベクトルを求める
-  getDirectionVector(position, dst.endpoint1, dst.direction1, &vec1);
-  getDirectionVector(position, dst.endpoint2, dst.direction2, &vec2);
+  getDirectionVector(dst.position, dst.endpoint1, dst.direction1, &vec1);
+  getDirectionVector(dst.position, dst.endpoint2, dst.direction2, &vec2);
   // 頂点を構成する線分の成す角を求める
   vangle = cvDotProduct(&vec1, &vec2);
   vangle = (acos(vangle) / M_PI) * 180.0;
@@ -50,8 +48,11 @@ convertVertexS(VertexCandidate src, Vertex& dst, int num)
   // 頂点の法線と中線の両方に直交する軸の方向を求める
   perpendicular = cvMat(3, 1, CV_64FC1, dst.orientation[0]);
   cvCrossProduct(&bisector, &normal, &perpendicular);
-  // 平行移動成分
-  copyV3(src.position, dst.orientation[3]);
+  // 同次行列にする
+  for (i = 0; i < 3; ++i)
+    {
+      dst.orientation[3][i] = 0.0;
+    }
   dst.orientation[3][3] = 1.0;
   // 特徴の通し番号を設定
   dst.n = num;
@@ -70,11 +71,13 @@ convertCircleS(CircleCandidate src, Circle& dst, int num)
 
   // 元の情報をコピーする
   dst.radius = src.radius;
-  copyV3(src.normal, dst.orientation[2]);
+  copyV3(src.center, dst.center);
+  copyV3(src.normal, dst.normal);
+  copyV3(src.normal, dst.orientation[0]);
 
   axis = cvMat(3, 1, CV_64FC1, adata);
-  normal = cvMat(3, 1, CV_64FC1, dst.orientation[2]);
-  dir1 = cvMat(3, 1, CV_64FC1, dst.orientation[0]);
+  normal = cvMat(3, 1, CV_64FC1, dst.orientation[0]);
+  dir1 = cvMat(3, 1, CV_64FC1, dst.orientation[1]);
 
   for (i = 0; i < 3; i++)
     {
@@ -98,19 +101,16 @@ convertCircleS(CircleCandidate src, Circle& dst, int num)
       return;
     }
 
-  dir2 = cvMat(3, 1, CV_64FC1, dst.orientation[1]);
+  dir2 = cvMat(3, 1, CV_64FC1, dst.orientation[2]);
   // normal と dir1 に直交するベクトルを dir2 に返す
   cvCrossProduct(&normal, &dir1, &dir2);
   cvNormalize(&dir2, &dir2);
 
-  // 円の法線
+  // 同次行列にする
   for (i = 0; i < 3; ++i)
     {
-      dst.normal[i] = (i != 0) ? 0.0 : 1.0; // 法線はx軸
+      dst.orientation[3][i] = 0.0;
     }
-
-  // 平行移動成分
-  copyV3(src.center, dst.orientation[3]);
   dst.orientation[3][3] = 1.0;
 
   // 特徴の通し番号を設定
@@ -120,14 +120,114 @@ convertCircleS(CircleCandidate src, Circle& dst, int num)
   return;
 }
 
-//ステレオ対応点から３次元座標を計算するの2
-//戻り値：再投影誤差の平均
+// 歪み補正点座標(X', Y')より視線ベクトルを計算する
+void
+calculateSightVector(double* SightVector,      // 視線ベクトル
+                     Data_2D icPos,            // 歪み補正点座標
+                     CameraParam* cameraParam) // カメラパラメータ
+{
+  double sWT[3];                // 歪み補正後の画像上の位置
+
+  sWT[0] = icPos.col;
+  sWT[1] = icPos.row;
+  sWT[2] = 1.0;
+  mulM33V3(cameraParam->rRotation, sWT, SightVector);
+  // 視線ベクトルを正規化する
+  normalizeV3(SightVector, SightVector);
+
+  return;
+}
+
+//ステレオ対応点から３次元座標を計算する
+//戻り値：復元誤差＝２つの視線（エピポーラ線）間の距離
 double
 calculateLR2XYZ(double position3D[3],          // 出力３次元座標
                 Data_2D posL,                  // 左画像上の対応点座標
                 Data_2D posR,                  // 右画像上の対応点座標
                 CameraParam* camParamL,        // 左画像のカメラパラメータ
                 CameraParam* camParamR)        // 右画像のカメラパラメータ
+{
+  Data_2D icPos;
+  double sightVectorL[3], sightVectorR[3];
+  double ip;                    /* 視線ベクトルの内積 */
+  double directionLtoR[3];      /* 左カメラの焦点位置から右カメラの焦点位置を見込んだベクトル */
+  double iL;                    /* 左視線と LtoRDirection の内積 */
+  double iR;                    /* 右視線と LtoRDirection の内積 */
+  double D;                     /* 行列の判別式 */
+  double dL;                    /* 視線上にあって、対象物の点までの最近傍点と、カメラ焦点からの距離 */
+  double dR;                    /* 視線上にあって、対象物の点までの最近傍点と、カメラ焦点からの距離 */
+  int i;                        /* ベクトル計算での引数 */
+  double positionL[3];          /* 左視線上の、対象物の点までの最近傍点 */
+  double positionR[3];          /* 右視線上の、対象物の点までの最近傍点 */
+
+  double* camPositionL = camParamL->Position;
+  double* camPositionR = camParamR->Position;
+
+  backprojectPoint(&icPos, posL, camParamL);
+  calculateSightVector(sightVectorL, icPos, camParamL);
+
+  backprojectPoint(&icPos, posR, camParamR);
+  calculateSightVector(sightVectorR, icPos, camParamR);
+
+  /* 内積を取る */
+  ip = getInnerProductV3(sightVectorL, sightVectorR);
+
+  /* dL, dR は視線上にあって、対象物の点のまでの最近傍点と、カメラ焦点からの距離
+   * 
+   *   eL・eL  -eL・eR      dL        eL・(cR - cL)
+   * (                 ) (      ) = (               )
+   *  -eL・eR   eR・eR      dR       -eR・(cR - cL)
+   * 
+   *              ↓
+   * 
+   *      1  -ip      dL       iL
+   * (            ) (    ) = (    )
+   *     -ip   1      dR       iR
+   * 
+   *              ↓
+   *
+   *   dL       1        1  ip     iL
+   * (    ) =  ------- (       ) (    )
+   *   dR      1-ip^2    ip  1     iR
+   */
+  subV3(camPositionR, camPositionL, directionLtoR);
+  iL = getInnerProductV3(sightVectorL, directionLtoR);
+  iR = -getInnerProductV3(sightVectorR, directionLtoR);
+  D = 1 - ip * ip;
+
+  if (D != 0.0)
+    {                           /* 視線が並行ではない場合 */
+      dL = (iL + ip * iR) / D;
+      dR = (iR + ip * iL) / D;
+    }
+  else
+    {
+      dL = dR = 0.0;            /* 視線が並行になってしまった場合 (本当は無限遠の位置になる) */
+    }
+
+  for (i = 0; i < 3; i++)
+    {
+      positionL[i] = dL * sightVectorL[i] + camPositionL[i];
+      positionR[i] = dR * sightVectorR[i] + camPositionR[i];
+    }
+
+  /* 対象物の位置は２点の中点 */
+  for (i = 0; i < 3; i++)
+    {
+      position3D[i] = (positionL[i] + positionR[i]) / 2.0;
+    }
+
+  return getDistanceV3(positionL, positionR);
+}
+
+//ステレオ対応点から３次元座標を計算するの2
+//戻り値：再投影誤差の平均
+double
+calculateLR2XYZ2(double position3D[3],          // 出力３次元座標
+                 Data_2D posL,                  // 左画像上の対応点座標
+                 Data_2D posR,                  // 右画像上の対応点座標
+                 CameraParam* camParamL,        // 左画像のカメラパラメータ
+                 CameraParam* camParamR)        // 右画像のカメラパラメータ
 {
   double (*R[2])[3] = {camParamL->Rotation, camParamR->Rotation};
   double *t[2] = {camParamL->Translation, camParamR->Translation};
@@ -172,120 +272,6 @@ calculateLR2XYZ(double position3D[3],          // 出力３次元座標
   return error;
 }
 
-// 対応する2組の線から3次元平面を求める
-double calculatePlane3D(double plane3D[4],             // ３次元平面
-                        const double l11[3],           // 左画像上の対応線1
-                        const double l12[3],           // 左画像上の対応線2
-                        const double l21[3],           // 右画像上の対応線1
-                        const double l22[3],           // 右画像上の対応線2
-                        const CameraParam* camParamL,  // 左画像のカメラパラメータ
-                        const CameraParam* camParamR)  // 右画像のカメラパラメータ
-{
-  cv::Mat P[2] = {cv::Mat(3, 4, CV_64FC1), cv::Mat(3, 4, CV_64FC1)};
-  const CameraParam* cp[2] = {camParamL, camParamR};
-
-  // 射影行列を計算する
-  for (int i = 0; i < 2; ++i)
-    {
-      for (int j = 0; j < 3; ++j)
-        {
-          for (int k = 0; k < 3; ++k)
-            {
-              P[i].at<double>(j, k) = 0.0;
-              for (int l = 0; l < 3; ++l)
-                {
-                  P[i].at<double>(j, k) += cp[i]->intrinsicMatrix[j][l] * cp[i]->Rotation[l][k];
-                }
-            }
-
-          P[i].at<double>(j, 3) = 0.0;
-          for (int k = 0; k < 3; ++k)
-            {
-              P[i].at<double>(j, 3) += cp[i]->intrinsicMatrix[j][k] * cp[i]->Translation[k];
-            }
-        }
-    }
-
-  cv::Mat M(4, 4, CV_64FC1);
-  cv::Mat ml[2][2] = {{cv::Mat(1, 3, CV_64FC1, const_cast<double*>(l11)),
-                       cv::Mat(1, 3, CV_64FC1, const_cast<double*>(l12))},
-                      {cv::Mat(1, 3, CV_64FC1, const_cast<double*>(l21)),
-                       cv::Mat(1, 3, CV_64FC1, const_cast<double*>(l22))}};
-
-  // 対応線から3次元直線を計算
-  for (int i = 0; i < 2; ++i)
-    {
-      cv::Mat L(2, 4, CV_64FC1);
-
-      for (int j = 0; j < 2; ++j)
-        {
-          L.row(j) = ml[j][i] * P[j];
-        }
-
-      cv::SVD svd(L, cv::SVD::MODIFY_A | cv::SVD::FULL_UV);
-
-      for (int j = 0; j < 2; ++j)
-        {
-          for (int k = 0; k < 4; ++k)
-            {
-              M.at<double>(2*i + j, k) = svd.vt.at<double>(2 + j, k);
-            }
-        }
-    }
-
-  // 2本の3次元直線を含む平面を算出
-  cv::SVD svd(M, cv::SVD::MODIFY_A);
-
-#if 0
-  printf("singular value: ");
-  for (int i = 0; i < 4; ++i)
-    {
-      printf("% 10.3g ", svd.w.at<double>(i, 0));
-    }
-  printf("\n");
-
-  for (int i = 0; i < 4; ++i)
-    {
-      for (int j = 0; j < 4; ++j)
-        {
-          printf("% 10.3g ", svd.vt.at<double>(i, j));
-        }
-      printf("\n");
-    }
-  printf("\n");
-#endif
-
-  // 計算結果を代入
-  double norm = 0.0;
-  for (int i = 0; i < 3; ++i)
-    {
-      norm += svd.vt.at<double>(3, i) * svd.vt.at<double>(3, i);
-    }
-  norm = sqrt(norm);
-
-  if (norm >= VISION_EPS)
-    {
-      if (svd.vt.at<double>(3, 3) > 0.0)
-        {
-          norm = -norm;
-        }
-
-      for (int i = 0; i < 4; ++i)
-        {
-          plane3D[i] = svd.vt.at<double>(3, i) / norm;
-        }
-    }
-  else
-    {
-      plane3D[0] = plane3D[1] = plane3D[2] = 0.0;
-      plane3D[3] = 1.0;
-    }
-
-  //printf("plane: % 10.3g % 10.3g % 10.3g % 10.3g\n", plane3D[0], plane3D[1], plane3D[2], plane3D[3]);
-
-  return svd.w.at<double>(3, 0);
-}
-
 // ３次元点の２次元画像上への投影点座標を求める
 void
 projectXYZ2LR(Data_2D* pos2D,                  // ２次元画像上の投影点座標
@@ -322,12 +308,12 @@ freeStereoData(StereoData* stereo)
 StereoData
 StereoCorrespondence(StereoPairing pairing,    // ステレオペア情報
                      CalibParam calib,         // キャリブレーションデータ
-                     Features2D_old* left,     // 左画像の２次元特徴
-                     Features2D_old* right,    // 右画像の２次元特徴
+                     Features2D* left,         // 左画像の２次元特徴
+                     Features2D* right,        // 右画像の２次元特徴
                      Parameters parameters)    // 全パラメータ
 {
-  Feature2D_old* Lfeature;
-  Feature2D_old* Rfeature;
+  Feature2D* Lfeature;
+  Feature2D* Rfeature;
   StereoData stereo = { 0 };
   double colL, rowL;
   double colR, rowR;
@@ -795,86 +781,6 @@ setFeature3D_TBLAND(StereoData& stereoLR,     // ＬＲペアのステレオ対�
               k += 2;
             }
         }
-    }
-
-  return true;
-}
-
-// ステレオ処理結果を３次元特徴構造体へセットする
-bool
-set_circle_to_OldFeature3D(const std::vector<CircleCandidate>& candidates,
-                           Features3D* feature)
-{
-  size_t numOfcircles = 0;
-  size_t i, j;
-
-  numOfcircles = candidates.size();
-
-  if (numOfcircles == 0)
-    {
-      return true;
-    }
-
-  // 表裏の特徴をつくるため元の２倍の領域を確保する
-  feature->numOfCircles = numOfcircles * 2;
-
-  feature->Circles = (Circle*) calloc(feature->numOfCircles, sizeof(Circle));
-  if (feature->Circles == NULL)
-    {
-      free(feature->Vertices);
-      feature->Vertices = NULL;
-      return false;
-    }
-
-
-  j = 0;
-  for (i = 0; i < candidates.size(); i++)
-    {
-      // 有効な円特徴をコピーする
-      // 表の特徴を作成
-      convertCircleS(candidates[i], feature->Circles[j], (int) (j / 2));
-      // 裏の特徴を作成
-      reverseCircle(feature->Circles[j], feature->Circles[j + 1]);
-      j += 2;
-    }
-
-  return true;
-}
-
-// 頂点のステレオ処理結果を３次元特徴構造体へセットする
-bool
-set_vertex_to_OldFeature3D(const std::vector<VertexCandidate>& candidates,
-                           Features3D* feature)
-{
-  size_t numOfvertices = 0;
-  size_t i, j;
-
-  numOfvertices = candidates.size();
-
-  if (numOfvertices == 0)
-    {
-      return true;
-    }
-
-  // 表裏の特徴をつくるため元の２倍の領域を確保する
-  feature->numOfVertices = numOfvertices * 2;
-
-  feature->Vertices = (Vertex*) calloc(feature->numOfVertices, sizeof(Vertex));
-  if (feature->Vertices == NULL)
-    {
-      return false;
-    }
-
-
-  j = 0;
-  for (i = 0; i < candidates.size(); i++)
-    {
-      // 有効な円特徴をコピーする
-      // 表の特徴を作成
-      convertVertexS(candidates[i], feature->Vertices[j], (int) (j / 2));
-      // 裏の特徴を作成
-      reverseVertex(feature->Vertices[j], feature->Vertices[j + 1]);
-      j += 2;
     }
 
   return true;

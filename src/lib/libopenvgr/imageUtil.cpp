@@ -490,13 +490,19 @@ convertTimedMultiCameraImageToRecogImage(const Img::TimedMultiCameraImage& frame
       if (channelNum == 3)
         {
           // カラー画像
-          for (j = 0; j < imageSize; j++)
+          for (j = 0; j < imageSize; j += 3)
             {
               colorImage->pixel[j] =
+                (unsigned char) frame.data.image_seq[i].image.raw_data[j + 2];
+              colorImage->pixel[j + 1] =
+                (unsigned char) frame.data.image_seq[i].image.raw_data[j + 1];
+              colorImage->pixel[j + 2] =
                 (unsigned char) frame.data.image_seq[i].image.raw_data[j];
             }
+
           // グレー画像に変換する。
           rgb2grayImage(*(resultImage + i), colorImage);
+
         }
       else if (channelNum == 1)
         {

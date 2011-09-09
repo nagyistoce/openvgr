@@ -18,7 +18,6 @@
 #include "vectorutil.h"
 #include "rtvcm.h"
 #include "visionErrorCode.h"
-#include "circle.h"
 
 using namespace std;
 
@@ -370,64 +369,40 @@ errorEnding:
 static void
 convertVertex(RTVCM_Vertex src, Vertex& dst)
 {
-  double endpoint[2][3];
-  double length[2];
   double vangle;
+  CvMat vec1, vec2;
+  CvMat normal, bisector, perpendicular;
   int i;
 
-  // 端点の頂点に対する相対座標
-  for (i = 0; i < 3; ++i)
-    {
-      endpoint[0][i] = src.endpoint1[i] - src.position[i];
-      endpoint[1][i] = src.endpoint2[i] - src.position[i];
-    }
-
-  length[0] = getNormV3(endpoint[0]);
-  length[1] = getNormV3(endpoint[1]);
-
-  normalizeV3(endpoint[0], endpoint[0]);
-  normalizeV3(endpoint[1], endpoint[1]);
-
+  // 元の情報をコピーする
+  copyV3(src.position, dst.position);
+  copyV3(src.endpoint1, dst.endpoint1);
+  copyV3(src.endpoint2, dst.endpoint2);
+  // 頂点を構成する線分の単位方向ベクトルを求める
+  getDirectionVector(dst.position, dst.endpoint1, dst.direction1, &vec1);
+  getDirectionVector(dst.position, dst.endpoint2, dst.direction2, &vec2);
   // 頂点を構成する線分の成す角を求める
-  vangle = acos(getInnerProductV3(endpoint[0], endpoint[1]));
-  dst.angle = vangle * 180.0 / M_PI;
-
+  vangle = cvDotProduct(&vec1, &vec2);
+  vangle = (acos(vangle) / M_PI) * 180.0;
+  dst.angle = vangle;
   // 以下の３つのベクトルを用いて姿勢を表す行列をつくる
   // 頂点の法線を求める
-  getCrossProductV3(endpoint[0], endpoint[1], dst.orientation[2]);
-  normalizeV3(dst.orientation[2], dst.orientation[2]);
-
+  normal = cvMat(3, 1, CV_64FC1, dst.orientation[2]);
+  cvCrossProduct(&vec1, &vec2, &normal);
   // 頂点を構成する線分が成す角の２等分線（単位方向ベクトルの中線）を求める
-  addV3(endpoint[0], endpoint[1], dst.orientation[1]);
-  normalizeV3(dst.orientation[1], dst.orientation[1]);
-
+  bisector = cvMat(3, 1, CV_64FC1, dst.orientation[1]);
+  cvAdd(&vec1, &vec2, &bisector);
+  cvScale(&bisector, &bisector, 0.5);
+  cvNormalize(&bisector, &bisector);
   // 頂点の法線と中線の両方に直交する軸の方向を求める
-  getCrossProductV3(dst.orientation[1], dst.orientation[2], dst.orientation[0]);
-
-  // 端点の座標を代入する
-  dst.endpoint1[0] = length[0] * sin(vangle / 2.0);
-  dst.endpoint1[1] = length[0] * cos(vangle / 2.0);
-  dst.endpoint1[2] = 0.0;
-
-  dst.endpoint2[0] = length[1] * -sin(vangle / 2.0);
-  dst.endpoint2[1] = length[1] * cos(vangle / 2.0);
-  dst.endpoint2[2] = 0.0;
-
-  // 頂点を構成する線分の単位方向ベクトルを求める
-  normalizeV3(dst.endpoint1, dst.direction1);
-  normalizeV3(dst.endpoint2, dst.direction2);
-
-  // 平行移動成分
+  perpendicular = cvMat(3, 1, CV_64FC1, dst.orientation[0]);
+  cvCrossProduct(&bisector, &normal, &perpendicular);
+  // 同次行列にする
   for (i = 0; i < 3; ++i)
     {
-      dst.orientation[3][i] = src.position[i];
+      dst.orientation[3][i] = 0.0;
     }
-
-  for (i = 0; i < 4; ++i)
-    {
-      dst.orientation[i][3] = (i < 3) ? 0.0 : 1.0;
-    }
-
+  dst.orientation[3][3] = 1.0;
   // 特徴の通し番号を設定
   dst.n = src.n;
   dst.side = M3DF_FRONT;
@@ -444,23 +419,22 @@ reverseVertex(Vertex src,      // ３次元頂点データ
   // 元の情報をコピーする
   dst.n = src.n;
   dst.angle = src.angle;
-  // 反対向きの情報をコピーする
-  for (i = 0; i < 3; ++i)
-    {
-      dst.endpoint1[i] = ((i != 1) ? -1.0 : 1.0) * src.endpoint1[i];
-      dst.endpoint2[i] = ((i != 1) ? -1.0 : 1.0) * src.endpoint2[i];
-      dst.direction1[i] = ((i != 1) ? -1.0 : 1.0) * src.direction1[i];
-      dst.direction2[i] = ((i != 1) ? -1.0 : 1.0) * src.direction2[i];
-    }
+  copyV3(src.position, dst.position);
+  // 反対向きに情報をコピーする
+  copyV3(src.endpoint2, dst.endpoint1);
+  copyV3(src.endpoint1, dst.endpoint2);
+  copyV3(src.direction2, dst.direction1);
+  copyV3(src.direction1, dst.direction2);
   // 反対向きの姿勢行列をつくる
   copyV3(src.orientation[1], dst.orientation[1]);
-  copyV3(src.orientation[3], dst.orientation[3]);
+  //copyV3( src.orientation[3], dst.orientation[3] );
   mulV3S(-1.0, src.orientation[2], dst.orientation[2]);
   mulV3S(-1.0, src.orientation[0], dst.orientation[0]);
-  for (i = 0; i < 4; ++i)
+  for (i = 0; i < 3; ++i)
     {
-      dst.orientation[i][3] = (i < 3) ? 0.0 : 1.0;
+      dst.orientation[3][i] = 0.0;
     }
+  dst.orientation[3][3] = 1.0;
   dst.side = M3DF_BACK;
   return;
 }
@@ -469,28 +443,53 @@ reverseVertex(Vertex src,      // ３次元頂点データ
 static void
 convertCircle(RTVCM_Circle src, Circle& dst)
 {
-  int i;
+  CvMat axis, normal, dir1, dir2;
+  double adata[3];
+  int i, sts;
 
   // 元の情報をコピーする
   dst.radius = src.radius;
-  copyV3(src.normal, dst.orientation[2]);
+  copyV3(src.center, dst.center);
+  copyV3(src.normal, dst.normal);
+  copyV3(src.normal, dst.orientation[0]);
 
-  // 法線と直交するベクトルを求める
-  calc_3d_axes_of_circle(dst.orientation[0], dst.orientation[1], dst.orientation[2], NULL);
+  axis = cvMat(3, 1, CV_64FC1, adata);
+  normal = cvMat(3, 1, CV_64FC1, dst.orientation[0]);
+  dir1 = cvMat(3, 1, CV_64FC1, dst.orientation[1]);
 
-  // 円の法線
+  for (i = 0; i < 3; i++)
+    {
+      cvSetZero(&axis);
+      // x, y, z 軸の単位方向ベクトルを順に試す
+      cvmSet(&axis, i, 0, 1.0);
+      // axis と normal に直交するベクトルを dir1 に返す
+      sts = getOrthogonalDir(&axis, &normal, &dir1);
+      // うまくいったらループから出る
+      if (sts == 0)
+        {
+          break;
+        }
+    }
+
+  if (sts == -1)
+    {
+      cvSetZero(&axis);
+      cvSetZero(&normal);
+      cvSetZero(&dir1);
+      return;
+    }
+
+  dir2 = cvMat(3, 1, CV_64FC1, dst.orientation[2]);
+  // normal と dir1 に直交するベクトルを dir2 に返す
+  cvCrossProduct(&normal, &dir1, &dir2);
+  cvNormalize(&dir2, &dir2);
+
+  // 同次行列にする
   for (i = 0; i < 3; ++i)
     {
-      dst.normal[i] = (i != 2) ? 0.0 : 1.0; // 法線はz軸
+      dst.orientation[3][i] = 0.0;
     }
-
-  // 平行移動成分
-  copyV3(src.center, dst.orientation[3]);
-  
-  for (i = 0; i < 4; ++i)
-    {
-      dst.orientation[i][3] = (i < 3) ? 0.0 : 1.0;
-    }
+  dst.orientation[3][3] = 1.0;
 
   // 特徴の通し番号を設定
   dst.n = src.n;
@@ -508,16 +507,18 @@ reverseCircle(Circle src,      // ３次元円データ
   // 元の情報をコピーする
   dst.n = src.n;
   dst.radius = src.radius;
-  copyV3(src.normal, dst.normal);
-  copyV3(src.orientation[1], dst.orientation[1]);
-  copyV3(src.orientation[3], dst.orientation[3]);
+  copyV3(src.center, dst.center);
+  copyV3(src.orientation[2], dst.orientation[2]);
   // 反対向きの情報をコピーする
-  mulV3S(-1.0, src.orientation[0], dst.orientation[0]);
-  mulV3S(-1.0, src.orientation[2], dst.orientation[2]);
-  for (i = 0; i < 4; ++i)
+  mulV3S(-1.0, src.orientation[1], dst.orientation[1]);
+  mulV3S(-1.0, src.normal, dst.normal);
+  copyV3(dst.normal, dst.orientation[0]);
+  // 同次行列にする
+  for (i = 0; i < 3; ++i)
     {
-      dst.orientation[i][3] = (i < 3) ? 0.0 : 1.0;
+      dst.orientation[3][i] = 0.0;
     }
+  dst.orientation[3][3] = 1.0;
   dst.side = M3DF_BACK;
   return;
 }
@@ -527,9 +528,11 @@ int
 convertRTVCMtoFeatures3D(RTVCM rtvcm,          // モデルデータ
                          Features3D& feature)  // ３次元特徴データ
 {
-  int numOfVertices, numOfCircles, i;
+  int numOfVertices, numOfCircles, i, j;
 
-  numOfVertices = rtvcm.nvertex;
+  // 表裏の特徴をつくるため元の２倍の領域を確保する
+
+  numOfVertices = rtvcm.nvertex * 2;
   if (numOfVertices)
     {
       feature.Vertices = (Vertex*) calloc(numOfVertices, sizeof(Vertex));
@@ -539,7 +542,7 @@ convertRTVCMtoFeatures3D(RTVCM rtvcm,          // モデルデータ
         }
     }
 
-  numOfCircles = rtvcm.ncircle;
+  numOfCircles = rtvcm.ncircle * 2;
   if (numOfCircles)
     {
       feature.Circles = (Circle*) calloc(numOfCircles, sizeof(Circle));
@@ -556,12 +559,20 @@ convertRTVCMtoFeatures3D(RTVCM rtvcm,          // モデルデータ
 
   for (i = 0; i < rtvcm.nvertex; i++)
     {
-      convertVertex(rtvcm.vertex[i], feature.Vertices[i]);
+      j = i * 2;
+      // 表の特徴を作成
+      convertVertex(rtvcm.vertex[i], feature.Vertices[j]);
+      // 裏の特徴を作成
+      reverseVertex(feature.Vertices[j], feature.Vertices[j + 1]);
     }
 
   for (i = 0; i < rtvcm.ncircle; i++)
     {
-      convertCircle(rtvcm.circle[i], feature.Circles[i]);
+      j = i * 2;
+      // 表の特徴を作成
+      convertCircle(rtvcm.circle[i], feature.Circles[j]);
+      // 裏の特徴を作成
+      reverseCircle(feature.Circles[j], feature.Circles[j + 1]);
     }
 
   return 0;

@@ -24,11 +24,11 @@ OutputCandNum		20
 #
 # エッジ検出アルゴリズム
 #
-EdgeDetectFunction	1
+EdgeDetectFunction	0
 #
 # 検出するエッジの最低微分強度
 #
-EdgeStrength		720
+EdgeStrength		50
 #
 # 直線を当てはめるときの最大誤差
 #
@@ -82,11 +82,5 @@ StereoError		5.0
 #
 # 認識評価時のエッジ強度閾値
 #
-MatchEdge		720
+MatchEdge		30
 
-IW_Condition   0
-IW_MinLength   20
-IW_MinShortRad 2.0
-IW_ThMeanError 0.4
-IW_ThMaxError  2.0
-IW_OffsetMode  0

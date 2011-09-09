@@ -33,10 +33,4 @@ int extractEdge(unsigned char *edge,    // エッジ画像
                 const int threshold,    // エッジ閾値
                 Parameters parameters); // 全パラメータ
 
-// エッジ点を検出するプログラムその2
-void extractEdge_new(unsigned char *edge,    // エッジ画像
-                     unsigned char *gray,    // 原画像
-                     const int threshold,    // エッジ閾値
-                     Parameters parameters); // 全パラメータ
-
 #endif // _EXTRACTEDGE_H
