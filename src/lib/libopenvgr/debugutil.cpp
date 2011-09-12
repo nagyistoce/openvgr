@@ -507,12 +507,9 @@ drawStereoCircles(const uchar* edge,
     }
 
   int ndiv = 360; // 分割数
-  double step = 2.0 * M_PI / ndiv;
-  quaternion_t q;
-  double genP[3];
   double dst[3];  // 円上の点（開始は３次元円周上の一点）
   Data_2D iPos;
-  int sts, d;
+  int d;
   int ix, iy;
   CvPoint pt;
   CvScalar green = CV_RGB(0, 255, 0);
@@ -537,30 +534,6 @@ drawStereoCircles(const uchar* edge,
       pt = cvPoint(ix, iy);
       cvLine(cvColorImage, pt, pt, green);
 
-#if 0
-      // 円の始点座標計算
-      sts = getPointOnCircle(circle->normal, circle->radius, genP);
-      // 始点計算ができないときは次の円へ
-      if (sts)
-        {
-          continue;
-        }
-
-      // 回転を表す単位クォータニオンの計算
-      quaternion_rotation(q, -step, circle->normal);
-      for (d = 0; d < ndiv; d++)
-        {
-          // 円中心からの法線を回転軸にして円の点列座標を計算する
-          quat_rot(genP, q, genP);
-          addV3(genP, circle->center, dst);
-          projectXYZ2LR(&iPos, dst, (CameraParam*)cameraParam);
-          ix = roundoff(iPos.col);
-          iy = roundoff(iPos.row);
-          pt = cvPoint(ix, iy);
-          // 円周の描画
-          cvLine(cvColorImage, pt, pt, green);
-        }
-#else
       double axis[2][3];
 
       calc_3d_axes_of_circle(axis[0], axis[1], circle->normal, NULL);
@@ -581,8 +554,6 @@ drawStereoCircles(const uchar* edge,
           // 円周の描画
           cvLine(cvColorImage, pt, pt, green);
         }
-#endif
-
     }
 
   outDebugImage(cvColorImage, "circles3D", pairing, parameters.dbgdisp);
@@ -632,14 +603,10 @@ printStereoCircles(const StereoData& stereo, int pairing)
   int i;
   StereoConic* conic;
   CircleCandidate* circle;
-  double radius;
   double dst[3];
   int ndiv = 180; // 分割数
-  double step = 2.0 * M_PI / ndiv; // 円の描画ステップ
   char filename[PATH_MAX+1] = {0};
-  double genP[3];
-  quaternion_t q;
-  int sts, d;
+  int d;
 
   snprintf(filename, sizeof(filename), "circle3D%d.txt", pairing);
   fp = fopen(filename, "w");
@@ -656,33 +623,6 @@ printStereoCircles(const StereoData& stereo, int pairing)
           continue;
         }
 
-#if 0
-      // 円の始点座標計算
-      sts = getPointOnCircle(circle->normal, circle->radius, genP);
-      // 始点計算ができないときは次の円へ
-      if (sts)
-        {
-          continue;
-        }
-
-      // 中心と法線
-      radius = circle->radius;
-      fprintf(fp, "%f %f %f\n", circle->center[0], circle->center[1], circle->center[2]);
-      fprintf(fp, "%f %f %f\n", 
-              circle->center[0] + radius * circle->normal[0], 
-              circle->center[1] + radius * circle->normal[1],
-              circle->center[2] + radius * circle->normal[2]);
-
-      // 回転を表す単位クォータニオンの計算
-      quaternion_rotation(q, -step, circle->normal);
-      for (d = 0; d < ndiv; d++)
-        {
-          // 円中心からの法線を回転軸にして円の点列座標を計算する
-          quat_rot(genP, q, genP);
-          addV3(genP, circle->center, dst);
-          fprintf(fp, "%f %f %f\n", dst[0], dst[1], dst[2]);
-        }
-#else
       double axis[2][3];
 
       calc_3d_axes_of_circle(axis[0], axis[1], circle->normal, NULL);
@@ -696,7 +636,6 @@ printStereoCircles(const StereoData& stereo, int pairing)
             }
           fprintf(fp, "%f %f %f\n", dst[0], dst[1], dst[2]);
         }
-#endif
     }
   fclose(fp);
 
@@ -721,12 +660,9 @@ drawCircleCandidate(const uchar* edge,
     }
 
   int ndiv = 360; // 分割数
-  double step = 2.0 * M_PI / ndiv;
-  quaternion_t q;
-  double genP[3];
   double dst[3];  // 円上の点（開始は３次元円周上の一点）
   Data_2D iPos;
-  int sts, d;
+  int d;
   int ix, iy;
   CvPoint pt;
   CvScalar green = CV_RGB(0, 255, 0);
@@ -751,30 +687,7 @@ drawCircleCandidate(const uchar* edge,
       cvLine(cvColorImage, pt, pt, green);
       
       fprintf(fp, "%f %f %f\n", circle.center[0], circle.center[1], circle.center[2]);
-#if 0
-      // 円の始点座標計算
-      sts = getPointOnCircle(circle.normal, circle.radius, genP);
-      // 始点計算ができないときは次の円へ
-      if (sts)
-        {
-          continue;
-        }
 
-      // 回転を表す単位クォータニオンの計算
-      quaternion_rotation(q, -step, circle.normal);
-      for (d = 0; d < ndiv; d++)
-        {
-          // 円中心からの法線を回転軸にして円の点列座標を計算する
-          quat_rot(genP, q, genP);
-          addV3(genP, circle.center, dst);
-          projectXYZ2LR(&iPos, dst, (CameraParam*)cameraParam);
-          ix = roundoff(iPos.col);
-          iy = roundoff(iPos.row);
-          pt = cvPoint(ix, iy);
-          // 円周の描画
-          cvLine(cvColorImage, pt, pt, green);
-        }
-#else
       double axis[2][3];
 
       calc_3d_axes_of_circle(axis[0], axis[1], circle.normal, NULL);
@@ -795,7 +708,6 @@ drawCircleCandidate(const uchar* edge,
           // 円周の描画
           cvLine(cvColorImage, pt, pt, green);
         }
-#endif
     }
 
   fclose(fp);
