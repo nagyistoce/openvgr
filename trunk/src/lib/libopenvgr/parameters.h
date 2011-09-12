@@ -134,4 +134,7 @@ typedef struct Parameters
   int dbgdisp;
 } Parameters;
 
+//! Parameters 構造体にデフォルト値をセットする。
+void setDefaultRecogParameter(Parameters& param);
+
 #endif // _PARAMETERS_H
