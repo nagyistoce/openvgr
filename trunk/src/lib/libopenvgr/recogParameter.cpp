@@ -31,7 +31,7 @@ setDefaultRecogParameter(Parameters& param)
   // 認識パラメータの設定
 
   param.feature2D.edgeDetectFunction = 0;       // エッジ検出アルゴリズム
-  param.feature2D.edgeStrength = 30;    // 検出するエッジの最低微分強度
+  param.feature2D.edgeStrength = 5.0;    // 検出するエッジの最低微分強度
 
   param.feature2D.maxErrorofLineFit = 0.5;
   // 直線を当てはめるときの最大誤差
@@ -89,7 +89,7 @@ setDefaultRecogParameter(Parameters& param)
   double pdist = 3.0;           // モデルサンプル点間隔(mm)
   double intervalParam = 3.0;   // 認識評価時のサンプル点間隔
   int searchParam = 7;          // 認識評価時のエッジ探索範囲
-  int edgeParam = 30;           // 認識評価時のエッジ強度閾値
+  int edgeParam = 3;            // 認識評価時のエッジ強度閾値
 
   param.match.tolerance1 = tolerance1;
   param.match.tolerance2 = tolerance2;
@@ -241,7 +241,7 @@ loadRecogParameter(char* path, Parameters& param)
               break;
             case eEdgeStrength:
               // 検出するエッジの最低微分強度
-              param.feature2D.edgeStrength = atoi(p);
+              param.feature2D.edgeStrength = atof(p);
               break;
             case eMaxErrorOfLineFit:
               // 直線を当てはめるときの最大誤差
