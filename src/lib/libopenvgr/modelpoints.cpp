@@ -314,8 +314,8 @@ is_visible(const CameraParam *cp, double matrix[4][4], double pos[3], double nor
 }
 
 // 頂点の可視判定
-static void
-setVisibleVertex(Features3D* model, double matrix[4][4], Vertex* vertex, int p_camera)
+static inline int
+isVisibleVertex(Features3D* model, double matrix[4][4], Vertex* vertex, int p_camera)
 {
   CameraParam* cameraParam;
 
@@ -335,16 +335,7 @@ setVisibleVertex(Features3D* model, double matrix[4][4], Vertex* vertex, int p_c
       break;
     }
 
-  if (is_visible(cameraParam, matrix, vertex->orientation[3], vertex->orientation[2]))
-    {
-      vertex->label = VISIBLE;
-    }
-  else
-    {
-      vertex->label = INVISIBLE;
-    }
-
-  return;
+  return is_visible(cameraParam, matrix, vertex->orientation[3], vertex->orientation[2]);
 }
 
 // 3次元点の2次元画像上への投影
@@ -668,12 +659,11 @@ traceModelPoints(Features3D* model, int p_camera, double matrix[4][4])
         {
           continue;
         }
-
-      setVisibleVertex(model, matrix, &vertex, p_camera);
-      if (vertex.label == INVISIBLE)
+      if (isVisibleVertex(model, matrix, &vertex, p_camera) != VISIBLE)
         {
           continue;
         }
+
       projectVertexPoint(model, matrix, vertex, p_camera);
 
       trace = &vertex.tracepoints[0];
@@ -795,12 +785,11 @@ drawModelPoints(Features3D* model,     // モデルの３次元特徴情報
         {
           continue;
         }
-
-      setVisibleVertex(model, matrix, &vertex, p_camera);
-      if (vertex.label == INVISIBLE)
+      if (isVisibleVertex(model, matrix, &vertex, p_camera) != VISIBLE)
         {
           continue;
         }
+
       // 頂点および端点の投影
       projectXYZ2LRwithTrans(model, matrix, p_camera, vertex.orientation[3], &p1);
 
@@ -1117,9 +1106,7 @@ calcEvaluationValue2D(Features3D* model, int p_camera, double matrix[4][4],
         {
           continue;
         }
-
-      setVisibleVertex(model, matrix, &vertex, p_camera);
-      if (vertex.label == INVISIBLE)
+      if (isVisibleVertex(model, matrix, &vertex, p_camera) != VISIBLE)
         {
           continue;
         }
