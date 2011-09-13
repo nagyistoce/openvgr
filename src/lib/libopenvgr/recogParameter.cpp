@@ -22,18 +22,11 @@
 void
 setDefaultRecogParameter(Parameters& param)
 {
+  // パラメータ領域のクリア
+  memset(&param, 0x0, sizeof(Parameters));
+
   param.pairing = DBL_LR;       // ステレオペア設定
   param.outputCandNum = 20;     // 出力候補数
-
-  memset(&(param.feature2D), 0x0, sizeof(ParametersFeature2D));
-  memset(&(param.stereo), 0x0, sizeof(ParametersStereo));
-  memset(&(param.match), 0x0, sizeof(ParametersMatch));
-  memset(&(param.paramEIW), 0x0, sizeof(ParamEllipseIW));
-
-  // デバッグ用パラメータのクリア
-  param.dbgtext = 0; // テキスト情報生成
-  param.dbgimag = 0; // 画像情報生成
-  param.dbgdisp = 0; // 画像表示
 
   // 認識パラメータの設定
 
