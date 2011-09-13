@@ -41,6 +41,8 @@ static const int dv[16][2] = {
   {-1, 1}, {0, 1}, {1, 1}, {1, 0}, {1, -1}, {0, -1}, {-1, -1}, {-1, 0}
 };
 
+// 固定小数点用スケール係数
+static const unsigned int fp_scale = 1U << 8;
 
 // 与えられた画像が形式上正常かどうか確認する
 template <typename T>
@@ -329,7 +331,7 @@ detectEdge(unsigned int* eStrength2, unsigned char* eDirection,
         {
           n2 = n1 + col;
           eStrength2[n2] = (unsigned int) (pow((double) diffVertical[n2] / scale, 2) +
-					   pow((double) diffHorizontal[n2] / scale, 2));
+					   pow((double) diffHorizontal[n2] / scale, 2)) * fp_scale;
           eDirection[n2] = edgeDirection(diffHorizontal[n2], diffVertical[n2]);
         }
     }
@@ -368,7 +370,7 @@ thinEdge(unsigned char* thin, unsigned char* gray, Parameters parameters)
   int imgsize = parameters.imgsize;
   int col, row, n1, n2, n3;
 
-  const unsigned int minThreshold2 = (unsigned int) pow(parameters.feature2D.edgeStrength, 2);
+  const unsigned int minThreshold2 = (unsigned int) pow(parameters.feature2D.edgeStrength, 2) * fp_scale;
 
   unsigned int* eStrength2 = NULL;
   unsigned char* eDirection = NULL;
