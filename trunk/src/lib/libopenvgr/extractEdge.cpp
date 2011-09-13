@@ -293,6 +293,7 @@ detectEdge(unsigned int* eStrength2, unsigned char* eDirection,
 
   int* diffVertical = NULL;
   int* diffHorizontal = NULL;
+  double scale = 1.0;
 
   if ((diffVertical = (int*) calloc(imgsize, sizeof(int))) == NULL)
     {
@@ -308,11 +309,13 @@ detectEdge(unsigned int* eStrength2, unsigned char* eDirection,
     case 0:                    // Sobel 3x3
       diffHorizontal3(diffHorizontal, gray, colsize, rowsize);
       diffVertical3(diffVertical, gray, colsize, rowsize);
+      scale = 8.0;
       break;
 
     case 1:                    // Sobel 5x5
       diffHorizontal5(diffHorizontal, gray, colsize, rowsize);
       diffVertical5(diffVertical, gray, colsize, rowsize);
+      scale = 96.0;
       break;
 
     default:
@@ -325,8 +328,8 @@ detectEdge(unsigned int* eStrength2, unsigned char* eDirection,
       for (col = 1; col < colsize - 1; col++)
         {
           n2 = n1 + col;
-          eStrength2[n2] = (unsigned int) (pow((double) diffVertical[n2], 2) +
-					   pow((double) diffHorizontal[n2], 2));
+          eStrength2[n2] = (unsigned int) (pow((double) diffVertical[n2] / scale, 2) +
+					   pow((double) diffHorizontal[n2] / scale, 2));
           eDirection[n2] = edgeDirection(diffHorizontal[n2], diffVertical[n2]);
         }
     }
