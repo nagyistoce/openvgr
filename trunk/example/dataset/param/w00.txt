@@ -28,7 +28,7 @@ EdgeDetectFunction	0
 #
 # 検出するエッジの最低微分強度
 #
-EdgeStrength		50
+EdgeStrength		5.0
 #
 # 直線を当てはめるときの最大誤差
 #
@@ -82,7 +82,7 @@ StereoError		5.0
 #
 # 認識評価時のエッジ強度閾値
 #
-MatchEdge		30
+MatchEdge		5.0
 
 IW_Condition   0
 IW_MinLength   20
