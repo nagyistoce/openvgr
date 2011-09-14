@@ -151,7 +151,7 @@ isVisibleVertex(Features3D* model, double matrix[4][4], Vertex* vertex, int p_ca
       break;
     }
 
-  return is_visible(cameraParam, matrix, vertex->orientation[3], vertex->orientation[2]);
+  return is_visible(cameraParam, matrix, vertex->tPose[3], vertex->tPose[2]);
 }
 
 // 3次元点の2次元画像上への投影
@@ -196,16 +196,16 @@ projectXYZ2LRwithTrans(Features3D* model, double matrix[4][4], int p_camera,
 }
 
 static void
-mult_orientation(double result[3], double orientation[4][4], const double pos[3])
+mult_tPose(double result[3], double tPose[4][4], const double pos[3])
 {
   int i, j;
 
   for (i = 0; i < 3; ++i)
     {
-      result[i] = orientation[3][i];
+      result[i] = tPose[3][i];
       for (j = 0; j < 3; ++j)
         {
-          result[i] += orientation[j][i] * pos[j];
+          result[i] += tPose[j][i] * pos[j];
         }
     }
 }
@@ -237,12 +237,12 @@ projectVertexPoint(Features3D* model, double matrix[4][4], Vertex& vertex, int p
 
   num = vertex.numOfTracePoints;
 
-  mult_orientation(pos3d, vertex.orientation, vertex.endpoint1);
+  mult_tPose(pos3d, vertex.tPose, vertex.endpoint1);
   projectXYZ2LRwithTrans(model, matrix, p_camera, pos3d, &pos2d[0]);
 
-  projectXYZ2LRwithTrans(model, matrix, p_camera, vertex.orientation[3], &pos2d[1]);
+  projectXYZ2LRwithTrans(model, matrix, p_camera, vertex.tPose[3], &pos2d[1]);
 
-  mult_orientation(pos3d, vertex.orientation, vertex.endpoint2);
+  mult_tPose(pos3d, vertex.tPose, vertex.endpoint2);
   projectXYZ2LRwithTrans(model, matrix, p_camera, pos3d, &pos2d[2]);
 
   for (i = 0; i < num/2; ++i)
@@ -269,7 +269,7 @@ calc_observable_angle(double angle[2], double matrix[4][4], const Circle& circle
 {
   int i, j, k;
 
-  cv::Mat M(4, 4, CV_64FC1), T(4, 4, CV_64FC1, matrix), model(4, 4, CV_64FC1, const_cast<double (*)[4]>(circle.orientation));
+  cv::Mat M(4, 4, CV_64FC1), T(4, 4, CV_64FC1, matrix), model(4, 4, CV_64FC1, const_cast<double (*)[4]>(circle.tPose));
 
   M = T * model.t(); // モデルの行列は転置されている..
 
@@ -379,7 +379,7 @@ projectCirclePoint(Features3D* model, double matrix[4][4], Circle& circle, int p
   RTmat = cvMat(4, 4, CV_64FC1, matrix);
   for (i = 0; i < numOfpoints; i++)
     {
-      mult_orientation(hvec, circle.orientation, circle.tracepoints[i].xyz);
+      mult_tPose(hvec, circle.tPose, circle.tracepoints[i].xyz);
       hvec[3] = 1.0;
       src = cvMat(4, 1, CV_64FC1, hvec);
       dst = cvMat(4, 1, CV_64FC1, pdata);
@@ -395,7 +395,7 @@ projectCirclePoint(Features3D* model, double matrix[4][4], Circle& circle, int p
 
   // 法線による可視判定
   // カメラ視線ベクトル
-  copyV3(circle.orientation[3], hvec);
+  copyV3(circle.tPose[3], hvec);
   setOneAtEnd(hvec);
   src = cvMat(4, 1, CV_64FC1, hvec);
   dst = cvMat(4, 1, CV_64FC1, pdata);
@@ -404,7 +404,7 @@ projectCirclePoint(Features3D* model, double matrix[4][4], Circle& circle, int p
   calcPointDirection(vec, cameraParam, pdata);
 
   // 法線
-  copyV3(circle.orientation[2], hvec);
+  copyV3(circle.tPose[2], hvec);
   hvec[3] = 0.0;
   src = cvMat(4, 1, CV_64FC1, hvec);
   dst = cvMat(4, 1, CV_64FC1, pdata);
@@ -568,9 +568,9 @@ calc_xyz_of_circle(double xyz[3], const Circle& circle, const double angle)
 
   for (i = 0; i < 3; ++i)
     {
-      xyz[i] = circle.radius * (circle.orientation[0][i] * cos(angle)
-                                + circle.orientation[1][i] * sin(angle))
-        + circle.orientation[3][i];
+      xyz[i] = circle.radius * (circle.tPose[0][i] * cos(angle)
+                                + circle.tPose[1][i] * sin(angle))
+        + circle.tPose[3][i];
     }
 }
 
@@ -607,12 +607,12 @@ drawModelPoints(Features3D* model,     // モデルの３次元特徴情報
         }
 
       // 頂点および端点の投影
-      projectXYZ2LRwithTrans(model, matrix, p_camera, vertex.orientation[3], &p1);
+      projectXYZ2LRwithTrans(model, matrix, p_camera, vertex.tPose[3], &p1);
 
-      mult_orientation(pos3d, vertex.orientation, vertex.endpoint1);
+      mult_tPose(pos3d, vertex.tPose, vertex.endpoint1);
       projectXYZ2LRwithTrans(model, matrix, p_camera, pos3d, &p2);
 
-      mult_orientation(pos3d, vertex.orientation, vertex.endpoint2);
+      mult_tPose(pos3d, vertex.tPose, vertex.endpoint2);
       projectXYZ2LRwithTrans(model, matrix, p_camera, pos3d, &p3);
 
       cv::line(cimg, p1, p2, color, lineThickness, CV_AA);
@@ -666,7 +666,7 @@ drawModelPoints(Features3D* model,     // モデルの３次元特徴情報
 
         // 円一つの場合
         if (model->numOfCircles == 1
-            && is_visible(cp, matrix, circle[n]->orientation[3], circle[n]->orientation[2]))
+            && is_visible(cp, matrix, circle[n]->tPose[3], circle[n]->tPose[2]))
           {
             const int num = circle[n]->numOfTracePoints;
             cv::Point curve[2];
@@ -695,7 +695,7 @@ drawModelPoints(Features3D* model,     // モデルの３次元特徴情報
                 cv::Point curve[2];
                 int k;
                     
-                if (is_visible(cp, matrix, circle[j]->orientation[3], circle[j]->orientation[2]))
+                if (is_visible(cp, matrix, circle[j]->tPose[3], circle[j]->tPose[2]))
                   {
                     // 円が見える場合
                     calc_xyz_of_circle(xyz, *circle[j], 0.0);
@@ -918,12 +918,12 @@ calcEvaluationValue2D(Features3D* model, int p_camera, double matrix[4][4],
       double pos3d[3];
       cv::Point pos2d[3];
 
-      mult_orientation(pos3d, vertex.orientation, vertex.endpoint1);
+      mult_tPose(pos3d, vertex.tPose, vertex.endpoint1);
       projectXYZ2LRwithTrans(model, matrix, p_camera, pos3d, &pos2d[0]);
 
-      projectXYZ2LRwithTrans(model, matrix, p_camera, vertex.orientation[3], &pos2d[1]);
+      projectXYZ2LRwithTrans(model, matrix, p_camera, vertex.tPose[3], &pos2d[1]);
 
-      mult_orientation(pos3d, vertex.orientation, vertex.endpoint2);
+      mult_tPose(pos3d, vertex.tPose, vertex.endpoint2);
       projectXYZ2LRwithTrans(model, matrix, p_camera, pos3d, &pos2d[2]);
 
       score += (calcEvaluationValue2D_on_line(model, pos2d[0], pos2d[1], dstImage)
@@ -981,7 +981,7 @@ calcEvaluationValue2D(Features3D* model, int p_camera, double matrix[4][4],
 
         // 円一つの場合
         if (model->numOfCircles == 1
-            && is_visible(cp, matrix, circle[n]->orientation[3], circle[n]->orientation[2]))
+            && is_visible(cp, matrix, circle[n]->tPose[3], circle[n]->tPose[2]))
           {
             const int num = circle[n]->numOfTracePoints;
             cv::Point curve[2];
@@ -1012,7 +1012,7 @@ calcEvaluationValue2D(Features3D* model, int p_camera, double matrix[4][4],
                 cv::Point curve[2];
                 int k;
                     
-                if (is_visible(cp, matrix, circle[j]->orientation[3], circle[j]->orientation[2]))
+                if (is_visible(cp, matrix, circle[j]->tPose[3], circle[j]->tPose[2]))
                   {
                     // 円が見える場合
                     calc_xyz_of_circle(xyz, *circle[j], 0.0);

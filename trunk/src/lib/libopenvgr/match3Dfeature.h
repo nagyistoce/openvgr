@@ -62,12 +62,11 @@ typedef struct Vertex
   m3df_feature_label label;     //!< ラベル
   int n;                        //!< 通し番号
   int side;                     //!< 表裏情報
-  //double position[3];           //!< 頂点の3次元位置(mm)
   double endpoint1[3];          //!< 辺の端点(mm)
   double endpoint2[3];          //!< 辺の端点(mm)
   double direction1[3];         //!< 辺の方向
   double direction2[3];         //!< 辺の方向
-  double orientation[4][4];     //!< 認識用姿勢行列
+  double tPose[4][4];           //!< 認識用姿勢行列
   double angle;                 //!< 頂点角度(ラジアン）
   int numOfTracePoints;         //!< 認識評価用のサンプリング点列数
   Trace* tracepoints;           //!< 認識評価用のサンプリング点列情報
@@ -82,9 +81,8 @@ typedef struct Circle
   int n;                        //!< 通し番号
   int side;                     //!< 表裏情報
   double radius;                //!< 半径
-  //double center[3];             //!< 中心位置
   double normal[3];             //!< 法線
-  double orientation[4][4];     //!< 認識用姿勢行列
+  double tPose[4][4];           //!< 認識用姿勢行列
   int numOfTracePoints;         //!< 認識評価用のサンプリング点列数
   Trace* tracepoints;           //!< 認識評価用のサンプリング点列情報
   P3D* transformed;             //!< 認識時の位置・姿勢変換後の3次元点列

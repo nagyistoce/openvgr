@@ -40,19 +40,19 @@ convertVertexS(VertexCandidate src, Vertex& dst, int num)
   dst.angle = vangle;
   // 以下の３つのベクトルを用いて姿勢を表す行列をつくる
   // 頂点の法線を求める
-  normal = cvMat(3, 1, CV_64FC1, dst.orientation[2]);
+  normal = cvMat(3, 1, CV_64FC1, dst.tPose[2]);
   cvCrossProduct(&vec1, &vec2, &normal);
   // 頂点を構成する線分が成す角の２等分線（単位方向ベクトルの中線）を求める
-  bisector = cvMat(3, 1, CV_64FC1, dst.orientation[1]);
+  bisector = cvMat(3, 1, CV_64FC1, dst.tPose[1]);
   cvAdd(&vec1, &vec2, &bisector);
   cvScale(&bisector, &bisector, 0.5);
   cvNormalize(&bisector, &bisector);
   // 頂点の法線と中線の両方に直交する軸の方向を求める
-  perpendicular = cvMat(3, 1, CV_64FC1, dst.orientation[0]);
+  perpendicular = cvMat(3, 1, CV_64FC1, dst.tPose[0]);
   cvCrossProduct(&bisector, &normal, &perpendicular);
   // 平行移動成分
-  copyV3(src.position, dst.orientation[3]);
-  dst.orientation[3][3] = 1.0;
+  copyV3(src.position, dst.tPose[3]);
+  dst.tPose[3][3] = 1.0;
   // 特徴の通し番号を設定
   dst.n = num;
   dst.side = M3DF_FRONT;
@@ -70,11 +70,11 @@ convertCircleS(CircleCandidate src, Circle& dst, int num)
 
   // 元の情報をコピーする
   dst.radius = src.radius;
-  copyV3(src.normal, dst.orientation[2]);
+  copyV3(src.normal, dst.tPose[2]);
 
   axis = cvMat(3, 1, CV_64FC1, adata);
-  normal = cvMat(3, 1, CV_64FC1, dst.orientation[2]);
-  dir1 = cvMat(3, 1, CV_64FC1, dst.orientation[0]);
+  normal = cvMat(3, 1, CV_64FC1, dst.tPose[2]);
+  dir1 = cvMat(3, 1, CV_64FC1, dst.tPose[0]);
 
   for (i = 0; i < 3; i++)
     {
@@ -98,7 +98,7 @@ convertCircleS(CircleCandidate src, Circle& dst, int num)
       return;
     }
 
-  dir2 = cvMat(3, 1, CV_64FC1, dst.orientation[1]);
+  dir2 = cvMat(3, 1, CV_64FC1, dst.tPose[1]);
   // normal と dir1 に直交するベクトルを dir2 に返す
   cvCrossProduct(&normal, &dir1, &dir2);
   cvNormalize(&dir2, &dir2);
@@ -110,8 +110,8 @@ convertCircleS(CircleCandidate src, Circle& dst, int num)
     }
 
   // 平行移動成分
-  copyV3(src.center, dst.orientation[3]);
-  dst.orientation[3][3] = 1.0;
+  copyV3(src.center, dst.tPose[3]);
+  dst.tPose[3][3] = 1.0;
 
   // 特徴の通し番号を設定
   dst.n = num;
