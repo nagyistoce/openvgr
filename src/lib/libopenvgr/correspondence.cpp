@@ -23,6 +23,7 @@
 
 using namespace ovgr;
 
+#ifdef DEBUG_CORRES
 static void
 disp_Mat(const cv::Mat& m)
 {
@@ -37,6 +38,7 @@ disp_Mat(const cv::Mat& m)
     }
   printf("\n");
 }
+#endif
 
 inline static double
 sign(const double val, const double eps = epsilon)
