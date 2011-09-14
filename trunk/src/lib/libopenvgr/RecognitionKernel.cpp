@@ -17,9 +17,6 @@
 #include "extractFeature_old.h"
 #include "extractFeature.hpp"
 #include "visionErrorCode.h"
-#if 0
-#include <fpu_control.h>
-#endif
 
 #include <sys/time.h>
 
@@ -68,7 +65,7 @@ RecognitionKernel(RecogImage** image,
                   Parameters&  param)
 {
   Match3Dresults Match = {0};
-  int imageNum = param.imagnum;
+  int imageNum = calib.numOfCameras;
   int colsize = image[0]->colsize;
   int rowsize = image[0]->rowsize;
 
@@ -350,7 +347,7 @@ RecognitionKernel(RecogImage** image,
   stime = GetTickCount();
 
   // シーンとモデルデータを照合して認識を実行する。
-  Match = matchFeatures3d(scene, model, edgeL, edgeR, edgeV, param);
+  Match = matchFeatures3D(scene, model, edgeL, edgeR, edgeV, param);
 
   etime = GetTickCount();
   dtime3 = etime - stime;
