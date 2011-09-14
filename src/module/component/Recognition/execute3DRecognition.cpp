@@ -213,5 +213,5 @@ execute3DRecognition(Img::TimedMultiCameraImage& frame, int modelID,
   printf("Cand num = %d, Error = %d\n", candNum, Match.error);
   fflush(stdout);
 
-  return 0;
+  return Match.error;
 }
