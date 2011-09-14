@@ -120,8 +120,6 @@ typedef struct Parameters
   //! 出力候補数
   int outputCandNum;
 
-  //! 画像数
-  int imagnum;
   //! 画像サイズ横（画素）
   int colsize;
   //! 画像サイズ縦（画素）
