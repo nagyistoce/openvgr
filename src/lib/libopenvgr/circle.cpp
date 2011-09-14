@@ -17,36 +17,6 @@
 #include "correspondence.hpp"
 #include "extractFeature.hpp"
 
-// 画像平面上での楕円長軸方向算出
-static void
-calc_normal_on_image_plane(CameraParam* camera_param, const Feature2D_old* feature, double normal[3])
-{
-  Data_2D image[2], plane[2];
-  double v[2], norm = 0.0;
-  int i;
-
-  image[0].col = -feature->axis[0] * feature->ev[0][0] + feature->center[0];
-  image[0].row = -feature->axis[0] * feature->ev[0][1] + feature->center[1];
-
-  image[1].col =  feature->axis[0] * feature->ev[0][0] + feature->center[0];
-  image[1].row =  feature->axis[0] * feature->ev[0][1] + feature->center[1];
-
-  for (i = 0; i < 2; ++i)
-    {
-      backprojectPoint(&plane[i], image[i], camera_param);
-    }
-
-  v[0] = plane[1].col - plane[0].col;
-  v[1] = plane[1].row - plane[0].row;
-  norm = sqrt(v[0]*v[0] + v[1]*v[1]);
-
-  for (i = 0; i < 2; ++i)
-    {
-      normal[i] = v[i] / norm;
-    }
-  normal[2] = 0.0;
-}
-
 // 二次元楕円の形状から三次元空間中の真円の半径と法線の推定値を計算する
 // Reference:
 // Kenichi Katanani and Wu Liu, "3D Interpretation of Conics and Orthogonality", 
