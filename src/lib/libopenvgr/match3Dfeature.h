@@ -116,6 +116,8 @@ typedef struct MatchResult
   double score;                 //!< ２次元評価値
   double mat[4][4];             //!< 変換行列
   double vec[7];                //!< 変換行列の７次元のベクトル（位置＋回転）表現
+  int npoint;                   //!< 総投影点数
+  int cpoint;                   //!< 総対応点数
 } MatchResult;
 
 //! 全認識結果

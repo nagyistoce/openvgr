@@ -119,7 +119,7 @@ getResultScore(MatchResult* results,   // 認識結果情報
     {
       // 距離変換画像を用いた評価値計算
       results[i].score = 
-        calcEvaluationValue2DMultiCameras(model, pairing, results[i].mat, dstImages) * weight;
+        calcEvaluationValue2DMultiCameras(model, pairing, &results[i], dstImages) * weight;
     }
 
   // 評価値でソート
