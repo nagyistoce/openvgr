@@ -32,12 +32,6 @@ int makeModelPoints(Features3D* model,         // モデルの３次元特徴デ
 void getPropertyVector(double mat[4][4],       // 合同変換行列
                        double vec[7]);         // ７次元ベクトル
 
-//! 使用した全画像を用いた２次元評価値計算
-//! 戻り値：２次元評価値
-double traceModelPointsMultiCameras(Features3D* model,      // モデルの３次元特徴情報
-                                    StereoPairing& pairing, // ステレオペア情報
-                                    double matrix[4][4]);   // 認識結果の位置姿勢変換行列
-
 //! 使用した全画像を用いた２次元評価値計算。距離変換画像の利用
 //! 戻り値：２次元評価値
 double calcEvaluationValue2DMultiCameras(Features3D* model,      // モデルの３次元特徴情報
