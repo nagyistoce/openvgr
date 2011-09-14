@@ -17,14 +17,14 @@ OpenVGR consists of the followings:
   * Recognition
    * receives TimedStereo3D, and outputs the result of object detection as 4x4 coordinate transform matrices and additional informations.
   * !RecognitionResultViewer
-   * shows the top scored result by drawing a model at the projected position on camera images.
+   * shows the top scored result with green contours by projecting a model onto camera images.
  * command line tools
   * VGRModeler
    * produces a simple box or cylinder model for the recognition.
   * multicalib
    * genconf generates a template configuration file for cameras. 
    * sample generates a data file for the multicalib by detecting chessboard pattern using the OpenCV's function (cv::findChessboardCorners()).
-   * multicalib computes the calibration data of multi-cameras from the data file . Camera parameters in the calibration data are compatible to OpenCV's camera model.
+   * multicalib computes the calibration data of multi-cameras from the data file. Camera parameters in the calibration data are compatible to OpenCV's camera model.
 
 
 = Prerequisites =
