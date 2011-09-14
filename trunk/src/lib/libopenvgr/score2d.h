@@ -13,16 +13,6 @@
 #ifndef _SCORE2D_H
 #define _SCORE2D_H
 
-// data->colrow[2] から data->direction で決まる方向に
-// 画像データをトレースし、
-// 最初に見つかったエッジピークを peakcr に格納する
-// 戻り値：エラーコード
-int tracePoint(Features3D* finfo,      // ３次元特徴情報
-               Trace* data,            // トレース結果
-               int p_search,           // 探索領域サイズ
-               int p_edge,             // エッジ強度の閾値
-               int p_camera);          // カメラ（画像）番号 (0|1|2)
-
 // 認識結果評価値の比較
 // 戻り値：比較結果
 int compareResultScore(const void* c1,   // 評価値１
