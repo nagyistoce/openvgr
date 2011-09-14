@@ -35,6 +35,4 @@ typedef enum StereoPairing     // ステレオの画像の組み合わせ指定
   TBL_AND
 } StereoPairing;
 
-#define USE_DISTANCETRANSFORM // Hausdorff distance を用いた対応点評価
-
 #endif // _COMMON_H

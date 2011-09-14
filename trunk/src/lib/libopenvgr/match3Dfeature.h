@@ -148,17 +148,10 @@ Match3Dresults matchFeatures3D(Features3D& scene,    // シーンの３次元特
 
 //! ２円を使った照合
 //! 戻り値：認識結果
-#ifdef USE_DISTANCETRANSFORM
 extern Match3Dresults matchPairedCircles(Features3D& scene,      // シーンの３次元特徴情報
                                          Features3D& model,      // モデルの３次元特徴情報
                                          const std::vector<cv::Mat>& dstImages,
                                          double tolerance,       // 照合の許容値
                                          StereoPairing& pairing);  // ステレオペアの情報
-#else
-extern Match3Dresults matchPairedCircles(Features3D& scene,      // シーンの３次元特徴情報
-                                         Features3D& model,      // モデルの３次元特徴情報
-                                         double tolerance,       // 照合の許容値
-                                         StereoPairing& pairing);  // ステレオペアの情報
-#endif
 
 #endif // _MATCH3DFEATURE_H

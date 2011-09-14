@@ -954,16 +954,10 @@ makeModelPoints(Features3D* model,    // モデルの３次元特徴データ
         {
           continue;
         }
-#ifndef USE_DISTANCETRANSFORM
-      count = makeVertexPoints(&model->Vertices[i], pdist);
-      if (count < 0)
-        {
-          return count; // エラーコード
-        }
-#else
+
       model->Vertices[i].numOfTracePoints = ceil((getNormV3(model->Vertices[i].endpoint1) + getNormV3(model->Vertices[i].endpoint2)) / pdist);
       count = model->Vertices[i].numOfTracePoints;
-#endif
+
       totalcount += count;
     }
 
@@ -974,16 +968,10 @@ makeModelPoints(Features3D* model,    // モデルの３次元特徴データ
         {
           continue;
         }
-#ifndef USE_DISTANCETRANSFORM
-      count = makeCirclePoints(&model->Circles[i], pdist);
-      if (count < 0)
-        {
-          return count; // エラーコード
-        }
-#else
+
       model->Circles[i].numOfTracePoints = (int) (model->Circles[i].radius * 2.0 * M_PI / pdist) + 1;
       count = model->Circles[i].numOfTracePoints;
-#endif
+
       totalcount += count;
     }
 
