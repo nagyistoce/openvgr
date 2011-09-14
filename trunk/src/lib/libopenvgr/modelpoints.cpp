@@ -511,7 +511,8 @@ calcEvaluationValue2D_on_line(Features3D* model, const cv::Point& p1, const cv::
 
 // 各モデルの評価点を画像に投影して距離変換画像を参照し、２次元評価値を算出する
 static double
-calcEvaluationValue2D(Features3D* model, int p_camera, double matrix[4][4],
+calcEvaluationValue2D(Features3D* model, int p_camera, 
+                      MatchResult* result,
                       const cv::Mat& dstImage)
 {
   Vertex vertex;
@@ -544,7 +545,7 @@ calcEvaluationValue2D(Features3D* model, int p_camera, double matrix[4][4],
         {
           continue;
         }
-      if (isVisibleVertex(model, matrix, &vertex, p_camera) != VISIBLE)
+      if (isVisibleVertex(model, result->mat, &vertex, p_camera) != VISIBLE)
         {
           continue;
         }
@@ -553,12 +554,12 @@ calcEvaluationValue2D(Features3D* model, int p_camera, double matrix[4][4],
       cv::Point pos2d[3];
 
       mult_tPose(pos3d, vertex.tPose, vertex.endpoint1);
-      projectXYZ2LRwithTrans(model, matrix, p_camera, pos3d, &pos2d[0]);
+      projectXYZ2LRwithTrans(model, result->mat, p_camera, pos3d, &pos2d[0]);
 
-      projectXYZ2LRwithTrans(model, matrix, p_camera, vertex.tPose[3], &pos2d[1]);
+      projectXYZ2LRwithTrans(model, result->mat, p_camera, vertex.tPose[3], &pos2d[1]);
 
       mult_tPose(pos3d, vertex.tPose, vertex.endpoint2);
-      projectXYZ2LRwithTrans(model, matrix, p_camera, pos3d, &pos2d[2]);
+      projectXYZ2LRwithTrans(model, result->mat, p_camera, pos3d, &pos2d[2]);
 
       score += (calcEvaluationValue2D_on_line(model, pos2d[0], pos2d[1], dstImage)
                 + calcEvaluationValue2D_on_line(model, pos2d[1], pos2d[2], dstImage));
@@ -604,32 +605,32 @@ calcEvaluationValue2D(Features3D* model, int p_camera, double matrix[4][4],
           }
 
         // 遮蔽輪郭線と楕円の交点を求める
-        nangle[n] = calc_observable_angle(angle[n], matrix, *circle[n], cp);
+        nangle[n] = calc_observable_angle(angle[n], result->mat, *circle[n], cp);
         for (j = 0; j < 2; ++j)
           {
             calc_xyz_of_circle(xyz, *circle[n], angle[n][j]);
             xyz[3] = 1.0;
             
-            projectXYZ2LRwithTrans(model, matrix, p_camera, xyz, &pos[n][j]);
+            projectXYZ2LRwithTrans(model, result->mat, p_camera, xyz, &pos[n][j]);
           }
 
         // 円一つの場合
         if (model->numOfCircles == 1
-            && is_visible(cp, matrix, circle[n]->tPose[3], circle[n]->tPose[2]))
+            && is_visible(cp, result->mat, circle[n]->tPose[3], circle[n]->tPose[2]))
           {
             const int num = circle[n]->numOfTracePoints;
             cv::Point curve[2];
             
             calc_xyz_of_circle(xyz, *circle[n], 0.0);
             xyz[3] = 1.0;
-            projectXYZ2LRwithTrans(model, matrix, p_camera, xyz, &curve[0]);
+            projectXYZ2LRwithTrans(model, result->mat, p_camera, xyz, &curve[0]);
 
             for (j = 1; j <= num; ++j)
               {
                 double t = 2.0 * M_PI * (double)j / (double)num;
 
                 calc_xyz_of_circle(xyz, *circle[n], t);
-                projectXYZ2LRwithTrans(model, matrix, p_camera, xyz, &curve[j%2]);
+                projectXYZ2LRwithTrans(model, result->mat, p_camera, xyz, &curve[j%2]);
 # ifdef PROJECT_DEBUG
                 cv::line(dstImage_color, curve[(j+1)%2], curve[j%2], color, lineThickness, CV_AA);
 # endif
@@ -646,19 +647,19 @@ calcEvaluationValue2D(Features3D* model, int p_camera, double matrix[4][4],
                 cv::Point curve[2];
                 int k;
                     
-                if (is_visible(cp, matrix, circle[j]->tPose[3], circle[j]->tPose[2]))
+                if (is_visible(cp, result->mat, circle[j]->tPose[3], circle[j]->tPose[2]))
                   {
                     // 円が見える場合
                     calc_xyz_of_circle(xyz, *circle[j], 0.0);
                     xyz[3] = 1.0;
-                    projectXYZ2LRwithTrans(model, matrix, p_camera, xyz, &curve[0]);
+                    projectXYZ2LRwithTrans(model, result->mat, p_camera, xyz, &curve[0]);
 
                     for (k = 1; k <= num; ++k)
                       {
                         double t = 2.0 * M_PI * (double)k / (double)num;
 
                         calc_xyz_of_circle(xyz, *circle[j], t);
-                        projectXYZ2LRwithTrans(model, matrix, p_camera, xyz, &curve[k%2]);
+                        projectXYZ2LRwithTrans(model, result->mat, p_camera, xyz, &curve[k%2]);
 
 # ifdef PROJECT_DEBUG
                         cv::line(dstImage_color, curve[(k+1)%2], curve[k%2], color, lineThickness, CV_AA);
@@ -674,14 +675,14 @@ calcEvaluationValue2D(Features3D* model, int p_camera, double matrix[4][4],
 
                     calc_xyz_of_circle(xyz, *circle[j], angle[j][0]);
                     xyz[3] = 1.0;
-                    projectXYZ2LRwithTrans(model, matrix, p_camera, xyz, &curve[0]);
+                    projectXYZ2LRwithTrans(model, result->mat, p_camera, xyz, &curve[0]);
                     
                     for (k = 1; k <= pnum; ++k)
                       {
                         double t = 2.0 * M_PI * (double)k / (double)num + angle[j][0];
 
                         calc_xyz_of_circle(xyz, *circle[j], t);
-                        projectXYZ2LRwithTrans(model, matrix, p_camera, xyz, &curve[k%2]);
+                        projectXYZ2LRwithTrans(model, result->mat, p_camera, xyz, &curve[k%2]);
 
 # ifdef PROJECT_DEBUG
                         cv::line(dstImage_color, curve[(k+1)%2], curve[k%2], color, lineThickness, CV_AA);
@@ -719,35 +720,36 @@ calcEvaluationValue2D(Features3D* model, int p_camera, double matrix[4][4],
 
 // 使用した全画像を用いた２次元評価値計算。距離変換画像の利用
 // 戻り値：２次元評価値
-double calcEvaluationValue2DMultiCameras(Features3D* model,      // モデルの３次元特徴情報
-                                         StereoPairing& pairing, // ステレオペア情報
-                                         double matrix[4][4],    // 認識結果の位置姿勢変換行列
-                                         const std::vector<cv::Mat>& dstImages)  // 距離変換画像
+double 
+calcEvaluationValue2DMultiCameras(Features3D* model,      // モデルの３次元特徴情報
+                                  StereoPairing& pairing, // ステレオペア情報
+                                  MatchResult* result,    // 認識結果
+                                  const std::vector<cv::Mat>& dstImages)  // 距離変換画像
 {
   double score = 0.0;
 
   switch (pairing)
     {
     case DBL_LR:
-      score = calcEvaluationValue2D(model, 0, matrix, dstImages[0]);
-      score += calcEvaluationValue2D(model, 1, matrix, dstImages[1]);
+      score = calcEvaluationValue2D(model, 0, result, dstImages[0]);
+      score += calcEvaluationValue2D(model, 1, result, dstImages[1]);
       break;
 
     case DBL_LV:
-      score = calcEvaluationValue2D(model, 0, matrix, dstImages[0]);
-      score += calcEvaluationValue2D(model, 2, matrix, dstImages[2]);
+      score = calcEvaluationValue2D(model, 0, result, dstImages[0]);
+      score += calcEvaluationValue2D(model, 2, result, dstImages[2]);
       break;
 
     case DBL_RV:
-      score = calcEvaluationValue2D(model, 1, matrix, dstImages[1]);
-      score += calcEvaluationValue2D(model, 2, matrix, dstImages[2]);
+      score = calcEvaluationValue2D(model, 1, result, dstImages[1]);
+      score += calcEvaluationValue2D(model, 2, result, dstImages[2]);
       break;
 
     case TBL_OR:
     case TBL_AND:
-      score = calcEvaluationValue2D(model, 0, matrix, dstImages[0]);
-      score += calcEvaluationValue2D(model, 1, matrix, dstImages[1]);
-      score += calcEvaluationValue2D(model, 2, matrix, dstImages[2]);
+      score = calcEvaluationValue2D(model, 0, result, dstImages[0]);
+      score += calcEvaluationValue2D(model, 1, result, dstImages[1]);
+      score += calcEvaluationValue2D(model, 2, result, dstImages[2]);
       break;
     }
 
