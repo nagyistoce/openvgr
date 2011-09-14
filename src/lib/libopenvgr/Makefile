@@ -15,9 +15,9 @@ RTMINC = -I`rtm-config --prefix`/include/rtm/idl
 INCLUDES = $(OPENCVINC) $(RTMINC)
 
 CC = gcc
-#CFLAGS = -O3 -march=native -pipe -Wall
-#CFLAGS = -O3 -march=native -pipe -Wall -fopenmp
-CFLAGS = -g -O0 -march=native -pipe -Wall
+CFLAGS = -O3 -march=native -Wall -pipe
+#CFLAGS = -O3 -march=native -Wall -pipe -fopenmp
+#CFLAGS = -g -O0 -march=native -Wall -pipe
 
 CXX = g++
 CXXFLAGS = $(CFLAGS)
