@@ -594,7 +594,7 @@ createDistanceTranceformImages(const Features3D& model,
 // 認識：シーン特徴とモデル特徴の照合
 // 戻り値：認識結果
 Match3Dresults
-matchFeatures3d(Features3D& scene,             // シーンの３次元特徴情報
+matchFeatures3D(Features3D& scene,             // シーンの３次元特徴情報
                 Features3D& model,             // モデルの３次元特徴情報
                 unsigned char* edgeL,          // １番目の画像のエッジ画像
                 unsigned char* edgeR,          // ２番目の画像のエッジ画像 
