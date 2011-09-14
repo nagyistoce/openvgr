@@ -177,7 +177,7 @@ matchVertex(Vertex* scene, Vertex* model, double diffrate, double mat[4][4])
       return -1;
     }
 
-  getRTmatrix(model->orientation, scene->orientation, mat);
+  getRTmatrix(model->tPose, scene->tPose, mat);
 
   return 0;
 }
@@ -196,7 +196,7 @@ matchCircle(Circle* scene, Circle* model, double diffrate, double mat[4][4])
       return -1;
     }
 
-  getRTmatrix(model->orientation, scene->orientation, mat);
+  getRTmatrix(model->tPose, scene->tPose, mat);
 
   return 0;
 }

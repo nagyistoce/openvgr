@@ -73,7 +73,7 @@ getOrthogonalAxis(CvMat* axis, CvMat* snormal, CvMat* dnormal,
 // 2 円の姿勢データを作る
 static int
 makeOrientationDataForCirclePair(Circle* c1, Circle* c2,
-                                 double orientation[12][3])
+                                 double tPose[12][3])
 {
   CvMat axis;
   CvMat dir11, dir12;
@@ -90,8 +90,8 @@ makeOrientationDataForCirclePair(Circle* c1, Circle* c2,
 
   for (i = 0; i < 3; i++)
     {
-      mat1[0][i] = c1->orientation[2][i];
-      mat2[0][i] = c2->orientation[2][i];
+      mat1[0][i] = c1->tPose[2][i];
+      mat2[0][i] = c2->tPose[2][i];
     }
 
   axis = cvMat(3, 1, CV_64FC1, dir);
@@ -146,26 +146,26 @@ makeOrientationDataForCirclePair(Circle* c1, Circle* c2,
 
   for (i = 0; i < 3; i++)
     {
-      cv1 = c1->orientation[3][i];
+      cv1 = c1->tPose[3][i];
       nv1 = mat1[0][i];
       pv1 = mat1[1][i];
       qv1 = mat1[2][i];
-      cv2 = c2->orientation[3][i];
+      cv2 = c2->tPose[3][i];
       nv2 = mat2[0][i];
       pv2 = mat2[1][i];
       qv2 = mat2[2][i];
-      orientation[0][i] = cv1 + r1 * nv1;
-      orientation[1][i] = cv1 - r1 * nv1;
-      orientation[2][i] = cv1 + r1 * pv1;
-      orientation[3][i] = cv1 - r1 * pv1;
-      orientation[4][i] = cv1 + r1 * qv1;
-      orientation[5][i] = cv1 - r1 * qv1;
-      orientation[6][i] = cv2 + r2 * nv2;
-      orientation[7][i] = cv2 - r2 * nv2;
-      orientation[8][i] = cv2 + r2 * pv2;
-      orientation[9][i] = cv2 - r2 * pv2;
-      orientation[10][i] = cv2 + r2 * qv2;
-      orientation[11][i] = cv2 - r2 * qv2;
+      tPose[0][i] = cv1 + r1 * nv1;
+      tPose[1][i] = cv1 - r1 * nv1;
+      tPose[2][i] = cv1 + r1 * pv1;
+      tPose[3][i] = cv1 - r1 * pv1;
+      tPose[4][i] = cv1 + r1 * qv1;
+      tPose[5][i] = cv1 - r1 * qv1;
+      tPose[6][i] = cv2 + r2 * nv2;
+      tPose[7][i] = cv2 - r2 * nv2;
+      tPose[8][i] = cv2 + r2 * pv2;
+      tPose[9][i] = cv2 - r2 * pv2;
+      tPose[10][i] = cv2 + r2 * qv2;
+      tPose[11][i] = cv2 - r2 * qv2;
     }
 
   return 0;
@@ -630,7 +630,7 @@ makePairTable(Circle* mcir, int** cortbl, int tblen, int* nmodel)
 
           {
             // 中心間距離の計算
-            dist = getDistanceV3(mcir[mc1].orientation[3], mcir[mc2].orientation[3]);
+            dist = getDistanceV3(mcir[mc1].tPose[3], mcir[mc2].tPose[3]);
           }
           pairtbl[k].cdist = dist;
           ++k;
@@ -678,8 +678,8 @@ testNormal(Circle* scir, Circle* mcir, double trans[4][4], double diff)
 
   Rmat = cvMat(3, 3, CV_64FC1, rmat);
 
-  snormal = cvMat(3, 1, CV_64FC1, scir->orientation[2]);
-  mnormal = cvMat(3, 1, CV_64FC1, mcir->orientation[2]);
+  snormal = cvMat(3, 1, CV_64FC1, scir->tPose[2]);
+  mnormal = cvMat(3, 1, CV_64FC1, mcir->tPose[2]);
   rnormal = cvMat(3, 1, CV_64FC1, rn);
 
   // モデルの法線ベクトルに変換行列の回転部分をかける
@@ -822,7 +822,7 @@ matchPairedCircles(Features3D& scene,          // シーンの３次元特徴情
               s1 = sc1[j];
               s2 = sc2[k];
               // シーン円の中心間距離を求める
-              scdist = getDistanceV3(scenes[s1].orientation[3], scenes[s2].orientation[3]);
+              scdist = getDistanceV3(scenes[s1].tPose[3], scenes[s2].tPose[3]);
               // 中心間距離がモデルとシーンで異なるものは除外
               ddif = fabs (mcdist - scdist);
               if (ddif >= mddif)

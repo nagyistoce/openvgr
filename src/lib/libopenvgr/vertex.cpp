@@ -735,22 +735,22 @@ reconstruct_vertex3D(::Vertex vertex[2],
 
       // 以下の３つのベクトルを用いて姿勢を表す行列をつくる
       // 頂点の法線を求める
-      normal = cvMat(3, 1, CV_64FC1, vertex[num].orientation[2]);
+      normal = cvMat(3, 1, CV_64FC1, vertex[num].tPose[2]);
       cvCrossProduct(&vec1, &vec2, &normal);
       // 頂点を構成する線分が成す角の２等分線（単位方向ベクトルの中線）を求める
-      bisector = cvMat(3, 1, CV_64FC1, vertex[num].orientation[1]);
+      bisector = cvMat(3, 1, CV_64FC1, vertex[num].tPose[1]);
       cvAdd(&vec1, &vec2, &bisector);
       cvNormalize(&bisector, &bisector);
       // 頂点の法線と中線の両方に直交する軸の方向を求める
-      perpendicular = cvMat(3, 1, CV_64FC1, vertex[num].orientation[0]);
+      perpendicular = cvMat(3, 1, CV_64FC1, vertex[num].tPose[0]);
       cvCrossProduct(&bisector, &normal, &perpendicular);
 
       // 3次元頂点位置
       for (int i = 0; i < 3; ++i)
         {
-          vertex[num].orientation[3][i] = vpos[i];
+          vertex[num].tPose[3][i] = vpos[i];
         }
-      vertex[num].orientation[3][3] = 1.0;
+      vertex[num].tPose[3][3] = 1.0;
 
       vertex[num].n = -1;
       vertex[num].side = M3DF_FRONT;
