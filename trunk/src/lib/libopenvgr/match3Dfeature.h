@@ -24,6 +24,13 @@ enum m3df_side
   M3DF_BACK  = 1
 };
 
+//! 3次元特徴のラベル
+enum m3df_feature_label
+{
+  M3DF_LABEL_NONE = 0,
+  M3DF_LABEL_NOEVAL = 1
+};
+
 //! 認識結果評価用サンプリング点列情報
 typedef struct Trace
 {
@@ -52,7 +59,7 @@ typedef struct P2D
 //! ３次元頂点情報
 typedef struct Vertex
 {
-  int label;                    //!< ラベル
+  m3df_feature_label label;     //!< ラベル
   int n;                        //!< 通し番号
   int side;                     //!< 表裏情報
   //double position[3];           //!< 頂点の3次元位置(mm)
@@ -71,7 +78,7 @@ typedef struct Vertex
 //! ３次元円情報
 typedef struct Circle
 {
-  int label;                    //!< ラベル
+  m3df_feature_label label;     //!< ラベル
   int n;                        //!< 通し番号
   int side;                     //!< 表裏情報
   double radius;                //!< 半径

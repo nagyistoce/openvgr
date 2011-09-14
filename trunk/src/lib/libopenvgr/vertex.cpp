@@ -755,7 +755,7 @@ reconstruct_vertex3D(::Vertex vertex[2],
       vertex[num].n = -1;
       vertex[num].side = M3DF_FRONT;
 
-      vertex[num].label = 0;
+      vertex[num].label = M3DF_LABEL_NONE;
       vertex[num].numOfTracePoints = 0;
       vertex[num].tracepoints = NULL;
       vertex[num].transformed = NULL;

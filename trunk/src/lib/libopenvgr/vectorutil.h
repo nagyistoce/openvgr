@@ -44,7 +44,7 @@ double getNormV3(V3 in);                        // ノルム
 void getCrossProductV3(V3 in1, V3 in2, V3 out); // クロス積
 double getDistanceV3(V3 in1, V3 in2);           // ２点間の距離
 
-// ３ｘ３配列計算
+// ３ｘ３行列計算
 void subM33(M33 in1, M33 in2, M33 out);        // 減算
 void transposeM33(M33 in, M33 out);            // 転置
 void mulM33(M33 in1, M33 in2, M33 out);        // 積
