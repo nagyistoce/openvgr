@@ -91,10 +91,10 @@ $ cd ${OPENVGR_HOME}/build; make
 
 
 = Testing =
-Go to ${OPENVGR_HOME}/example/script, then execute ./stilltest.
+Go to ${OPENVGR_HOME}/example/script, then execute ./stilltest.sh.
 {{{
 $ cd ${OPENVGR_HOME}/example/script
-$ ./stilltest
+$ ./stilltest.sh
 }}}
 This script launches RT components, connects each other, and inputs test images to the component.
 After a while, you will get a recognition result for the input test image.
