@@ -261,7 +261,6 @@ tracePoint(Features3D* finfo, // ３次元特徴情報
 }
 
 // 結果の２次元評価値算出
-#ifdef USE_DISTANCETRANSFORM
 void
 getResultScore(MatchResult* results,   // 認識結果情報
                int numOfResults,       // 認識結果数
@@ -323,63 +322,3 @@ getResultScore(MatchResult* results,   // 認識結果情報
 
   return;
 }
-#else
-void
-getResultScore(MatchResult* results,   // 認識結果情報
-               int numOfResults,       // 認識結果数
-               Features3D* model,      // モデルの３次元特徴情報
-               StereoPairing& pairing, // ステレオ処理ペア情報
-               double weight)          // 評価値の重みづけ
-{
-  int i, j, num;
-  int status;
-
-  // 認識結果ベクトル（位置＋回転ベクトル）の値でソートする
-  qsort(results, numOfResults, sizeof(MatchResult), compareResultScore);
-
-  // 完全に同じ位置姿勢の結果には評価不要の印をつける
-  for (i = 0; i < numOfResults; i++)
-    {
-      // 既に不要となった結果はスキップ
-      if (results[i].score == -1)
-        {
-          continue;
-        }
-
-      for (j = i + 1; j < numOfResults; j++)
-        {
-          // 既に不要となった結果はスキップ
-          if (results[j].score == -1)
-            {
-              continue;
-            }
-          // 認識結果が全く同じ場合は評価値に -1 を入れて評価不要とする
-          status = comparePropertyVector(results[i].vec, results[j].vec);
-          if (status == 0)
-            {
-              results[j].score = -1;
-            }
-        }
-    }
-
-  // 評価する結果を先頭に集める
-  qsort(results, numOfResults, sizeof(MatchResult), compareResultScore);
-
-  // 評価
-  num = 0;
-  for (i = 0; i < numOfResults; i++)
-    {
-      if (results[i].score == -1)
-        {
-          break;
-        }
-      // モデルを画像に投影することによって認識結果の評価値計算をする
-      results[i].score = traceModelPointsMultiCameras(model, pairing, results[i].mat) * weight;
-      ++num;
-    }
-
-  // 評価値でソート
-  qsort(results, num, sizeof(MatchResult), compareResultScore);
-  return;
-}
-#endif

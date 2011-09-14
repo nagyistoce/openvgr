@@ -201,7 +201,6 @@ matchCircle(Circle* scene, Circle* model, double diffrate, double mat[4][4])
   return 0;
 }
 
-#ifdef USE_DISTANCETRANSFORM
 // 頂点による照合
 static Match3Dresults
 matchVertices(Features3D scene, Features3D model,
@@ -344,143 +343,6 @@ matchCircles(Features3D scene, Features3D model,
 
   return Match;
 }
-#else
-static Match3Dresults
-matchVertices(Features3D scene, Features3D model,
-              double tolerance, StereoPairing pairing)
-{
-  Match3Dresults Match = { 0 };
-  MatchResult* memory = NULL;
-  int i, j, status;
-  size_t k, numOfVerResults;
-  double score_weight = 1.0;    // 2円を差別化するために導入
-  double maxnum = (double)scene.numOfVertices * (double)model.numOfVertices;
-
-  if (maxnum > (double)INT_MAX)
-    {
-      numOfVerResults = INT_MAX/sizeof(MatchResult);
-    }
-  else
-    {
-      numOfVerResults = (size_t)maxnum;
-    }
-
-  if ((memory = (MatchResult*) calloc(numOfVerResults, sizeof(MatchResult))) == NULL)
-    {
-      Match.error = VISION_MALLOC_ERROR;
-      return Match;
-    }
-
-  Match.Results = memory;
-  k = 0;
-  for (j = 0; j < model.numOfVertices; j++)
-    {
-      for (i = 0; i < scene.numOfVertices; i++)
-        {
-          status = matchVertex(&scene.Vertices[i], &model.Vertices[j], tolerance, Match.Results[k].mat);
-          if (status == 0)
-            {
-              Match.Results[k].n = k;
-              Match.Results[k].type = 0;
-              Match.Results[k].score = 0.0;
-              Match.Results[k].scene[0] = scene.Vertices[i].n;
-              Match.Results[k].scene[1] = scene.Vertices[i].side;
-              Match.Results[k].model[0] = model.Vertices[j].n;
-              Match.Results[k].model[1] = model.Vertices[j].side;
-              // 認識結果の行列を７次元のベクトル（位置＋回転）としてもあらわす
-              getPropertyVector(Match.Results[k].mat, Match.Results[k].vec);
-              if (++k >= numOfVerResults)
-              {
-                goto breakout;
-              }
-            }
-        }
-    }
-
-breakout:
-  Match.numOfResults = k;
-
-  if (Match.numOfResults)
-    {
-      // 認識結果の評価値を作成する．完全重複した結果は評価しない．
-      getResultScore(Match.Results, k, &model, pairing, score_weight);
-    }
-  else
-    {
-      freeMatch3Dresults(&Match);
-    }
-
-  return Match;
-}
-
-// 単円による照合
-static Match3Dresults
-matchCircles(Features3D scene, Features3D model,
-             double tolerance, StereoPairing pairing)
-{
-  Match3Dresults Match = { 0 };
-  MatchResult* memory = NULL;
-  int i, j, status;
-  size_t k, numOfCirResults;
-  double score_weight = 1.0;    // 2円を差別化するために導入
-  double maxnum = (double)scene.numOfCircles * (double)model.numOfCircles;
-
-  if (maxnum > (double)INT_MAX)
-    {
-      numOfCirResults = INT_MAX/sizeof(MatchResult);
-    }
-  else
-    {
-      numOfCirResults = (size_t)maxnum;
-    }
-
-  memory = (MatchResult*) calloc(numOfCirResults, sizeof(MatchResult));
-  if (memory != NULL)
-    {
-      Match.Results = memory;
-      k = 0;
-      for (j = 0; j < model.numOfCircles; j++)
-        {
-          for (i = 0; i < scene.numOfCircles; i++)
-            {
-              status = matchCircle(&scene.Circles[i], &model.Circles[j],
-                                   tolerance, Match.Results[k].mat);
-              if (status == 0)
-                {
-                  Match.Results[k].n = k;
-                  Match.Results[k].type = 1;
-                  Match.Results[k].score = 0.0;
-                  Match.Results[k].scene[0] = scene.Circles[i].n;
-                  Match.Results[k].scene[1] = scene.Circles[i].side;
-                  Match.Results[k].model[0] = model.Circles[j].n;
-                  Match.Results[k].model[1] = model.Circles[j].side;
-                  // 認識結果の行列を７次元のベクトル（位置＋回転）としてもあらわす
-                  getPropertyVector(Match.Results[k].mat, Match.Results[k].vec);
-                  if (++k >= numOfCirResults)
-                    {
-                      goto breakout;
-                    }
-                }
-            }
-        }
-    breakout:
-      Match.numOfResults = k;
-      // 認識結果の評価値を作成する．完全重複した結果は評価しない．
-      getResultScore(memory, k, &model, pairing, score_weight);
-    }
-  else
-    {
-      Match.error = VISION_MALLOC_ERROR;
-    }
-
-  if(Match.numOfResults == 0)
-    {
-      freeMatch3Dresults(&Match);
-    }
-
-  return Match;
-}
-#endif
 
 // 認識結果のマージ
 static int
@@ -537,7 +399,6 @@ mergeMatch3Dresults(Match3Dresults* base, Match3Dresults* append)
   return VISION_MALLOC_ERROR;
 }
 
-#ifdef USE_DISTANCETRANSFORM
 // 距離変換画像の生成
 static void
 createDistanceTranceformImages(const Features3D& model, 
@@ -589,7 +450,6 @@ createDistanceTranceformImages(const Features3D& model,
 
   return;
 }
-#endif
 
 // 認識：シーン特徴とモデル特徴の照合
 // 戻り値：認識結果
@@ -607,9 +467,7 @@ matchFeatures3D(Features3D& scene,             // シーンの３次元特徴情
   double tolerance1 = parameters.match.tolerance1;
   double tolerance2 = parameters.match.tolerance2;
   StereoPairing pairing = parameters.pairing;
-#ifdef USE_DISTANCETRANSFORM
   std::vector<cv::Mat> dstImages; // 距離変換画像
-#endif
   int error;
 
   // 認識結果評価用にモデルサンプル点を生成する
@@ -620,27 +478,17 @@ matchFeatures3D(Features3D& scene,             // シーンの３次元特徴情
       return Match;
     }
 
-#ifdef USE_DISTANCETRANSFORM
   // 距離変換画像の生成
   createDistanceTranceformImages(model, &dstImages);
-#endif
 
   if (scene.numOfVertices > 0 && model.numOfVertices > 0)
     {
-#ifdef USE_DISTANCETRANSFORM
       Match = matchVertices(scene, model, dstImages, tolerance1, pairing);
-#else
-      Match = matchVertices(scene, model, tolerance1, pairing);
-#endif
     }
 
   if (Match.error == 0 && scene.numOfCircles > 0 && model.numOfCircles > 1)
     {
-#ifdef USE_DISTANCETRANSFORM
       cir2Match = matchPairedCircles(scene, model, dstImages, tolerance2, pairing);
-#else
-      cir2Match = matchPairedCircles(scene, model, tolerance2, pairing);
-#endif
       error = mergeMatch3Dresults(&Match, &cir2Match);
       if (error)
         {
@@ -656,11 +504,7 @@ matchFeatures3D(Features3D& scene,             // シーンの３次元特徴情
 
   if (Match.error == 0 && scene.numOfCircles > 0 && model.numOfCircles > 0)
     {
-#ifdef USE_DISTANCETRANSFORM
       cir1Match = matchCircles(scene, model, dstImages, tolerance2, pairing);
-#else
-      cir1Match = matchCircles(scene, model, tolerance2, pairing);
-#endif
       error = mergeMatch3Dresults(&Match, &cir1Match);
       if (error)
         {

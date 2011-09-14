@@ -29,19 +29,11 @@ int compareResultScore(const void* c1,   // 評価値１
                        const void* c2);  // 評価値２
 
 // 結果の２次元評価値算出
-#ifdef USE_DISTANCETRANSFORM
 void getResultScore(MatchResult* results,      // 認識結果情報
                     int numOfResults,          // 認識結果数
                     Features3D* model,         // モデルの３次元特徴情報
                     StereoPairing& pairing,    // ステレオ処理ペア情報
                     const std::vector<cv::Mat>& dstImages,
                     double weight);            // 評価値の重みづけ
-#else
-void getResultScore(MatchResult* results,      // 認識結果情報
-                    int numOfResults,          // 認識結果数
-                    Features3D* model,         // モデルの３次元特徴情報
-                    StereoPairing& pairing,    // ステレオ処理ペア情報
-                    double weight);            // 評価値の重みづけ
-#endif
 
 #endif // _SCORE2D_H
