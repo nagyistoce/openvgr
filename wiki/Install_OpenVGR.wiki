@@ -48,7 +48,7 @@ So when you try to build the programs with different versions of libraries, you 
 = Installing dependencies =
 We use apt-get here, you can use your favorite package manager (e.g. synaptic), of course.
 
-== OpenRTM-aist-1.0.0 ==
+== OpenRTM-aist-1.0.0 , rtshell 3.0 ==
 Please follow the instructions at [http://openrtm.org official page].
 
 == OpenCV-2.0 ==
