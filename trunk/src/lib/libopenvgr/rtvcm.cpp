@@ -522,6 +522,178 @@ reverseCircle(Circle src,      // ３次元円データ
   return;
 }
 
+// (to) = T (from)
+static void
+calc_transform_mat(double tT[4][4], const double tFrom[4][4], const double tTo[4][4])
+{
+  int i, j, k;
+
+  // 回転成分
+  for (i = 0; i < 3; ++i)
+    {
+      for (j = 0; j < 3; ++j)
+        {
+          tT[i][j] = 0.0;
+          for (k = 0; k < 3; ++k)
+            {
+              tT[i][j] += tFrom[k][i] * tTo[k][j];
+            }
+        }
+    }
+
+  // 並進成分
+  for (i = 0; i < 3; ++i)
+    {
+      tT[3][i] = tTo[3][i];
+      for (j = 0; j < 3; ++j)
+        {
+          tT[3][i] -= tFrom[3][i] * tT[j][i];
+        }
+    }
+
+  for (i = 0; i < 4; ++i)
+    {
+      tT[i][3] = (i < 3) ? 0.0 : 1.0;
+    }
+
+#if 0
+  printf("from:\n");
+  for (i = 0; i < 4; ++i)
+    {
+      for (j = 0; j < 4; ++j)
+        {
+          printf("% 10.3g ", tFrom[j][i]);
+        }
+      printf("\n");
+    }
+  printf("\n");
+
+  printf("to\n");
+  for (i = 0; i < 4; ++i)
+    {
+      for (j = 0; j < 4; ++j)
+        {
+          printf("% 10.3g ", tTo[j][i]);
+        }
+      printf("\n");
+    }
+  printf("\n");
+
+  printf("T (= (to) * inv(from)):\n");
+  for (i = 0; i < 4; ++i)
+    {
+      for (j = 0; j < 4; ++j)
+        {
+          printf("% 10.3g ", tT[j][i]);
+        }
+      printf("\n");
+    }
+  printf("\n");
+#endif
+}
+
+static double
+max_distance_of_points(const cv::Mat& V1, const cv::Mat& V2)
+{
+  int i, j, k;
+
+  double max_dist2 = 0.0;
+
+  // 距離が最小になる頂点の組み合わせのうち、最大になるものを見つける
+  for (i = 0; i < V1.rows; ++i)
+    {
+      const double* pos1 = V1.ptr<double>(i);
+      double min_dist2 = HUGE_VAL;
+
+      // 各点に対して変換前後で最小の距離になるものを見つける
+      for (j = 0; j < V2.rows; ++j)
+        {
+          const double* pos2 = V2.ptr<double>(j);
+          double dist2 = 0.0;
+
+          for (k = 0; k < 3; ++k)
+            {
+              dist2 += (pos1[k] - pos2[k]) * (pos1[k] - pos2[k]);
+            }
+
+          if (dist2 < min_dist2)
+            {
+              min_dist2 = dist2;
+            }
+        }
+
+      if (max_dist2 < min_dist2)
+        {
+          max_dist2 = min_dist2;
+        }
+    }
+
+  return sqrt(max_dist2);
+}
+
+// 回転対称のデータに印をつける
+template <class Feature>
+static void
+mark_rotational_symmetric_data(Feature* data, const int num_data)
+{
+  cv::Mat V(num_data, 4, CV_64FC1);
+  int i, j;
+
+  if (num_data < 2)
+    {
+      return;
+    }
+
+  // 頂点座標を代入
+  for (i = 0; i < num_data; ++i)
+    {
+      double* row = V.ptr<double>(i);
+      for (j = 0; j < 3; ++j)
+        {
+          row[j] = data[i].tPose[3][j];
+        }
+      row[3] = 1.0;
+    }
+
+  for (i = 0; i < num_data-1; ++i)
+    {
+      if (data[i].label & M3DF_LABEL_NOEVAL)
+        {
+          continue;
+        }
+
+      for (j = i+1; j < num_data; ++j)
+        {
+          double tTrans[4][4], dist = 0.0;
+          cv::Mat T(4, 4, CV_64FC1, tTrans), VT(num_data, 4, CV_64FC1);
+
+          if (data[j].label & M3DF_LABEL_NOEVAL)
+            {
+              continue;
+            }
+
+          calc_transform_mat(tTrans, data[i].tPose, data[j].tPose);
+          VT = V * T;
+
+          dist = max_distance_of_points(V, VT);
+
+          if (dist < VISION_EPS)
+            {
+              data[j].label |= M3DF_LABEL_NOEVAL;
+            }
+        }
+
+#if 0
+      printf("%d:\n", i);
+      for (j = 0; j < num_data; ++j)
+        {
+          printf(" %d", data[j].label);
+        }
+      printf("\n");
+#endif
+    }
+}
+
 // モデルデータから３次元特徴データへの変換
 int
 convertRTVCMtoFeatures3D(RTVCM rtvcm,          // モデルデータ
@@ -558,11 +730,13 @@ convertRTVCMtoFeatures3D(RTVCM rtvcm,          // モデルデータ
     {
       convertVertex(rtvcm.vertex[i], feature.Vertices[i]);
     }
+  mark_rotational_symmetric_data(feature.Vertices, numOfVertices);
 
   for (i = 0; i < rtvcm.ncircle; i++)
     {
       convertCircle(rtvcm.circle[i], feature.Circles[i]);
     }
+  mark_rotational_symmetric_data(feature.Circles, numOfCircles);
 
   return 0;
 }
