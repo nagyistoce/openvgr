@@ -16,7 +16,8 @@
              ELLIPSE_CONDITION_MEANのとき、誤差の平均値を評価に使う
              ELLIPSE_CONDITION_MAXのとき、誤差の最大値を評価に使う
   MinLength: 評価の対象にする点列の最小数
-  MinShortRad: 短径がこの値より小さい楕円は失敗とみなす
+  MinShortRadPrev: 短径がこの値より小さい楕円は失敗とみなす（距離計算前）通常は変更しない
+  MinShortRadPost: 短径がこの値より小さい楕円は失敗とみなす（距離計算後）
   ThMeanError: ELLIPSE_CONDITION_MEANのときに使う閾値(0.5くらい？）
   ThMaxError: ELLIPSE_CONDITION_MAXのときに使う閾値(2.0くらい？）
   Offset_Mode: MODE_OFFSET_STATIC or MODE_OFFSET_DYNAMIC
@@ -43,7 +44,8 @@
 // 推奨初期値
 #define	DEF_PARAME_CONDITION	(ELLIPSE_CONDITION_MEAN)
 #define	DEF_PARAME_MIN_LENGTH	(20)
-#define	DEF_PARAME_MIN_SHORT_RAD	(2.0)
+#define	DEF_PARAME_MIN_SHORT_RAD_PREV	(2.0)
+#define	DEF_PARAME_MIN_SHORT_RAD_POST	(2.0)
 #define	DEF_PARAME_TH_MEAN_ERROR	(0.5)
 #define	DEF_PARAME_TH_MAX_ERROR		(2.0)
 #define	DEF_PARAME_OFFSET_MODE		(ELLIPSE_OFFSET_DYNAMIC)
@@ -52,7 +54,8 @@
 typedef struct _param_ellipse_IW_{
   int		Condition; 
   int		MinLength;   // default = 20
-  double	MinShortRad; // default = 2.0
+  double	MinShortRadPrev; // default = 2.0
+  double	MinShortRadPost; // default = 2.0
   double	ThMeanError;
   double	ThMaxError;
   int		OffsetMode;

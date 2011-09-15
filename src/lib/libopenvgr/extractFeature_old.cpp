@@ -2267,6 +2267,20 @@ extractFeatures_old(unsigned char* edge,   // エッジ画像
       // 新マージ関数
       merge_ellipse(features);
 
+      // 半径が短い楕円を排除 （typeにConicType_Unknown をセットする）
+      tmpFeature = features->feature;
+      for (f = 0; f < features->nFeature; f++)
+	{
+          if (tmpFeature[f].type == ConicType_Ellipse)
+            {
+	      if (tmpFeature[f].axis[0] < paramEIW->MinShortRadPost ||
+		  tmpFeature[f].axis[1] < paramEIW->MinShortRadPost)
+		{
+		  tmpFeature[f].type = ConicType_Unknown;
+		}
+	    }
+	}
+
       // 楕円検出結果から、複数の楕円のデータを使って、楕円当てはめを行い、マージする
       if (Ellipse2Ellipse(features, features, parameters) < 0)
         {
