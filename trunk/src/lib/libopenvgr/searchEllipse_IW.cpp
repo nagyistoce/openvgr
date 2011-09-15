@@ -1101,8 +1101,8 @@ static int
 check_ellipse_cond(Ellipse* ellipse,
                    const ParamEllipseIW* paramE)
 {
-  if (ellipse->rad[0] < paramE->MinShortRad
-      || ellipse->rad[1] < paramE->MinShortRad)
+  if (ellipse->rad[0] < paramE->MinShortRadPrev
+      || ellipse->rad[1] < paramE->MinShortRadPrev)
     {
       return CHECK_ELLIPSE_NG;
     }
