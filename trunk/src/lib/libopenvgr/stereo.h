@@ -54,22 +54,6 @@ typedef struct CircleCandidate
   double radius;                //!< 半径
 } CircleCandidate;
 
-//! 二次曲線ステレオ対応データ
-typedef struct StereoConic
-{
-  ConicType type;               //!< 二次曲線のタイプ
-  Feature2D_old* featureL;      //!< 左画像の２次元特徴
-  Feature2D_old* featureR;      //!< 右画像の２次元特徴
-  int valid;                    //!< 有効無効フラグ
-  double error;                 //!< ステレオ対応誤差
-  double center[3];             //!< 復元円中心、復元頂点の３次元座標
-  union
-  {
-    VertexCandidate vertex;     //!< 頂点として処理した場合に保存する頂点情報
-    CircleCandidate circle;     //!< 円として処理した場合に保存する円情報
-  } work;
-} StereoConic;
-
 //! ステレオ対応点から３次元座標を計算する
 //! 戻り値：復元誤差＝２つの視線（エピポーラ線）間の距離
 double calculateLR2XYZ(double position3D[3],    // ３次元座標
