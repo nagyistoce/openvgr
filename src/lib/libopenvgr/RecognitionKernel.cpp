@@ -81,8 +81,8 @@ RecognitionKernel(RecogImage** image,
       undistortImage(image[2], image[2], &calib.CameraV);
     }
 
-  unsigned char* edgeL = (unsigned char*) malloc(colsize * rowsize * sizeof(unsigned char));
-  unsigned char* edgeR = (unsigned char*) malloc(colsize * rowsize * sizeof(unsigned char));
+  unsigned char* edgeL = (unsigned char*) calloc(colsize * rowsize, sizeof(unsigned char));
+  unsigned char* edgeR = (unsigned char*) calloc(colsize * rowsize, sizeof(unsigned char));
   if (edgeL == NULL || edgeR == NULL)
     {
       freeEdgeMemory(edgeL, edgeR, NULL);
@@ -93,7 +93,7 @@ RecognitionKernel(RecogImage** image,
   unsigned char* edgeV = NULL;
   if (imageNum > 2)
     {
-      edgeV = (unsigned char*) malloc(colsize * rowsize * sizeof(unsigned char));
+      edgeV = (unsigned char*) calloc(colsize * rowsize, sizeof(unsigned char));
       if (edgeV == NULL)
         {
           freeEdgeMemory(edgeL, edgeR, NULL);
