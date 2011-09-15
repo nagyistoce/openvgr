@@ -118,10 +118,6 @@ execute3DRecognition(Img::TimedMultiCameraImage& frame, int modelID,
   int colsize = recogImage[0]->colsize;
   int rowsize = recogImage[0]->rowsize;
 
-  param.colsize = colsize;
-  param.rowsize = rowsize;
-  param.imgsize = colsize * rowsize;
-
   Features3D model = { 0 };
 
   // モデルデータファイルを読み込む。
