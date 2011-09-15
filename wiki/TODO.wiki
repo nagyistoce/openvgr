@@ -1,0 +1,24 @@
+#summary ToDo list
+
+= TODO =
+
+== General ==
+ * introduce a sophisticated building system.
+ * re-design data structures.
+ * remove unused variables/functions.
+
+== Individual ==
+
+=== MultiCamera ===
+
+=== MultiDisp ===
+
+=== Measure3D ===
+
+=== Recognition ===
+
+=== RecognitionResultViewer ===
+
+=== VGRModeler ===
+
+=== multicalib ===
