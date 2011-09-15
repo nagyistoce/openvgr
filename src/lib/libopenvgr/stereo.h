@@ -70,13 +70,6 @@ typedef struct StereoConic
   } work;
 } StereoConic;
 
-//! ステレオ対応データ
-typedef struct StereoData
-{
-  int numOfconics;              //!< ２次曲線ステレオ対応個数
-  StereoConic* conics;          //!< ２次曲線ステレオ対応データ
-} StereoData;
-
 //! ステレオ対応点から３次元座標を計算する
 //! 戻り値：復元誤差＝２つの視線（エピポーラ線）間の距離
 double calculateLR2XYZ(double position3D[3],    // ３次元座標

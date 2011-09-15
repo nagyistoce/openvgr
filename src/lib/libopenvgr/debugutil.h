@@ -21,13 +21,6 @@ int drawEdgeImage(const uchar* edge, const Parameters& parameters);
 int drawDetectedLines(const uchar* edge, const Features2D_old* lineFeatures, const Parameters& parameters);
 int drawDetectedVertices(const Features2D_old* features, const Parameters& parameters);
 int drawDetectedEllipses(const uchar* edge, const Features2D_old* features, const Parameters& parameters);
-int drawTrackPoints(const Features2D_old* features, const Parameters& parameters);
-
-int drawStereoVertices(const uchar* edge, const StereoData& stereo, int pairing, const Parameters& parameters, const CameraParam* cameraParam);
-int drawStereoCircles(const uchar* edge, const StereoData& stereo, int pairing, const Parameters& parameters, const CameraParam* cameraParam);
-
-int printStereoVertices(const StereoData& stereo, int pairing);
-int printStereoCircles(const StereoData& stereo, int pairing);
 
 int drawCircleCandidate(const uchar* edge,
                         const std::vector<CircleCandidate>& candidates,
