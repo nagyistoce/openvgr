@@ -488,10 +488,13 @@ getPropertyVector(double mat[4][4],            // 合同変換行列
 
 static double
 calcEvaluationValue2D_on_line(Features3D* model, const cv::Point& p1, const cv::Point& p2, 
-                              const cv::Mat& dstImage, cv::Mat* plot)
+                              const cv::Mat& dstImage, cv::Mat* plot, MatchResult* result)
 {
   ovgr::PointsOnLine points(p1.x, p1.y, p2.x, p2.y);
   double score = 0.0;
+  int npoint = 0;
+  int cpoint = 0;
+  const float dist_thresh = 5.0;
 
   do
     {
@@ -505,12 +508,23 @@ calcEvaluationValue2D_on_line(Features3D* model, const cv::Point& p1, const cv::
             {
               float dist_value = dstImage.at<float>(prow, pcol);
               score += 1.0 / (double) (dist_value + 1.0);
+
+              // 投影点数
+              npoint++;
+              // エッジとの距離が近い点数
+              if (dist_value < dist_thresh)
+                {
+                  cpoint++;
+                }
             }
 
           plot->at<uchar>(prow, pcol) += 1;
         }
     }
   while (points.next());
+
+  result->npoint += npoint;
+  result->cpoint += cpoint;
 
   return score;
 }
@@ -568,8 +582,8 @@ calcEvaluationValue2D(Features3D* model, int p_camera,
       mult_tPose(pos3d, vertex.tPose, vertex.endpoint2);
       projectXYZ2LRwithTrans(model, result->mat, p_camera, pos3d, &pos2d[2]);
 
-      score += (calcEvaluationValue2D_on_line(model, pos2d[0], pos2d[1], dstImage, &plot)
-                + calcEvaluationValue2D_on_line(model, pos2d[1], pos2d[2], dstImage, &plot));
+      score += (calcEvaluationValue2D_on_line(model, pos2d[0], pos2d[1], dstImage, &plot, result)
+                + calcEvaluationValue2D_on_line(model, pos2d[1], pos2d[2], dstImage, &plot, result));
 # ifdef PROJECT_DEBUG
       cv::line(dstImage_color, pos2d[0], pos2d[1], color, lineThickness, CV_AA);
       cv::line(dstImage_color, pos2d[1], pos2d[2], color, lineThickness, CV_AA);
@@ -642,7 +656,7 @@ calcEvaluationValue2D(Features3D* model, int p_camera,
                 cv::line(dstImage_color, curve[(j+1)%2], curve[j%2], color, lineThickness, CV_AA);
 # endif
                 score += calcEvaluationValue2D_on_line(model, curve[(j+1)%2], curve[j%2], dstImage,
-                                                       &plot);
+                                                       &plot, result);
               }
           }
           
@@ -673,7 +687,7 @@ calcEvaluationValue2D(Features3D* model, int p_camera,
                         cv::line(dstImage_color, curve[(k+1)%2], curve[k%2], color, lineThickness, CV_AA);
 # endif
                         score += calcEvaluationValue2D_on_line(model, curve[(k+1)%2], curve[k%2], 
-                                                               dstImage, &plot);
+                                                               dstImage, &plot, result);
                       }
                   }
                 else if (nangle[j] == 2)
@@ -697,7 +711,7 @@ calcEvaluationValue2D(Features3D* model, int p_camera,
                         cv::line(dstImage_color, curve[(k+1)%2], curve[k%2], color, lineThickness, CV_AA);
 # endif
                         score += calcEvaluationValue2D_on_line(model, curve[(k+1)%2], curve[k%2], 
-                                                               dstImage, &plot);
+                                                               dstImage, &plot, result);
                       }
                   }
               }
@@ -709,8 +723,10 @@ calcEvaluationValue2D(Features3D* model, int p_camera,
                 cv::line(dstImage_color, pos[0][1], pos[1][0], color, lineThickness, CV_AA);
 # endif
                 // 遮蔽輪郭線(円筒の側面)を評価
-                score += calcEvaluationValue2D_on_line(model, pos[0][0], pos[1][1], dstImage, &plot);
-                score += calcEvaluationValue2D_on_line(model, pos[0][1], pos[1][0], dstImage, &plot);
+                score += calcEvaluationValue2D_on_line(model, pos[0][0], pos[1][1], 
+                                                       dstImage, &plot, result);
+                score += calcEvaluationValue2D_on_line(model, pos[0][1], pos[1][0], 
+                                                       dstImage, &plot, result);
               }
           }
 
@@ -737,6 +753,8 @@ calcEvaluationValue2DMultiCameras(Features3D* model,      // モデルの３次�
                                   const std::vector<cv::Mat>& dstImages)  // 距離変換画像
 {
   double score = 0.0;
+  result->npoint = 0;
+  result->cpoint = 0;
 
   switch (pairing)
     {
