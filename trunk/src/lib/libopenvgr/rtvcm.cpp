@@ -666,16 +666,6 @@ mark_rotational_symmetric_data(Feature* data, const int num_data, AuxFeature *au
       row[3] = 1.0;
     }
 
-  for (i = 0; i < 3; ++i)
-    {
-      for (j = 0; j < V.rows; ++j)
-        {
-          printf("% 5.1f ", V.at<double>(j, i));
-        }
-      printf("\n");
-    }
-  printf("\n");
-
   for (i = 0; i < num_data-1; ++i)
     {
       if (data[i].label & M3DF_LABEL_NOEVAL)
@@ -750,12 +740,12 @@ convertRTVCMtoFeatures3D(RTVCM rtvcm,          // モデルデータ
     {
       convertVertex(rtvcm.vertex[i], feature.Vertices[i]);
     }
-  mark_rotational_symmetric_data(feature.Vertices, numOfVertices, feature.Circles, numOfCircles);
-
   for (i = 0; i < rtvcm.ncircle; i++)
     {
       convertCircle(rtvcm.circle[i], feature.Circles[i]);
     }
+
+  mark_rotational_symmetric_data(feature.Vertices, numOfVertices, feature.Circles, numOfCircles);
   mark_rotational_symmetric_data(feature.Circles, numOfCircles, feature.Vertices, numOfVertices);
 
   return 0;
