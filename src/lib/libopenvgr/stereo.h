@@ -98,32 +98,6 @@ void projectXYZ2LR(Data_2D* pos2D,             // ２次元画像上の投影点
                    double position[3],         // ３次元点座標
                    CameraParam* cameraParam);  // 投影する画像のカメラパラメータ
 
-//! ステレオ対応データのメモリ解放
-void freeStereoData(StereoData* stereo);
-
-//! ステレオ対応データの作成
-//! 戻り値：ステレオ対応データ
-StereoData StereoCorrespondence(StereoPairing pairing,   // ステレオペア情報
-                                CalibParam calib,        // キャリブレーションデータ
-                                Features2D_old* left,    // 左画像の２次元特徴
-                                Features2D_old* right,   // 右画像の２次元特徴
-                                Parameters parameters);  // 全パラメータ
-
-//! ステレオ処理結果を３次元特徴構造体へセットする
-bool setFeature3D(StereoData& stereo, // ステレオ対応データ
-		  Features3D& feature); // ３次元特徴データ
-
-//! ステレオ処理結果を３次元特徴構造体へセットする：３眼ＯＲ処理
-bool setFeature3D_TBLOR(StereoData& stereoLR, // ＬＲペアのステレオ対応データ
-                        StereoData& stereoLV, // ＬＶペアのステレオ対応データ
-                        StereoData& stereoRV, // ＲＶペアのステレオ対応データ
-                        Features3D& feature); // ３次元特徴データ
-
-//! ステレオ処理結果を３次元特徴構造体へセットする：３眼ＡＮＤ処理
-bool setFeature3D_TBLAND(StereoData& stereoLR, // ＬＲペアのステレオ対応データ
-                         StereoData& stereoLV, // ＬＶペアのステレオ対応データ
-                         Features3D& feature); // ３次元特徴データ
-
 //! ステレオ処理結果を旧3次元特徴構造体へセットする
 bool set_circle_to_OldFeature3D(const std::vector<CircleCandidate>& candidates,
                                 Features3D* feature); // ３次元特徴データ

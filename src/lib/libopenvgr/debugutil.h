@@ -23,7 +23,6 @@ int drawDetectedVertices(const Features2D_old* features, const Parameters& param
 int drawDetectedEllipses(const uchar* edge, const Features2D_old* features, const Parameters& parameters);
 int drawTrackPoints(const Features2D_old* features, const Parameters& parameters);
 
-int drawStereoCorrespondence(const StereoData& stereo, int pairing, const Parameters& parameters);
 int drawStereoVertices(const uchar* edge, const StereoData& stereo, int pairing, const Parameters& parameters, const CameraParam* cameraParam);
 int drawStereoCircles(const uchar* edge, const StereoData& stereo, int pairing, const Parameters& parameters, const CameraParam* cameraParam);
 

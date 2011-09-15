@@ -388,43 +388,6 @@ drawDetectedEllipses(const uchar* edge, const Features2D_old* features, const Pa
 }
 
 int
-drawStereoCorrespondence(const StereoData& stereo, int pairing, const Parameters& parameters)
-{
-  // 頂点、円中心のステレオ対応結果表示（左画像）・保存
-  // 背景表示画像：なし
-  // ステレオ対応結果変数名：stereo
-
-  IplImage* cvGrayImage = createDebugImage(parameters);
-
-  if (cvGrayImage == NULL)
-    {
-      return VISION_MALLOC_ERROR;
-    }
-
-  CvPoint  pt;
-  CvScalar white = CV_RGB(255, 255, 255);
-  Feature2D_old* Lfeature;
-  int ix,iy;
-
-  // 特徴点の描画
-  for (int i = 0; i < stereo.numOfconics; i++)
-    {
-      if (stereo.conics[i].valid != 1)
-        {
-          continue;
-        }
-      Lfeature = stereo.conics[i].featureL;
-      ix = roundoff(Lfeature->center[0]);
-      iy = roundoff(Lfeature->center[1]);
-      pt = cvPoint(ix, iy);
-      cvLine(cvGrayImage, pt, pt, white);
-    }
-
-  outDebugImage(cvGrayImage, "stereo", pairing, parameters.dbgdisp);
-  return 0;
-}
-
-int
 drawStereoVertices(const uchar* edge,
                    const StereoData& stereo,
                    int pairing,
