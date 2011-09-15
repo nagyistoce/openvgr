@@ -165,6 +165,12 @@ matchVertex(Vertex* scene, Vertex* model, double diffrate, double mat[4][4])
 {
   double sangle, mangle, adif;
 
+  // 評価不要のラベルがついているか調べる
+  if (model->label & M3DF_LABEL_NOEVAL)
+    {
+      return -1;
+    }
+
   // 頂点を構成する線分の成す角を求める
   sangle = scene->angle;
   mangle = model->angle;
@@ -187,6 +193,12 @@ static int
 matchCircle(Circle* scene, Circle* model, double diffrate, double mat[4][4])
 {
   double rdif;
+
+  // 評価不要のラベルがついているか調べる
+  if (model->label & M3DF_LABEL_NOEVAL)
+    {
+      return -1;
+    }
 
   // 半径の異なる度合いを調べる
   rdif = 100.0 * fabs(model->radius - scene->radius) / model->radius;
