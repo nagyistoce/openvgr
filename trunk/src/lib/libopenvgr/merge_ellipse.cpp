@@ -1,12 +1,20 @@
-// Features2D_old ¹½Â¤ÂÎ¤Ë³ÊÇ¼¤µ¤ì¤¿ ConicType_Ellipse ¤È¤¤¤¦ÆÃÄ§Æ±»Î¤Î
-// ¥Ş¡¼¥¸²ÄÇ½À­¤òÄ´¤Ù¡¢¥Ş¡¼¥¸²ÄÇ½¤Ê¾ì¹ç¤Ë¤Ï¥Æ¥¹¥È¤·¡¢¾ò·ï¤òËş¤¿¤»¤Ğ
-// ¥Ş¡¼¥¸¸å¤ÎÂÊ±ß¤ò¥ê¥¹¥È¤ËÄÉ²Ã¤¹¤ë
+/* -*- coding: utf-8 -*-
+ merge_ellipse.cpp
+
+ Copyright (c) 2011 AIST  All Rights Reserved.
+ Eclipse Public License v1.0 (http://www.eclipse.org/legal/epl-v10.html)
+
+ $Date::                            $
+*/
+// Features2D_old æ§‹é€ ä½“ã«æ ¼ç´ã•ã‚ŒãŸ ConicType_Ellipse ã¨ã„ã†ç‰¹å¾´åŒå£«ã®
+// ãƒãƒ¼ã‚¸å¯èƒ½æ€§ã‚’èª¿ã¹ã€ãƒãƒ¼ã‚¸å¯èƒ½ãªå ´åˆã«ã¯ãƒ†ã‚¹ãƒˆã—ã€æ¡ä»¶ã‚’æº€ãŸã›ã°
+// ãƒãƒ¼ã‚¸å¾Œã®æ¥•å††ã‚’ãƒªã‚¹ãƒˆã«è¿½åŠ ã™ã‚‹
 #include <stdio.h>
 
 #include "extractFeature_old.h"
 #include "ellipseIW.h"
 
-// Ìá¤êÃÍ
+// æˆ»ã‚Šå€¤
 #define MERGE_ELLIPSE_OK (0)
 #define MERGE_ELLIPSE_NG (1)
 
@@ -247,10 +255,10 @@ free_arrays(MergeEllipseArrays	*me)
   return;
 }
 
-// ÂÊ±ß¾å¤ÎÅÀ¤Ï
+// æ¥•å††ä¸Šã®ç‚¹ã¯
 // (axis[0]*cos(t)*ev[0][0]+axis[1]*sin(t)*ev[1][0]+center[0],
 //  axis[0]*cos(t)*ev[0][1]+axis[1]*sin(t)*ev[1][1]+center[1])
-// ¤Ê¤Î¤Ç¡¢
+// ãªã®ã§ã€
 // cos(t) = (ev[1][1](x-center[0])-ev[1][0](y-center[1]))/axis[0]
 // sin(t) = (ev[0][1](x-center[0])+ev[0][0](y-center[1]))/axis[1]
 
@@ -320,11 +328,11 @@ calc_terminal_point(EllipseTerminal	*ei,
 }
 		    
 
-// ÂÊ±ß¾å¤ÎÅÀ¤Ï
+// æ¥•å††ä¸Šã®ç‚¹ã¯
 // (axis[0]*cos(t)*ev[0][0]+axis[1]*sin(t)*ev[1][0]+center[0],
 //  axis[0]*cos(t)*ev[0][1]+axis[1]*sin(t)*ev[1][1]+center[1])
-//  tangent : dP/dt .. tÁı²ÃÊı¸ş¤ÎÀÜÀş 
-// ³°Â¦¤ÎË¡Àş¤Ï dP/dt ¤ò»ş·×²ó¤ê¤Ë(col,row²èÁüÃæ¤Ç¤ÏÈ¾»ş·×²ó¤ê¤Ë)£¹£°ÅÙ¤Ş¤ï¤·¤¿¤â¤Î
+//  tangent : dP/dt .. tå¢—åŠ æ–¹å‘ã®æ¥ç·š 
+// å¤–å´ã®æ³•ç·šã¯ dP/dt ã‚’æ™‚è¨ˆå›ã‚Šã«(col,rowç”»åƒä¸­ã§ã¯åŠæ™‚è¨ˆå›ã‚Šã«)ï¼™ï¼åº¦ã¾ã‚ã—ãŸã‚‚ã®
 
 static void
 set_maxmin_part(EllipseTerminal	*ei)
@@ -390,25 +398,25 @@ set_eterminal(Features2D_old	*f2D,
     ei->coef[i] = e0->coef[i];
   }
 
-  // Ã¼ÅÀ¤ò¤µ¤¬¤¹
-  // Ã±¤Ë start ¤ä end ¤Ç¤Ï¤Ê¤¯¡¢ÂÊ±ßÃæ¿´¤«¤é¤ß¤¿¤È¤­¤Î³ÑÅÙÈÏ°Ï¤ÎÃ¼
-  // ¶ÊÀş¤ÎÉ½Î¢¤¬Ï¢Â³¤·¤Æ¤Ò¤È¤Ä¤ÎÂÊ±ß¤ò¹½À®¤·¤Æ¤¤¤ë¾ì¹ç¤â¤¢¤ë
-  // ¤½¤¦¤¤¤Ã¤¿¾ì¹ç¡¢ end == start + nPoint-1 ¤Ç¤¢¤Ã¤Æ¤âÁ´¼ş¤È¤Ï¸Â¤é¤Ê¤¤
+  // ç«¯ç‚¹ã‚’ã•ãŒã™
+  // å˜ã« start ã‚„ end ã§ã¯ãªãã€æ¥•å††ä¸­å¿ƒã‹ã‚‰ã¿ãŸã¨ãã®è§’åº¦ç¯„å›²ã®ç«¯
+  // æ›²ç·šã®è¡¨è£ãŒé€£ç¶šã—ã¦ã²ã¨ã¤ã®æ¥•å††ã‚’æ§‹æˆã—ã¦ã„ã‚‹å ´åˆã‚‚ã‚ã‚‹
+  // ãã†ã„ã£ãŸå ´åˆã€ end == start + nPoint-1 ã§ã‚ã£ã¦ã‚‚å…¨å‘¨ã¨ã¯é™ã‚‰ãªã„
 
-  // (x_i - x_c)(y_{i+1}-y_c) - (y_i - y_c)(x_{i+1}-x_c) ¤ÎÉä¹æ¤Ç
-  // ³ÑÅÙ¤¬Áı²Ã¤«¸º¾¯¤«¤òÈ½Äê¤¹¤ë¥×¥é¥¹¤Ê¤éÁı²Ã
+  // (x_i - x_c)(y_{i+1}-y_c) - (y_i - y_c)(x_{i+1}-x_c) ã®ç¬¦å·ã§
+  // è§’åº¦ãŒå¢—åŠ ã‹æ¸›å°‘ã‹ã‚’åˆ¤å®šã™ã‚‹ãƒ—ãƒ©ã‚¹ãªã‚‰å¢—åŠ 
 
-  // ¶ËÂç¡¢¶Ë¾®¤ò¸¡½Ğ¤·¡¢¤½¤Î¤È¤­¤Î³ÑÅÙ¤ò atan2 ¤Ç·×»»¤·¤ÆÊİ»ı¤¹¤ë¡£
-  // ÂÊ±ß¾å¤ÎÅÀ¤Ï
+  // æ¥µå¤§ã€æ¥µå°ã‚’æ¤œå‡ºã—ã€ãã®ã¨ãã®è§’åº¦ã‚’ atan2 ã§è¨ˆç®—ã—ã¦ä¿æŒã™ã‚‹ã€‚
+  // æ¥•å††ä¸Šã®ç‚¹ã¯
   // (axis[0]*cos(t)*ev[0][0]+axis[1]*sin(t)*ev[1][0]+center[0],
   //  axis[0]*cos(t)*ev[0][1]+axis[1]*sin(t)*ev[1][1]+center[1])
-  // ¤Ê¤Î¤Ç¡¢
+  // ãªã®ã§ã€
   // cos(t) = (ev[1][1](x-center[0])-ev[1][0](y-center[1]))/axis[0]
   // sin(t) = (ev[0][1](x-center[0])+ev[0][0](y-center[1]))/axis[1]
   // 
-  // ¤½¤·¤Æ
-  // ¤¹¤Ç¤Ë·×»»¤µ¤ì¤¿ ºÇÂç¡¢ºÇ¾®³ÑÅÙ¤ÈÈæ³Ó¤·¤Æ¹¹¿·¤¹¤ë
-  // ÅÀÎó¤Î¥µ¥¤¥º¤¬ nPoint ¤ÈÆ±°ì¤Î¤È¤­¤Î¤ß¡¢ºÇ¸å¤ÎÅÀ¤ÈºÇ½é¤ÎÅÀ¤Î´Ö¤ÎÈ½Äê¤ò²Ã¤¨¤ë
+  // ãã—ã¦
+  // ã™ã§ã«è¨ˆç®—ã•ã‚ŒãŸ æœ€å¤§ã€æœ€å°è§’åº¦ã¨æ¯”è¼ƒã—ã¦æ›´æ–°ã™ã‚‹
+  // ç‚¹åˆ—ã®ã‚µã‚¤ã‚ºãŒ nPoint ã¨åŒä¸€ã®ã¨ãã®ã¿ã€æœ€å¾Œã®ç‚¹ã¨æœ€åˆã®ç‚¹ã®é–“ã®åˆ¤å®šã‚’åŠ ãˆã‚‹
 
   point = f2D->track[e0->nTrack].Point;
   nPoint = f2D->track[e0->nTrack].nPoint;
@@ -417,7 +425,7 @@ set_eterminal(Features2D_old	*f2D,
   if(goal < start) goal += nPoint;
   prev_sign = SIGN_UNDEF;
 
-  // ÅÀÎó¤¬track¤ÎÁ´ÅÀ¤Ç¤¢¤ì¤Ğ¡¢end¤ÎÅÀ¤Èstart ¤ÎÅÀ¤ò·ë¤ÖÀşÊ¬¤òÄ´¤Ù¤ë
+  // ç‚¹åˆ—ãŒtrackã®å…¨ç‚¹ã§ã‚ã‚Œã°ã€endã®ç‚¹ã¨start ã®ç‚¹ã‚’çµã¶ç·šåˆ†ã‚’èª¿ã¹ã‚‹
   if(mod_nPoint(goal+1, nPoint) == mod_nPoint(start, nPoint)){
     goal++;
   }
@@ -448,7 +456,7 @@ set_eterminal(Features2D_old	*f2D,
 	case SIGN_INC:
 	  if(prev_sign == SIGN_DEC)
 	    {
-	      // ¶Ë¾®
+	      // æ¥µå°
 	      theta = calc_angle_i(ei, &point[mod_nPoint(i, nPoint)*2]);
 	      if(theta > prev_locmax)
 		{
@@ -464,7 +472,7 @@ set_eterminal(Features2D_old	*f2D,
 	case SIGN_DEC:
 	  if(prev_sign == SIGN_INC)
 	    {
-	      // ¶ËÂç
+	      // æ¥µå¤§
 	      theta = calc_angle_i(ei, &point[mod_nPoint(i, nPoint)*2]);
 	      if(theta < prev_locmin)
 		{
@@ -483,7 +491,7 @@ set_eterminal(Features2D_old	*f2D,
 
       if(ei->max_theta > ei->min_theta + 2.0*M_PI)
 	{
-	  // ÂÊ±ßÁ´¼ş¤Î¥Ç¡¼¥¿¤¢¤ê
+	  // æ¥•å††å…¨å‘¨ã®ãƒ‡ãƒ¼ã‚¿ã‚ã‚Š
 	  ei->flag = ELLIPSE_TERMINAL_WHOLE;
 	  return;
 	}
@@ -518,7 +526,7 @@ set_eterminal(Features2D_old	*f2D,
 	}
     }
 
-  // ÉôÊ¬¥Ç¡¼¥¿¤Î¥»¥Ã¥È
+  // éƒ¨åˆ†ãƒ‡ãƒ¼ã‚¿ã®ã‚»ãƒƒãƒˆ
   set_maxmin_part(ei);
 
   return;
@@ -538,7 +546,7 @@ check_center_zone_whole(EllipseTerminal	*ei,
 	 ei->coef[5]);
   if(val > 0.0)
     {
-      // ÂÊ±ß¤Î³°Â¦
+      // æ¥•å††ã®å¤–å´
       return REF_NG;
     }
 
@@ -554,13 +562,13 @@ check_center_zone(EllipseTerminal	*ei,
   double	tmpvec[2];
   double	a0, a1;
 
-  // Á´¼ş
+  // å…¨å‘¨
   if(ei->flag == ELLIPSE_TERMINAL_WHOLE)
     {
       return check_center_zone_whole(ei, fj);
     }
 
-  // Á´¼ş°Ê³°
+  // å…¨å‘¨ä»¥å¤–
   theta = calc_angle_d(ei, fj->center);
 
   while(theta < ei->min_theta){
@@ -573,12 +581,12 @@ check_center_zone(EllipseTerminal	*ei,
 
   if(theta < ei->max_theta)
     {
-      //±ß¸ÌÂ¦
+      //å††å¼§å´
       return check_center_zone_whole(ei, fj);
     }
 
   
-  //³«ÊüÂ¦
+  //é–‹æ”¾å´
   for(n = 0; n < NTERMINAL; n++){ 
     for(i = 0; i < NDIM2; i++){
       tmpvec[i] = fj->center[i] - ei->p[n][i];
@@ -595,7 +603,7 @@ check_center_zone(EllipseTerminal	*ei,
   return REF_OK;
 }
 
-// ºÆµ¢Åª¤Ë±ß¸Ì¤ò¥Ş¡¼¥¸¤¹¤ë
+// å†å¸°çš„ã«å††å¼§ã‚’ãƒãƒ¼ã‚¸ã™ã‚‹
 static int
 search_another_arc(int	step,
 		   int	i0,
@@ -623,7 +631,7 @@ search_another_arc(int	step,
 	}
 
       /*
-	³ÎÇ§ÂÔ¤Á
+	ç¢ºèªå¾…ã¡
       if(cond == ALL_REF_OK)
 	{
 	  if(try_ellipse_merge() == TRY_ELLIPSE_OK)
@@ -650,7 +658,7 @@ merge_ellipse(Features2D_old	*f2D)
   int	jFeature;
   int	found_pair;
 
-  // ¥í¡¼¥«¥ëÇÛÎó¹½Â¤ÂÎ¤Î malloc
+  // ãƒ­ãƒ¼ã‚«ãƒ«é…åˆ—æ§‹é€ ä½“ã® malloc
   if(initial_arrays(f2D, &me) == INITIAL_ARRAYS_NG)
     {
       free_arrays(&me);
@@ -659,13 +667,13 @@ merge_ellipse(Features2D_old	*f2D)
     }
 
   /*
-  // »²¾Ètable¤ÎºîÀ®
+  // å‚ç…§tableã®ä½œæˆ
   tab = create_ref_table(f2D);
   if(tab == NULL){
     return MERGE_ELLIPSE_ERR;
   }
 
-  // Ã¼ÅÀ¾ğÊó¹ÔÎó
+  // ç«¯ç‚¹æƒ…å ±è¡Œåˆ—
   eterm = (EllipseTerminal *)calloc(f2D->nFeature, sizeof(EllipseTerminal));
   if(eterm == NULL){
     free_arrays(tab);
@@ -673,12 +681,12 @@ merge_ellipse(Features2D_old	*f2D)
   }
   */
 
-  // ³ÆÂÊ±ß¤ÎÃ¼ÅÀÀÜÀş¤Î·×»»¡ÊÁ´¼ş¤ÎÂÊ±ß¤«¤É¤¦¤«¤Î¥Õ¥é¥°¤âÎ©¤Æ¤ë¡Ë
+  // å„æ¥•å††ã®ç«¯ç‚¹æ¥ç·šã®è¨ˆç®—ï¼ˆå…¨å‘¨ã®æ¥•å††ã‹ã©ã†ã‹ã®ãƒ•ãƒ©ã‚°ã‚‚ç«‹ã¦ã‚‹ï¼‰
   for(iFeature = 0; iFeature < f2D->nFeature; iFeature++){
     set_eterminal(f2D, iFeature, &me.eterm[iFeature]);
   }
 
-  // »²¾Ètable ¤ÎºîÀ® ÂÊ±ß¤Î¸Ì¤ÎÈÏ°Ï¤ËÂ¾¤ÎÂÊ±ß¤ÎÃæ¿´¤¬¤¢¤ë¤«
+  // å‚ç…§table ã®ä½œæˆ æ¥•å††ã®å¼§ã®ç¯„å›²ã«ä»–ã®æ¥•å††ã®ä¸­å¿ƒãŒã‚ã‚‹ã‹
   for(iFeature = 0; iFeature < f2D->nFeature; iFeature++){
     for(jFeature = 0; jFeature < f2D->nFeature; jFeature++){
       if(jFeature == iFeature){
@@ -691,9 +699,9 @@ merge_ellipse(Features2D_old	*f2D)
     }
   }
 
-  // Sum ¤Î·×»»
+  // Sum ã®è¨ˆç®—
   /*
-    table ¤Î³ÎÇ§ÂÔ¤Á
+    table ã®ç¢ºèªå¾…ã¡
   for(iFeature = 0; iFeature < f2D->nFeature; iFeature++){
     me.flist[iFeature] = 0;
   }
@@ -722,7 +730,7 @@ merge_ellipse(Features2D_old	*f2D)
     }
   */
 
-  // ÁÈ¤ß¹ç¤ï¤»¥ê¥¹¥È¤ÎºîÀ®
+  // çµ„ã¿åˆã‚ã›ãƒªã‚¹ãƒˆã®ä½œæˆ
   me.nFeature0 = f2D->nFeature;
   for(iFeature = 0; iFeature < me.nFeature0; iFeature++){
     me.flist[iFeature] = 1;
