@@ -1392,20 +1392,12 @@ searchEllipseIW(Features2D_old* f2D,
   Feature2D_old max_f2D;
   //int i;
   int turn;
-  int start0;
+  int start0, start1;
   int goal0, goal1;
   OffsetProp  offsetProp;
   int gapcount;
   int dir0;
   int len0, len1;
-
-  turn = 0;
-  start0 = 0;
-  goal0 = 0;
-  goal1 = 0;
-  dir0 = 0;
-  len0 = 0;
-  len1 = 0;
 
   offsetProp.mode = paramE->OffsetMode;
   if (offsetProp.mode == ELLIPSE_OFFSET_STATIC)
@@ -1558,8 +1550,7 @@ searchEllipseIW(Features2D_old* f2D,
           if (mod_nPoint(goal, nPoint) == mod_nPoint(start + nPoint - 1, nPoint))
             // 一周点列判定
             {
-              if (add_new_ellipse(f2D, start, goal, &max_f2D, paramE, nPoint, iTrack, point) == 
-                  ADD_NEW_ELLIPSE_NG)
+              if (add_new_ellipse(f2D, start, goal, &max_f2D, paramE, nPoint, iTrack, point) == -1)
                 {
                   return SEARCH_FEATURES2_NG;
                 }
@@ -1601,7 +1592,7 @@ searchEllipseIW(Features2D_old* f2D,
                     {
                       // 全周の楕円が見つかった。それを登録して終了
                       if (add_new_ellipse(f2D, start, goal, &max_f2D, paramE,
-                                          nPoint, iTrack, point) == ADD_NEW_ELLIPSE_NG)
+                                          nPoint, iTrack, point) == -1)
                         {
                           return SEARCH_FEATURES2_NG;
                         }
@@ -1660,7 +1651,7 @@ searchEllipseIW(Features2D_old* f2D,
                   if (len0 == paramE->MinLength)
                     {
                       if (add_new_ellipse(f2D, start, goal, &max_f2D, paramE,
-                                          nPoint, iTrack, point) == ADD_NEW_ELLIPSE_NG)
+                                          nPoint, iTrack, point) == -1)
                         {
                           return SEARCH_FEATURES2_NG;
                         }
@@ -1701,7 +1692,7 @@ searchEllipseIW(Features2D_old* f2D,
                     {
                       // 全周の楕円が見つかった。それを登録して終了
                       if (add_new_ellipse(f2D, start, goal, &max_f2D, paramE,
-                                          nPoint, iTrack, point) == ADD_NEW_ELLIPSE_NG)
+                                          nPoint, iTrack, point) == -1)
                         {
                           return SEARCH_FEATURES2_NG;
                         }
@@ -1744,7 +1735,7 @@ searchEllipseIW(Features2D_old* f2D,
                   // max_f2D を登録し、ループを抜ける
                   // add new feature
                   if (add_new_ellipse(f2D, start, goal, &max_f2D, paramE,
-                                      nPoint, iTrack, point) == ADD_NEW_ELLIPSE_NG)
+                                      nPoint, iTrack, point) == -1)
                     {
                       return SEARCH_FEATURES2_NG;
                     }
