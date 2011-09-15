@@ -20,13 +20,6 @@
 #include "correspondence.hpp"
 
 // 二次元楕円のステレオ対応から三次元空間中の真円を推定・復元する
-void EllipseToCircle(StereoPairing pairing,    // ステレオペア情報
-		     CalibParam calib,         // キャリブレーションデータ
-		     StereoData& stereo,       // ステレオ対応情報（復元真円情報を含む）
-		     unsigned char* edgeL,     // 評価用エッジ画像（左）
-		     unsigned char* edgeR,     // 評価用エッジ画像（右）
-		     Parameters parameters);   // 全パラメータ
-
 void
 reconstruct_ellipse2D_to_circle3D(std::vector<const ovgr::Features2D*>& feature,
                                   const ovgr::CorrespondingSet& cs,
