@@ -59,7 +59,7 @@ typedef struct P2D
 //! ３次元頂点情報
 typedef struct Vertex
 {
-  m3df_feature_label label;     //!< ラベル
+  int label;                    //!< ラベル
   int n;                        //!< 通し番号
   int side;                     //!< 表裏情報
   double endpoint1[3];          //!< 辺の端点(mm)
@@ -77,7 +77,7 @@ typedef struct Vertex
 //! ３次元円情報
 typedef struct Circle
 {
-  m3df_feature_label label;     //!< ラベル
+  int label;                    //!< ラベル
   int n;                        //!< 通し番号
   int side;                     //!< 表裏情報
   double radius;                //!< 半径
