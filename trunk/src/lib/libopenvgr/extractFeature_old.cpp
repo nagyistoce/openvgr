@@ -2223,7 +2223,7 @@ extractFeatures_old(unsigned char* edge,   // エッジ画像
       for (iTrack = 0; iTrack < features->nTrack; iTrack++)
         {
           //if (searchFeatures(work, features, iTrack, parameters) < 0)
-          if(searchEllipseIW(features, iTrack, paramEIW) == SEARCH_FEATURES2_NG)
+	  if(searchEllipseIW(features, iTrack, paramEIW) == SEARCH_FEATURES2_NG)
             {
               clearFeatures2Dpointer(&features);
               goto ending; // メモリ確保失敗
@@ -2264,6 +2264,9 @@ extractFeatures_old(unsigned char* edge,   // エッジ画像
             }
         }
 
+      // 新マージ関数
+      merge_ellipse(features);
+
       // 楕円検出結果から、複数の楕円のデータを使って、楕円当てはめを行い、マージする
       if (Ellipse2Ellipse(features, features, parameters) < 0)
         {
@@ -2293,7 +2296,7 @@ extractFeatures_old(unsigned char* edge,   // エッジ画像
       for (iTrack = 0; iTrack < ellipseFeatures->nTrack; iTrack++)
         {
           //if (searchFeatures(work, ellipseFeatures, iTrack, parameters) < 0 )
-          if(searchEllipseIW(ellipseFeatures, iTrack, paramEIW) == SEARCH_FEATURES2_NG)
+	  if(searchEllipseIW(ellipseFeatures, iTrack, paramEIW) == SEARCH_FEATURES2_NG)
             {
               clearFeatures2Dpointer(&features);
               goto ending; // メモリ確保失敗

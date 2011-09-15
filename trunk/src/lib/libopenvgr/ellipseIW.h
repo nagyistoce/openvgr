@@ -89,4 +89,6 @@ int searchEllipseIW(Features2D_old* f2D,
                     int iTrack,
                     const ParamEllipseIW* paramE);
 
+int merge_ellipse(Features2D_old	*f2D);
+
 #endif
