@@ -632,11 +632,11 @@ max_distance_of_points(const cv::Mat& V1, const cv::Mat& V2)
 }
 
 // 回転対称のデータに印をつける
-template <class Feature>
+template <class Feature, class AuxFeature>
 static void
-mark_rotational_symmetric_data(Feature* data, const int num_data)
+mark_rotational_symmetric_data(Feature* data, const int num_data, AuxFeature *aux = 0, const int num_aux = 0)
 {
-  cv::Mat V(num_data, 4, CV_64FC1);
+  cv::Mat V(num_data + num_aux, 4, CV_64FC1);
   int i, j;
 
   if (num_data < 2)
@@ -644,7 +644,7 @@ mark_rotational_symmetric_data(Feature* data, const int num_data)
       return;
     }
 
-  // 頂点座標を代入
+  // 座標を代入
   for (i = 0; i < num_data; ++i)
     {
       double* row = V.ptr<double>(i);
@@ -654,6 +654,27 @@ mark_rotational_symmetric_data(Feature* data, const int num_data)
         }
       row[3] = 1.0;
     }
+
+  // 補助データの座標を代入
+  for (i = 0; i < num_aux; ++i)
+    {
+      double* row = V.ptr<double>(num_data + i);
+      for (j = 0; j < 3; ++j)
+        {
+          row[j] = aux[i].tPose[3][j];
+        }
+      row[3] = 1.0;
+    }
+
+  for (i = 0; i < 3; ++i)
+    {
+      for (j = 0; j < V.rows; ++j)
+        {
+          printf("% 5.1f ", V.at<double>(j, i));
+        }
+      printf("\n");
+    }
+  printf("\n");
 
   for (i = 0; i < num_data-1; ++i)
     {
@@ -665,7 +686,7 @@ mark_rotational_symmetric_data(Feature* data, const int num_data)
       for (j = i+1; j < num_data; ++j)
         {
           double tTrans[4][4], dist = 0.0;
-          cv::Mat T(4, 4, CV_64FC1, tTrans), VT(num_data, 4, CV_64FC1);
+          cv::Mat T(4, 4, CV_64FC1, tTrans), VT;
 
           if (data[j].label & M3DF_LABEL_NOEVAL)
             {
@@ -682,7 +703,6 @@ mark_rotational_symmetric_data(Feature* data, const int num_data)
               data[j].label |= M3DF_LABEL_NOEVAL;
             }
         }
-
 #if 0
       printf("%d:\n", i);
       for (j = 0; j < num_data; ++j)
@@ -730,13 +750,13 @@ convertRTVCMtoFeatures3D(RTVCM rtvcm,          // モデルデータ
     {
       convertVertex(rtvcm.vertex[i], feature.Vertices[i]);
     }
-  mark_rotational_symmetric_data(feature.Vertices, numOfVertices);
+  mark_rotational_symmetric_data(feature.Vertices, numOfVertices, feature.Circles, numOfCircles);
 
   for (i = 0; i < rtvcm.ncircle; i++)
     {
       convertCircle(rtvcm.circle[i], feature.Circles[i]);
     }
-  mark_rotational_symmetric_data(feature.Circles, numOfCircles);
+  mark_rotational_symmetric_data(feature.Circles, numOfCircles, feature.Vertices, numOfVertices);
 
   return 0;
 }
