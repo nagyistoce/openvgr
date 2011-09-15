@@ -1,4 +1,5 @@
 #summary Installation guide for OpenVGR
+#labels Phase-Deploy,Featured
 
 = Introduction =
 
