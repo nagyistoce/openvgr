@@ -107,9 +107,6 @@ RecognitionKernel(RecogImage** image,
   model.image[1] = image[1]->pixel;
   model.edge[0] = edgeL;
   model.edge[1] = edgeR;
-  model.trace_pdist = param.match.interval;
-  model.trace_search = param.match.search;
-  model.trace_edge = param.match.edge;
   if (imageNum > 2)
     {
       model.image[2] = image[2]->pixel;
