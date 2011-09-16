@@ -99,9 +99,6 @@ typedef struct Features3D
   Circle* Circles;              //!< ３次元円特徴
   uchar* image[3];              //!< 原画像ポインタ
   uchar* edge[3];               //!< エッジ画像ポインタ
-  double trace_pdist;           //!< ２次元評価時の評価点間隔
-  int trace_search;             //!< ２次元評価時の探索範囲
-  int trace_edge;               //!< ２次元評価時の有効エッジ強度閾値
   int pointCounts;              //!< ２次元評価のための全評価点数
   double traceCounts;           //!< ２次元評価に用いた評価点数
 } Features3D;

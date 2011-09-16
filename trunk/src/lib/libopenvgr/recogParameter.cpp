@@ -87,16 +87,10 @@ setDefaultRecogParameter(Parameters& param)
   double tolerance1 = 5.0;      // 頂点の角度差の許容割合
   double tolerance2 = 10.0;     // 円の半径の差の許容割合
   double pdist = 3.0;           // モデルサンプル点間隔(mm)
-  double intervalParam = 3.0;   // 認識評価時のサンプル点間隔
-  int searchParam = 7;          // 認識評価時のエッジ探索範囲
-  int edgeParam = 3;            // 認識評価時のエッジ強度閾値
 
   param.match.tolerance1 = tolerance1;
   param.match.tolerance2 = tolerance2;
   param.match.pdist = pdist;
-  param.match.interval = intervalParam;
-  param.match.search = searchParam;
-  param.match.edge = edgeParam;
 
   param.paramEIW.Condition = DEF_PARAME_CONDITION;
   param.paramEIW.MinLength = DEF_PARAME_MIN_LENGTH;
@@ -299,11 +293,6 @@ loadRecogParameter(char* path, Parameters& param)
             case eStereoError:
               // ステレオ対応誤差
               param.stereo.ethr = atof(p);
-              break;
-
-            case eMatchEdge:
-              // 認識評価時のエッジ強度閾値
-              param.match.edge = atoi(p);
               break;
 
             case eIwCondition:

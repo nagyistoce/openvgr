@@ -100,12 +100,6 @@ typedef struct ParametersMatch
   double tolerance2;
   //! モデルサンプル点間隔（mm）
   double pdist;
-  //! 評価時サンプル点間隔（画素）
-  double interval;
-  //! 評価時エッジ探索範囲（画素）
-  int search;
-  //! 評価時エッジ強度閾値
-  int edge;
 } ParametersMatch;
 
 //! 全パラメータ
