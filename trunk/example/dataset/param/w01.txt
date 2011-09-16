@@ -53,6 +53,15 @@ MinLengthLine2D       60
 # 端点間距離の閾値
 #
 HDMax			30.0
+#
+# 楕円検出パラメータ
+#
+IW_Condition   0
+IW_MinLength   20
+IW_MinShortRad 2.0
+IW_ThMeanError 0.5
+IW_ThMaxError  2.0
+IW_OffsetMode  0
 
 #
 # ステレオ対応用パラメータ
@@ -78,19 +87,3 @@ LMax			303
 # ステレオ対応誤差
 #
 StereoError		1.0
-
-#
-# 特徴マッチング用パラメータ
-#
-
-#
-# 認識評価時のエッジ強度閾値
-#
-MatchEdge		3.125
-
-IW_Condition   0
-IW_MinLength   20
-IW_MinShortRad 2.0
-IW_ThMeanError 0.5
-IW_ThMaxError  2.0
-IW_OffsetMode  0
