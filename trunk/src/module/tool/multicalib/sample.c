@@ -114,7 +114,7 @@ main (int argc, char **argv)
 static void
 show_help (const char *prog_name)
 {
-  printf ("usage: %s [-w <filename>] [-s <size>] [-g <row>x<col>] [-l]\n", prog_name);
+  printf ("usage: %s [-o <filename>] [-s <size>] [-g <row>x<col>] [-l]\n", prog_name);
 
   printf ("\n");
 
@@ -192,7 +192,7 @@ get_grid (const char *str, int *row, int *col)
 static void
 parse_opt (int argc, char **argv, opt_t *opt)
 {
-  const static char optstr[] = "s:g:lm:w:h";
+  const static char optstr[] = "s:g:lm:o:w:h";
   char ch;
 
   opt->pattern_col  =  8;
@@ -231,6 +231,8 @@ parse_opt (int argc, char **argv, opt_t *opt)
           break;
 
         case 'w':
+          fprintf (stderr, "WARNING: '-w' is obsoleted. Use '-o' instead.\n");
+        case 'o':
           {
             FILE *fp = NULL;
             fp = fopen (optarg, "w");
