@@ -297,7 +297,7 @@ loadRecogParameter(char* path, Parameters& param)
               param.paramEIW.Condition = (atoi(p) != 0 ? ELLIPSE_CONDITION_MAX : ELLIPSE_CONDITION_MEAN);
               break;
             case eIwMinLength:
-              param.paramEIW.MinLength = atof(p);
+              param.paramEIW.MinLength = atoi(p);
               break;
             case eIwMinShortRadPrev:
               param.paramEIW.MinShortRadPrev = atof(p);
