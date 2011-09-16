@@ -123,7 +123,6 @@ enum paramKey
   eLMax,
 
   eStereoError,
-  eMatchEdge,
 
   eIwCondition,
   eIwMinLength,
@@ -157,7 +156,6 @@ static const char* paramKeyString[] = {
   "LMax",
 
   "StereoError",
-  "MatchEdge",
 
   "IW_Condition",
   "IW_MinLength",
