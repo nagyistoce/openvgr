@@ -135,6 +135,20 @@ show_help (const char *prog_name)
   printf ("use IEEE 1394 legacy mode (default: IEEE 1394b mode)\n");
 
   printf ("\n");
+
+  printf ("--- Keyboard operations ---\n");
+  printf ("<mode change>\n");
+  printf ("l\tlive mode; show captured images.\n");
+  printf ("c\tchessboard detection mode; search a chessboard pattern using OpenCV.\n");
+  printf ("q\tterminate this program.\n");
+
+  printf ("\n");
+
+  printf ("<in a detection mode>\n");
+  printf ("[ret]\t\tadd current detection result to a queue.\n");
+  printf ("W (shift-w)\twrite the queue to stdout or a specified file (-o <filename>).\n");
+
+  printf ("\n");
 }
 
 static int
