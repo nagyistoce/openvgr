@@ -596,9 +596,9 @@ optimize_camera_parameters (camera_param_t *camera_params, extrinsic_param_t *pl
               CV_MAT_ELEM (*H, double, i, i) += scale * CV_MAT_ELEM (*H, double, i, i);
             }
 
-          if (cvSolve (H, JtF, rev, CV_LU) != 1)
+          if (cvSolve (H, JtF, rev, CV_CHOLESKY) != 1)
             {
-              cvSolve (H, JtF, rev, CV_SVD);
+              cvSolve (H, JtF, rev, CV_SVD_SYM);
             }
 
           /* predict reduction of error */
