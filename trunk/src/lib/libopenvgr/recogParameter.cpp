@@ -78,8 +78,10 @@ setDefaultRecogParameter(Parameters& param)
   param.stereo.amin = 85;       // 頂点 線分の成す角度最小値
   param.stereo.amax = 95;       // 頂点 線分の成す角度最小値
 
+#if 0
   param.stereo.lmin = 10;       // 頂点と端点の距離最小値
   param.stereo.lmax = 200;      // 頂点と端点の距離最大値
+#endif
 
   param.stereo.depn = 500;      // カメラからの距離(near)
   param.stereo.depf = 2000;     // カメラからの距離(far)
@@ -119,9 +121,10 @@ enum paramKey
   eDepF,
   eAMin,
   eAMax,
+#if 0
   eLMin,
   eLMax,
-
+#endif
   eStereoError,
 
   eIwCondition,
@@ -152,9 +155,10 @@ static const char* paramKeyString[] = {
   "DepF",
   "AMin",
   "AMax",
+#if 0
   "LMin",
   "LMax",
-
+#endif
   "StereoError",
 
   "IW_Condition",
@@ -279,6 +283,7 @@ loadRecogParameter(char* path, Parameters& param)
               // 頂点 線分の成す角度最小値
               param.stereo.amax = atoi(p);
               break;
+#if 0
             case eLMin:
               // 頂点と端点の距離最小値
               param.stereo.lmin = atoi(p);
@@ -287,7 +292,7 @@ loadRecogParameter(char* path, Parameters& param)
               // 頂点と端点の距離最大値
               param.stereo.lmax = atoi(p);
               break;
-
+#endif
             case eStereoError:
               // ステレオ対応誤差
               param.stereo.ethr = atof(p);

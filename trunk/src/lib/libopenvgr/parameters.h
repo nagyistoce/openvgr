@@ -85,10 +85,12 @@ typedef struct ParmetersStereo
   double amin;
   //! 頂点 角度最大値（度）
   double amax;
+#if 0
   //! 頂点 線分最小値（mm）
   double lmin;
   //! 頂点 線分最大値（mm）
   double lmax;
+#endif
 } ParametersStereo;
 
 //! 認識用パラメータ
