@@ -13,7 +13,7 @@
 #ifndef _MATCH3DFEATURE_H
 #define _MATCH3DFEATURE_H
 
-#include <cxcore.h>
+#include <cv.h>
 #include "parameters.h"
 #include "calib.h"
 

@@ -16,8 +16,6 @@
 
 #include <cv.h>
 #include <highgui.h>
-#include <cxtypes.h>
-#include <cxcore.h>
 
 #include "parameters.h"
 #include "extractEdge.h"
