@@ -14,8 +14,6 @@
 #include <sys/time.h>
 #include "VisionSVC_impl.h"
 
-#include <cxtypes.h>
-#include <cxcore.h>
 #include <cv.h>
 #include <highgui.h>
 
