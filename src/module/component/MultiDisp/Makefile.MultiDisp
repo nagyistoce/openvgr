@@ -15,9 +15,9 @@
 #
 # $Id$
 #
-OPENCV_LIB = -lcvaux -lhighgui -lcv -lcxcore
+OPENCV_LIB = `pkg-config --libs opencv`
 
-CXXFLAGS = -I/usr/include/opencv `rtm-config --cflags` -I.
+CXXFLAGS = `pkg-config --cflags opencv` `rtm-config --cflags` -I.
 LDFLAGS  = $(OPENCV_LIB) `rtm-config --libs`
 SHFLAGS  = -shared
 
