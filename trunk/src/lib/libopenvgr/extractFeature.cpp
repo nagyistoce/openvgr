@@ -386,7 +386,7 @@ create_LineFeature(LineFeature2D* feature, const Points& points, support_index_t
 
   /* 抽出した点列に当てはまる直線を求める */
   cv::Vec6f line;
-  cv::fitLine(points_for_fitting, line, CV_DIST_L2, 0, 0.01, 0.01);
+  cv::fitLine(cv::Mat(points_for_fitting), line, CV_DIST_L2, 0, 0.01, 0.01);
   feature->coef[0] = -line[1];
   feature->coef[1] =  line[0];
   feature->coef[2] = -(feature->coef[0] * line[3] + feature->coef[1] * line[4]);
@@ -586,7 +586,7 @@ compute_ellipse_coef(double coef[6], const Points& points)
   const double min_width = 10.0;
   double error = 0.0;
 
-  cv::RotatedRect rr = fitEllipse(points);
+  cv::RotatedRect rr = fitEllipse(cv::Mat(points));
 
   if (rr.size.width < min_width || rr.size.height < min_width)
     {
