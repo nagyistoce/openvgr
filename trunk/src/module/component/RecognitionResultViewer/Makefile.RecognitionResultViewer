@@ -17,7 +17,6 @@
 #
 # $Id$
 #
-OPENCVINCDIR = /usr/include/opencv
 OPENCVLIBS = `pkg-config opencv --libs`
 
 GTKINCDIR = `pkg-config gtk+-2.0 --cflags`
@@ -25,7 +24,7 @@ GTKLIBS   = `pkg-config gtk+-2.0 --libs`
 
 LIBDIR   = ../../../lib/libopenvgr
 
-CXXFLAGS = -Wall -g -O2 `rtm-config --cflags` -I. -I$(LIBDIR) -I$(OPENCVINCDIR) $(GTKINCDIR)
+CXXFLAGS = -Wall -g -O2 `rtm-config --cflags` -I. -I$(LIBDIR) `pkg-config --cflags opencv` $(GTKINCDIR)
 LDFLAGS  = `rtm-config --libs` -L$(LIBDIR) -lopenvgr $(OPENCVLIBS) $(GTKLIBS)
 SHFLAGS  = -shared
 

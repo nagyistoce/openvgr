@@ -21,8 +21,6 @@
 #
 # $Id$
 #
-OPENCVINCDIR = /usr/include/opencv
-
 OPENCVLIBS = `pkg-config opencv --libs`
 
 LIBDIR = ../../../lib/libopenvgr
@@ -33,7 +31,7 @@ LIBDIR = ../../../lib/libopenvgr
 OPTFLAGS = -O2
 #OPTFLAGS =
 
-CXXFLAGS = -Wall -g $(OPTFLAGS) `rtm-config --cflags` -I. -I$(LIBDIR) -I$(OPENCVINCDIR)
+CXXFLAGS = -Wall -g $(OPTFLAGS) `rtm-config --cflags` -I. -I$(LIBDIR) `pkg-config --cflags opencv`
 DEFS =
 #DEFS = -DRECOGNITION_TEST
 LDFLAGS  = `rtm-config --libs` -L$(LIBDIR) -lopenvgr $(OPENCVLIBS)

@@ -19,9 +19,9 @@
 # $Id$
 #
 LIBCAPTURE_DIR = ../../../lib/libcapture
-OPENCV_LIB = -lcvaux -lhighgui -lcv -lcxcore
+OPENCV_LIB = `pkg-config --libs opencv`
 
-CXXFLAGS = -I$(LIBCAPTURE_DIR) -I/usr/include/opencv `rtm-config --cflags` -I.
+CXXFLAGS = -I$(LIBCAPTURE_DIR) `pkg-config --cflags opencv` `rtm-config --cflags` -I.
 LDFLAGS  = -L$(LIBCAPTURE_DIR) -lcapture $(OPENCV_LIB) -ldc1394 `rtm-config --libs`
 SHFLAGS  = -shared
 
