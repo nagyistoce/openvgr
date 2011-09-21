@@ -13,7 +13,6 @@
 
 //OpenCV header file include
 #include<cv.h>
-#include<cxcore.h>
 #include<highgui.h>
 
 #include "Measure3D.h"
@@ -129,8 +128,11 @@ release_work3D(Work3D *work)
   cvReleaseMat(&(work->state.preFilteredImg0));
   cvReleaseMat(&(work->state.preFilteredImg1));
   cvReleaseMat(&(work->state.slidingSumBuf));
+#if (!defined(CV_VERSION))
+  || (((CV_MAJOR_VERSION) == 2) && ((CV_MINOR_VERSION) == 0))
   cvReleaseMat(&(work->state.dbmin));
   cvReleaseMat(&(work->state.dbmax));
+#endif
 
   return;
 }
