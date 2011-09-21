@@ -9,8 +9,7 @@
  * @brief ベクトル処理、行列処理　ユーティリティ関数
  * @date \$Date::                            $
  */
-#include <cxtypes.h>
-#include <cxcore.h>
+#include <cv.h>
 
 #include "vectorutil.h"
 #include "common.h"

@@ -10,7 +10,6 @@
  * @date \$Date::                            $
  */
 #include <stdio.h>
-#include <cxcore.h>
 #include <cv.h>
 
 #include "common.h"

@@ -13,7 +13,7 @@
 #ifndef _VECTORUTIL_H
 #define _VECTORUTIL_H
 
-#include <cxcore.h>
+#include <cv.h>
 #include "common.h"
 #include "quaternion.h"
 
