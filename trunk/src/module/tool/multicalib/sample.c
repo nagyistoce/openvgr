@@ -692,7 +692,7 @@ s_detect_checker(IplImage *image, opt_t *opt)
                                     CV_CALIB_CB_ADAPTIVE_THRESH
                                     | CV_CALIB_CB_NORMALIZE_IMAGE
                                     | CV_CALIB_CB_FILTER_QUADS
-#if CV_MINOR_VERSION > 0
+#if ((CV_MAJOR_VERSION) == 2) && ((CV_MINOR_VERSION) > 0)
                                     | CV_CALIB_CB_FAST_CHECK
 #endif
                                     ) != 0)
