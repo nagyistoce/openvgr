@@ -28,10 +28,12 @@ typedef struct tag_capture
   int prefer_one_shot;
   int prefer_bmode;
 
+  int drop_frames;
+
   int verbose;
 } capture_t;
 
-const static capture_t CAPTURE_INIT_VAL = {0, NULL, NULL, 0, NULL, 4, 0, 0, 1};
+const static capture_t CAPTURE_INIT_VAL = {0, NULL, NULL, 0, NULL, 4, 0, 0, 0, 1};
 
 
 typedef enum tag_capture_frame_format

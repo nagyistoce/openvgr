@@ -72,6 +72,8 @@ main (int argc, char **argv)
     }
 
   cap.prefer_bmode = opt.ieee1394b_mode; /* use 1394b mode if the cameras support it */
+  cap.drop_frames = 1; /* enable dropping frames */
+
   status = capture_setup (&cap, "ieee1394board.0");
   if (status != CAPTURE_SUCCESS)
     {

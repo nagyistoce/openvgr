@@ -298,6 +298,7 @@ int capture_single(capture_t *cap, const int index, capture_frame_t *frame)
   dc1394camera_t *cam = cap->cameras[index];
   dc1394error_t err;
   dc1394video_frame_t *vframe = NULL;
+  uint32_t frames_behind = 0;
 
   if (cap->prefer_one_shot && cam->one_shot_capable == DC1394_TRUE) {
     err = dc1394_video_set_one_shot(cam, DC1394_ON);
@@ -312,14 +313,32 @@ int capture_single(capture_t *cap, const int index, capture_frame_t *frame)
   if (err != DC1394_SUCCESS) {
     return CAPTURE_ERROR;
   }
+  frames_behind = vframe->frames_behind;
 
   /* copy the image to frame->raw_data */
   s_copy_frame(vframe, frame);
 
   err = dc1394_capture_enqueue(cam, vframe);
-  DC1394_WRN(err, "could not dequeue frame.");
+  DC1394_WRN(err, "could not enqueue frame.");
   if (err != DC1394_SUCCESS) {
     return CAPTURE_ERROR;
+  }
+
+  /* drop behind frames if drop_frame is enable */
+  if (cap->drop_frames) {
+    while (frames_behind-- > 0) {
+      err = dc1394_capture_dequeue(cam, DC1394_CAPTURE_POLICY_WAIT, &vframe);
+      DC1394_WRN(err, "could not dequeue frame.");
+      if (err != DC1394_SUCCESS) {
+        return CAPTURE_ERROR;
+      }
+      
+      err = dc1394_capture_enqueue(cam, vframe);
+      DC1394_WRN(err, "could not enqueue frame.");
+      if (err != DC1394_SUCCESS) {
+        return CAPTURE_ERROR;
+      }
+    }
   }
 
   return CAPTURE_SUCCESS;
@@ -330,6 +349,7 @@ int capture_multi(capture_t *cap, capture_frame_t *frames)
   int i;
   dc1394error_t err;
   dc1394video_frame_t **vframes = NULL;
+  uint32_t frames_behind = 0;
 
   vframes = (dc1394video_frame_t **)malloc(sizeof(dc1394video_frame_t *) * cap->num_active);
   if (vframes == NULL) {
@@ -355,6 +375,14 @@ int capture_multi(capture_t *cap, capture_frame_t *frames)
     }
   }
 
+  /* find the minimum number of behind frames */
+  frames_behind = vframes[0]->frames_behind;
+  for (i = 1; i < cap->num_active; ++i) {
+    if (frames_behind > vframes[i]->frames_behind) {
+      frames_behind = vframes[i]->frames_behind;
+    }
+  }
+
   /* copy the image to frame->raw_data */
   for (i = 0; i < cap->num_active; ++i) {
     s_copy_frame(vframes[i], &frames[i]);
@@ -362,7 +390,34 @@ int capture_multi(capture_t *cap, capture_frame_t *frames)
 
   for (i = 0; i < cap->num_active; ++i) {
     err = dc1394_capture_enqueue(cap->cameras[i], vframes[i]);
-    DC1394_WRN(err, "could not dequeue frame.");
+    DC1394_WRN(err, "could not enqueue frame.");
+    if (err != DC1394_SUCCESS) {
+      free(vframes);
+      return CAPTURE_ERROR;
+    }
+  }
+
+  /* drop behind frames if drop_frame is enable */
+  if (cap->drop_frames != 0) {
+    while (frames_behind-- > 0) {
+      for (i = 0; i < cap->num_active; ++i) {
+        err = dc1394_capture_dequeue(cap->cameras[i], DC1394_CAPTURE_POLICY_WAIT, &vframes[i]);
+        DC1394_WRN(err, "could not dequeue frame.");
+        if (err != DC1394_SUCCESS) {
+          free(vframes);
+          return CAPTURE_ERROR;
+        }
+      }
+      
+      for (i = 0; i < cap->num_active; ++i) {
+        err = dc1394_capture_enqueue(cap->cameras[i], vframes[i]);
+        DC1394_WRN(err, "could not enqueue frame.");    
+        if (err != DC1394_SUCCESS) {
+          free(vframes);
+          return CAPTURE_ERROR;
+        }
+      }
+    }
   }
 
   free(vframes);
