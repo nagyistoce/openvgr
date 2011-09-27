@@ -13,6 +13,9 @@
 #include <string.h>
 #include <stdio.h>
 
+#include <cv.h>
+#include <highgui.h>
+
 #include "recogImage.h"
 
 //! 画像メモリの確保と初期化
@@ -36,6 +39,64 @@ constructImage(const int colsize, const int rowsize, const int bytePerPixel)
       return NULL;
     }
   memset(image->pixel, 0, sizeof(*(image->pixel)) * colsize * rowsize * bytePerPixel);
+
+  return image;
+}
+
+//! OpenCV画像からの変換
+RecogImage*
+convertImage(const cv::Mat& cvimg)
+{
+  RecogImage* image = NULL;
+  cv::Mat refimg, dstimg;
+
+  // 画像データの正当性チェック
+  if (cvimg.rows < 1 || cvimg.cols < 1 || cvimg.empty())
+    {
+      return NULL;
+    }
+  if (cvimg.channels() != 1 && cvimg.channels() != 3)
+    {
+      return NULL;
+    }
+
+  // メモリの確保
+  image = constructImage(cvimg.cols, cvimg.rows, cvimg.channels());
+  if (image == NULL)
+    {
+      return NULL;
+    }
+
+  if (cvimg.channels() == 1)
+    {
+      dstimg = cv::Mat(cvimg.rows, cvimg.cols, CV_8UC1, image->pixel);
+    }
+  else
+    {
+      dstimg = cv::Mat(cvimg.rows, cvimg.cols, CV_8UC3, image->pixel);
+    }
+
+  // 必要なら画像データを1 byte正数に変換してコピー
+  if (cvimg.depth() != CV_8U && cvimg.depth() != CV_8S)
+    {
+      if (cvimg.depth() == 1)
+        {
+          cvimg.convertTo(dstimg, CV_8UC1, 255.0);
+        }
+      else
+        {
+          cvimg.convertTo(dstimg, CV_8UC3, 255.0);
+        }
+    }
+  else
+    {
+      cvimg.copyTo(refimg);
+    }
+  
+  // サイズなどの情報を設定
+  image->colsize = cvimg.cols;
+  image->rowsize = cvimg.rows;
+  image->bytePerPixel = cvimg.channels();
 
   return image;
 }
