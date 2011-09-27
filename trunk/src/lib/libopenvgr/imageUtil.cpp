@@ -191,10 +191,10 @@ convertTimedMultiCameraImageToIplImage(const Img::TimedMultiCameraImage& frame)
 
 //
 //! TimedMultiCameraImage 画像データを、RecogImage 構造体形式に変換する。
-//! カラー画像はグレー画像に変換する。
+//! color_mode == false のときカラー画像をグレー画像に変換する。
 //
 RecogImage**
-convertTimedMultiCameraImageToRecogImage(const Img::TimedMultiCameraImage& frame)
+convertTimedMultiCameraImageToRecogImage(const Img::TimedMultiCameraImage& frame, const bool color_mode)
 {
   int imageNum = frame.data.image_seq.length();
   if (imageNum < 1)
@@ -211,6 +211,7 @@ convertTimedMultiCameraImageToRecogImage(const Img::TimedMultiCameraImage& frame
       channelNum = 1;
     }
   int imageSize = imageWidth * imageHeight * channelNum;
+  fprintf(stderr, "Channel (%s): %d\n", __FUNCTION__, channelNum);
 
   RecogImage** resultImage = (RecogImage**) malloc(imageNum * sizeof(RecogImage *));
   if (resultImage == NULL)
@@ -228,42 +229,80 @@ convertTimedMultiCameraImageToRecogImage(const Img::TimedMultiCameraImage& frame
         }
     }
 
-  int i, j;
+  int i, j, k;
 
-  for (i = 0; i < imageNum; i++)
+  // メモリの確保
+  for (i = 0; i < imageNum; ++i)
     {
-      *(resultImage + i) = constructImage(imageWidth, imageHeight, 1);
-      if (*(resultImage + i) == NULL)
+      if (color_mode == false)
+        {
+          resultImage[i] = constructImage(imageWidth, imageHeight, 1);
+        }
+      else
+        {
+          resultImage[i] = constructImage(imageWidth, imageHeight, 3);
+        }
+
+      if (resultImage[i] == NULL)
         {
           // エラー処理
-          for (j = 0; j < i; j++)
+          while (--i >= 0)
             {
-              destructImage(*(resultImage + j));
+              destructImage(resultImage[i]);
             }
           free(resultImage);
           destructImage(colorImage);
           return NULL;
         }
+    }
 
-      // 画像 Data をコピーする。
-      if (channelNum == 3)
+  // 画像データをコピーする。
+  if (color_mode == false)
+    {
+      for (i = 0; i < imageNum; i++)
         {
-          // カラー画像
-          for (j = 0; j < imageSize; j++)
+          if (channelNum == 3)
             {
-              colorImage->pixel[j] =
-                (unsigned char) frame.data.image_seq[i].image.raw_data[j];
+              // カラー画像
+              for (j = 0; j < imageSize; j++)
+                {
+                  colorImage->pixel[j] = (unsigned char) frame.data.image_seq[i].image.raw_data[j];
+                }
+              // グレー画像に変換する。
+              rgb2grayImage(resultImage[i], colorImage);
             }
-          // グレー画像に変換する。
-          rgb2grayImage(*(resultImage + i), colorImage);
-        }
-      else if (channelNum == 1)
-        {
-          // グレー画像
-          for (j = 0; j < imageSize; j++)
+          else if (channelNum == 1)
             {
-              (*(resultImage + i))->pixel[j] =
-                (unsigned char) frame.data.image_seq[i].image.raw_data[j];
+              // グレー画像
+              for (j = 0; j < imageSize; j++)
+                {
+                  resultImage[i]->pixel[j] = (unsigned char) frame.data.image_seq[i].image.raw_data[j];
+                }
+            }
+        }
+    }
+  else
+    {
+      for (i = 0; i < imageNum; i++)
+        {
+          if (channelNum == 3)
+            {
+              // カラー画像
+              for (j = 0; j < imageSize; j++)
+                {
+                  resultImage[i]->pixel[j] = (unsigned char) frame.data.image_seq[i].image.raw_data[j];
+                }
+            }
+          else if (channelNum == 1)
+            {
+              // グレー画像
+              for (j = 0; j < imageSize; j++)
+                {
+                  for (k = 0; k < 3; k++)
+                    {
+                      resultImage[i]->pixel[3*j + k] = (unsigned char) frame.data.image_seq[i].image.raw_data[j];
+                    }
+                }
             }
         }
     }
