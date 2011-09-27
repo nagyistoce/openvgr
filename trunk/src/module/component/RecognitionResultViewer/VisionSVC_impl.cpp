@@ -12,6 +12,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/time.h>
+#include <sys/stat.h>
 #include "VisionSVC_impl.h"
 
 #include <cv.h>
@@ -263,17 +264,15 @@ RecognitionResultViewerServiceSVC_impl::display(const Img::TimedMultiCameraImage
   CvSize size;
   int ret;
 
-  // 歪み補正マップ
-  IplImage** undistortMapX;
-  IplImage** undistortMapY;
-
   // 画像データを OpenCV の IplImage 構造体形式に変換する。
   // 認識結果を描画するために個別の IplImage 構造体を作成する。
   // 認識候補の重ね合わせ用に、画像は channel 数 3 で確保する。
   // ImageData::raw_data は、TopLeft、RGB 順、行単位での padding なし。
 
-  // 歪み補正後の画像に変換する。
-  IplImage** resultImage = convertTimedMultiCameraImageToUndistortIplImage(frame, &undistortMapX, &undistortMapY);
+  // 歪み補正後の画像に変換する。キャリブレーションデータも CalibParam 構造体に変換される。
+  CalibParam calib = { 0 };
+  IplImage** resultImage = convertTimedMultiCameraImageToUndistortIplImage(frame, calib);
+
   if (resultImage == NULL)
     {
       // 画像の変換に失敗。
@@ -307,8 +306,7 @@ RecognitionResultViewerServiceSVC_impl::display(const Img::TimedMultiCameraImage
           // エラー処理
           fprintf(stderr, "表示画像領域が確保できませんでした。\n");
           // 個別画像領域の開放
-          freeUndistortIplImage(resultImage,
-                                undistortMapX, undistortMapY, imageNum);
+          freeUndistortIplImage(resultImage, imageNum);
           return;
         }
     }
@@ -346,8 +344,7 @@ RecognitionResultViewerServiceSVC_impl::display(const Img::TimedMultiCameraImage
     {
       // モデルリストがない場合、画像を表示して終了。
       // 個別画像領域の開放
-      freeUndistortIplImage(resultImage,
-                            undistortMapX, undistortMapY, imageNum);
+      freeUndistortIplImage(resultImage, imageNum);
       setWindowFlag(true);
       return;
     }
@@ -357,8 +354,7 @@ RecognitionResultViewerServiceSVC_impl::display(const Img::TimedMultiCameraImage
     {
       // 候補が 0 の場合、画像を表示して終了。
       // 個別画像領域の開放
-      freeUndistortIplImage(resultImage,
-                            undistortMapX, undistortMapY, imageNum);
+      freeUndistortIplImage(resultImage, imageNum);
       setWindowFlag(true);
       return;
     }
@@ -382,8 +378,7 @@ RecognitionResultViewerServiceSVC_impl::display(const Img::TimedMultiCameraImage
       // 候補番号 0 が見つからないか、モデル ID が不正。
       fprintf(stderr, "候補番号 0 が認識候補にありません。\n");
       // 個別画像領域の開放
-      freeUndistortIplImage(resultImage,
-                            undistortMapX, undistortMapY, imageNum);
+      freeUndistortIplImage(resultImage, imageNum);
       // 画像のみ表示して終了。
       setWindowFlag(true);
       return;
@@ -395,8 +390,7 @@ RecognitionResultViewerServiceSVC_impl::display(const Img::TimedMultiCameraImage
       fprintf(stderr, "エラーコード (%d) が入力されました。\n",
               (int) pos.data[candNo * RecogResultElementNum + eRRErrorCode]);
       // 個別画像領域の開放
-      freeUndistortIplImage(resultImage,
-                            undistortMapX, undistortMapY, imageNum);
+      freeUndistortIplImage(resultImage, imageNum);
       // 画像を表示しないで終了。
       return;
     }
@@ -414,8 +408,7 @@ RecognitionResultViewerServiceSVC_impl::display(const Img::TimedMultiCameraImage
       // モデル ID が不正。
       fprintf(stderr, "認識候補で指定されたモデル ID がモデルリストにありません。\n");
       // 個別画像領域の開放
-      freeUndistortIplImage(resultImage,
-                            undistortMapX, undistortMapY, imageNum);
+      freeUndistortIplImage(resultImage, imageNum);
       // 画像のみ表示して終了。
       setWindowFlag(true);
       return;
@@ -428,13 +421,14 @@ RecognitionResultViewerServiceSVC_impl::display(const Img::TimedMultiCameraImage
     {
       fprintf(stderr, "モデルファイルが読み込めません。\n");
       // 個別画像領域の開放
-      freeUndistortIplImage(resultImage,
-                            undistortMapX, undistortMapY, imageNum);
+      freeUndistortIplImage(resultImage, imageNum);
       // 画像のみ表示して終了。
       setWindowFlag(true);
       return;
     }
 
+  // キャリブレーションデータをセット
+  model.calib = &calib;
   // モデルデータにモデルサンプル点を生成する。
   makeModelPoints(&model, 3.0);
 
@@ -451,21 +445,6 @@ RecognitionResultViewerServiceSVC_impl::display(const Img::TimedMultiCameraImage
         }
     }
   matrix[3][3] = 1.0;
-
-  // キャリブレーションデータを Camera 構造体に変換する。
-  CalibParam calib = { 0 };
-  calib.numOfCameras = imageNum;
-  calib.colsize = frame.data.image_seq[0].image.width;
-  calib.rowsize = frame.data.image_seq[1].image.height;
-
-  setCalibFromCameraImage(frame.data.image_seq[0], calib.CameraL);
-  setCalibFromCameraImage(frame.data.image_seq[1], calib.CameraR);
-  if (imageNum > 2)
-    {
-      setCalibFromCameraImage(frame.data.image_seq[2], calib.CameraV);
-    }
-
-  model.calib = &calib;
 
   double zoomRatio = 1.0;
   if (m_displayImage->width > m_screenWidth)
@@ -484,15 +463,6 @@ RecognitionResultViewerServiceSVC_impl::display(const Img::TimedMultiCameraImage
       lineThickness = 2;
     }
 
-  // 歪み補正前の画像に描画する。
-  IplImage** distImage = convertTimedMultiCameraImageToIplImage(frame);
-  if (distImage == NULL)
-    {
-      // 画像の変換に失敗。
-      fprintf(stderr, "画像の変換に失敗しました。\n");
-      return;
-    }
-
   // 画像データ上にモデルデータを描画
   for (i = 0; i < imageNum; i++)
     {
@@ -502,20 +472,11 @@ RecognitionResultViewerServiceSVC_impl::display(const Img::TimedMultiCameraImage
       sprintf(filename, "/tmp/recogResultImage%02d.ppm", i);
 
       drawModelPoints(&model, matrix, filename,
-                      i, (unsigned char*)(*(distImage + i))->imageData, lineThickness);
+                      i, (unsigned char*)(*(resultImage + i))->imageData, lineThickness);
 #else
       drawModelPoints(&model, matrix, NULL,
-                      i, (unsigned char*)(*(distImage + i))->imageData, lineThickness);
+                      i, (unsigned char*)(*(resultImage + i))->imageData, lineThickness);
 #endif
-
-      // 歪み補正をする。
-      cvRemap(*(distImage + i), *(resultImage + i), 
-                                *(undistortMapX + i), *(undistortMapY + i));
-    }
-
-  for (i = 0; i < imageNum; i++)
-    {
-      cvReleaseImage(distImage + i);
     }
 
   pthread_mutex_lock(&m_mutex_image);
@@ -542,9 +503,23 @@ RecognitionResultViewerServiceSVC_impl::display(const Img::TimedMultiCameraImage
   cvSaveImage("/tmp/recogResultImage.ppm", m_displayImage);
 #endif
 
+#ifdef RECOGNITION_TEST
+//テスト確認用
+  struct timeval current;
+  char timestamp[16];
+  char strbuf[MAX_PATH];
+  gettimeofday( &current, NULL );
+  strftime( timestamp, sizeof(timestamp),
+                "%Y%m%d-%H%M%S", localtime(&current.tv_sec) );
+  mkdir( "recogResultImage" , S_IRWXU | S_IRWXG | S_IRWXO );
+  snprintf( strbuf, sizeof(strbuf),
+                "recogResultImage/recogResultImage.%s.%06ld.ppm",
+                timestamp, current.tv_usec );
+  cvSaveImage(strbuf, m_displayImage);
+#endif
+
   // 個別画像領域の開放
-  freeUndistortIplImage(resultImage,
-                        undistortMapX, undistortMapY, imageNum);
+  freeUndistortIplImage(resultImage, imageNum);
   // 画像データの表示
   setWindowFlag(true);
 
