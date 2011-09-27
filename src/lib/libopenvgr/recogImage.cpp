@@ -207,10 +207,12 @@ rgb2grayImage(RecogImage* target, RecogImage* source)
 }
 
 void
-undistortImage(const RecogImage* src, RecogImage* dst, CameraParam* cp)
+undistortImage(const RecogImage* src, const CameraParam* cp, RecogImage* dst, CameraParam* cp_dst)
 {
   double Anew_elem[3][3], dist[5];
-  cv::Mat A(3, 3, CV_64FC1, cp->intrinsicMatrix), Anew(3, 3, CV_64FC1, Anew_elem), distCoeffs(5, 1, CV_64FC1, dist);
+  const cv::Mat A(3, 3, CV_64FC1, const_cast<double(*)[3]>(cp->intrinsicMatrix));
+  cv::Mat Anew(3, 3, CV_64FC1, Anew_elem), Adst(3, 3, CV_64FC1, cp_dst->intrinsicMatrix);
+  cv::Mat distCoeffs(5, 1, CV_64FC1, dist);
   cv::Mat dimg, img, result;
 
   int i;
@@ -236,7 +238,9 @@ undistortImage(const RecogImage* src, RecogImage* dst, CameraParam* cp)
   dist[4] = cp->Distortion.k3;
 
   /* 歪み補正後の内部パラメータを計算 */
-#if 0
+#if defined(CV_MAJOR_VERSION) \
+  && (((CV_MAJOR_VERSION) > 2) \
+      || (((CV_MAJOR_VERSION) == 2) && ((CV_MINOR_VERSION) >= 1)))
   Anew = cv::getOptimalNewCameraMatrix(A, distCoeffs, cv::Size(src->rowsize, src->colsize), 0.0);
 #else
   A.copyTo(Anew);
@@ -282,13 +286,13 @@ undistortImage(const RecogImage* src, RecogImage* dst, CameraParam* cp)
     }
 
   /* 新しいカメラパラメータを設定 */
-  Anew.copyTo(A);
+  Anew.copyTo(Adst);
 
-  cp->Distortion.k1 = 0.0;
-  cp->Distortion.k2 = 0.0;
-  cp->Distortion.p1 = 0.0;
-  cp->Distortion.p2 = 0.0;
-  cp->Distortion.k3 = 0.0;
+  cp_dst->Distortion.k1 = 0.0;
+  cp_dst->Distortion.k2 = 0.0;
+  cp_dst->Distortion.p1 = 0.0;
+  cp_dst->Distortion.p2 = 0.0;
+  cp_dst->Distortion.k3 = 0.0;
 }
 
 void

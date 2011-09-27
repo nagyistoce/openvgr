@@ -40,7 +40,7 @@ void destructImage (RecogImage* image);
 void rgb2grayImage (RecogImage* target, RecogImage* source);
 
 // 歪み補正画像の作成
-void undistortImage(const RecogImage* src, RecogImage* dst, CameraParam* cp);
+void undistortImage(const RecogImage* src, const CameraParam* cp, RecogImage* dst, CameraParam* cp_dst);
 
 // 歪み補正画像の作成(IplImage用)
 void undistortImage(const IplImage* src, IplImage* dst, CameraParam* cp);
