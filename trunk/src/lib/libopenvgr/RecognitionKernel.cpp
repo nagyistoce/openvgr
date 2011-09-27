@@ -81,22 +81,22 @@ RecognitionKernel(RecogImage** image,
       undistortImage(image[2], &calib.CameraV, image[2], &calib.CameraV);
     }
 
-  unsigned char* edge0 = (unsigned char*) calloc(colsize * rowsize, sizeof(unsigned char));
-  unsigned char* edge1 = (unsigned char*) calloc(colsize * rowsize, sizeof(unsigned char));
-  if (edge0 == NULL || edge1 == NULL)
+  unsigned char* edgeL = (unsigned char*) calloc(colsize * rowsize, sizeof(unsigned char));
+  unsigned char* edgeR = (unsigned char*) calloc(colsize * rowsize, sizeof(unsigned char));
+  if (edgeL == NULL || edgeR == NULL)
     {
-      freeEdgeMemory(edge0, edge1, NULL);
+      freeEdgeMemory(edgeL, edgeR, NULL);
       Match.error = VISION_MALLOC_ERROR;
       return Match;
     }
 
-  unsigned char* edge2 = NULL;
+  unsigned char* edgeV = NULL;
   if (imageNum > 2)
     {
-      edge2 = (unsigned char*) calloc(colsize * rowsize, sizeof(unsigned char));
-      if (edge2 == NULL)
+      edgeV = (unsigned char*) calloc(colsize * rowsize, sizeof(unsigned char));
+      if (edgeV == NULL)
         {
-          freeEdgeMemory(edge0, edge1, NULL);
+          freeEdgeMemory(edgeL, edgeR, NULL);
           Match.error = VISION_MALLOC_ERROR;
           return Match;
         }
@@ -105,12 +105,12 @@ RecognitionKernel(RecogImage** image,
   model.calib = &calib;
   model.image[0] = image[0]->pixel;
   model.image[1] = image[1]->pixel;
-  model.edge[0] = edge0;
-  model.edge[1] = edge1;
+  model.edge[0] = edgeL;
+  model.edge[1] = edgeR;
   if (imageNum > 2)
     {
       model.image[2] = image[2]->pixel;
-      model.edge[2] = edge2;
+      model.edge[2] = edgeV;
     }
 
   // 処理時間計測
@@ -147,52 +147,61 @@ RecognitionKernel(RecogImage** image,
   switch (pairing)
     {
     case DBL_LR:
-      features0 = ImageToFeature2D_old(image[0]->pixel, edge0, param, model);
+      features0 = ImageToFeature2D_old(image[0]->pixel, edgeL, param, model);
       f0 = ovgr::create_new_features_from_old_one(features0, image[0]->pixel, &param);
       param.feature2D.id = 1;
-      features1 = ImageToFeature2D_old(image[1]->pixel, edge1, param, model);
+      features1 = ImageToFeature2D_old(image[1]->pixel, edgeR, param, model);
       f1 = ovgr::create_new_features_from_old_one(features1, image[1]->pixel, &param);
       camParam[0] = &calib.CameraL;
       camParam[1] = &calib.CameraR;
+      edges[0] = edgeL;
+      edges[1] = edgeR;
       break;
 
     case DBL_LV:
-      features0 = ImageToFeature2D_old(image[2]->pixel, edge0, param, model);
+      features0 = ImageToFeature2D_old(image[2]->pixel, edgeV, param, model);
       f0 = ovgr::create_new_features_from_old_one(features0, image[2]->pixel, &param);
       param.feature2D.id = 1;
-      features1 = ImageToFeature2D_old(image[0]->pixel, edge1, param, model);
+      features1 = ImageToFeature2D_old(image[0]->pixel, edgeL, param, model);
       f1 = ovgr::create_new_features_from_old_one(features1, image[0]->pixel, &param);
       camParam[0] = &calib.CameraV;
       camParam[1] = &calib.CameraL;
+      edges[0] = edgeV;
+      edges[1] = edgeL;
       break;
 
     case DBL_RV:
-      features0 = ImageToFeature2D_old(image[1]->pixel, edge0, param, model);
+      features0 = ImageToFeature2D_old(image[1]->pixel, edgeR, param, model);
       f0 = ovgr::create_new_features_from_old_one(features0, image[1]->pixel, &param);
       param.feature2D.id = 1;
-      features1 = ImageToFeature2D_old(image[2]->pixel, edge1, param, model);
+      features1 = ImageToFeature2D_old(image[2]->pixel, edgeV, param, model);
       f1 = ovgr::create_new_features_from_old_one(features1, image[2]->pixel, &param);
       camParam[0] = &calib.CameraR;
       camParam[1] = &calib.CameraV;
+      edges[0] = edgeR;
+      edges[1] = edgeV;
       break;
 
     case TBL_OR:
     case TBL_AND:
-      features0 = ImageToFeature2D_old(image[0]->pixel, edge0, param, model);
+      features0 = ImageToFeature2D_old(image[0]->pixel, edgeL, param, model);
       f0 = ovgr::create_new_features_from_old_one(features0, image[0]->pixel, &param);
       param.feature2D.id = 1;
-      features1 = ImageToFeature2D_old(image[1]->pixel, edge1, param, model);
+      features1 = ImageToFeature2D_old(image[1]->pixel, edgeR, param, model);
       f1 = ovgr::create_new_features_from_old_one(features1, image[1]->pixel, &param);
       param.feature2D.id = 2;
-      features2 = ImageToFeature2D_old(image[2]->pixel, edge2, param, model);
+      features2 = ImageToFeature2D_old(image[2]->pixel, edgeV, param, model);
       f2 = ovgr::create_new_features_from_old_one(features2, image[2]->pixel, &param);
       camParam[0] = &calib.CameraL;        
       camParam[1] = &calib.CameraR;
       camParam[2] = &calib.CameraV;
+      edges[0] = edgeL;
+      edges[1] = edgeR;
+      edges[2] = edgeV;
       break;
 
     default:
-      freeEdgeMemory(edge0, edge1, edge2);
+      freeEdgeMemory(edgeL, edgeR, edgeV);
       Match.error = VISION_PARAM_ERROR;
       return Match;
     }
@@ -205,7 +214,7 @@ RecognitionKernel(RecogImage** image,
   if (features0 == NULL || features1 == NULL)
     {
       freeFeatures2D(features0, features1, features2);
-      freeEdgeMemory(edge0, edge1, edge2);
+      freeEdgeMemory(edgeL, edgeR, edgeV);
       Match.error = VISION_MALLOC_ERROR;
       return Match;
     }
@@ -214,7 +223,7 @@ RecognitionKernel(RecogImage** image,
       if (features2 == NULL)
         {
           freeFeatures2D(features0, features1, features2);
-          freeEdgeMemory(edge0, edge1, edge2);
+          freeEdgeMemory(edgeL, edgeR, edgeV);
           Match.error = VISION_MALLOC_ERROR;
           return Match;
         }
@@ -228,14 +237,12 @@ RecognitionKernel(RecogImage** image,
       cps[0] = &cp_bi;
       features[0] = &f0;
       features[1] = &f1;
-      edges[0] = edge0;
-      edges[1] = edge1;
     }
   else
     {
-      cp_LR = make_corresponding_pairs(f0, *camParam[0], f1, *camParam[1], cpThs);
-      cp_RV = make_corresponding_pairs(f1, *camParam[1], f2, *camParam[2], cpThs);
-      cp_VL = make_corresponding_pairs(f2, *camParam[2], f0, *camParam[0], cpThs);
+      cp_LR = make_corresponding_pairs(f0, calib.CameraL, f1, calib.CameraR, cpThs);
+      cp_RV = make_corresponding_pairs(f1, calib.CameraR, f2, calib.CameraV, cpThs);
+      cp_VL = make_corresponding_pairs(f2, calib.CameraV, f0, calib.CameraL, cpThs);
       cps.resize(3);
       cps[0] = &cp_LR;
       cps[1] = &cp_RV;
@@ -244,9 +251,6 @@ RecognitionKernel(RecogImage** image,
       features[0] = &f0;
       features[1] = &f1;
       features[2] = &f2;
-      edges[0] = edge0;
-      edges[1] = edge1;
-      edges[2] = edge2;
     }
 
   if (pairing != TBL_AND)
@@ -287,7 +291,7 @@ RecognitionKernel(RecogImage** image,
   stime = GetTickCount();
 
   // シーンとモデルデータを照合して認識を実行する。
-  Match = matchFeatures3D(scene, model, edge0, edge1, edge2, param);
+  Match = matchFeatures3D(scene, model, edgeL, edgeR, edgeV, param);
 
   etime = GetTickCount();
   dtime3 = etime - stime;
@@ -297,7 +301,7 @@ RecognitionKernel(RecogImage** image,
 	 dtime1 + dtime2 + dtime3, dtime1, dtime2, dtime3);
   fflush(stdout);
 
-  freeEdgeMemory(edge0, edge1, edge2);
+  freeEdgeMemory(edgeL, edgeR, edgeV);
   freeFeatures3D(&scene);
 
   return Match;
