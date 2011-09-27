@@ -13,6 +13,9 @@
 #ifndef _RECOGIMAGE_H
 #define _RECOGIMAGE_H
 
+#include <cv.h>
+#include <highgui.h>
+
 #include "common.h"
 #include "calib.h"
 
@@ -36,6 +39,9 @@ void rgb2grayImage (RecogImage * target, RecogImage * source);
 
 // 歪み補正画像の作成
 void undistortImage(const RecogImage* src, RecogImage* dst, CameraParam* cp);
+
+// 歪み補正画像の作成(IplImage用)
+void undistortImage(const IplImage* src, IplImage* dst, CameraParam* cp);
 
 // 画像メモリのファイル出力　デバッグ用
 void writeRecogImage(const char* filename, const RecogImage* img);
