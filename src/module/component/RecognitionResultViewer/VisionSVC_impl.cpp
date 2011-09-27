@@ -245,7 +245,6 @@ RecognitionResultViewerServiceSVC_impl::display(const Img::TimedMultiCameraImage
           return;
         }
     }
-  fprintf(stderr, "line: %d\n", __LINE__);
 
 #ifdef _DEBUG
   saveDisplayData(frame, pos);
@@ -279,7 +278,6 @@ RecognitionResultViewerServiceSVC_impl::display(const Img::TimedMultiCameraImage
 
   // 画像をRecogImage型に変換
   RecogImage** resultImage = convertTimedMultiCameraImageToRecogImage(frame, true);
-  fprintf(stderr, "line: %d\n", __LINE__);
 
   if (resultImage == NULL)
     {
