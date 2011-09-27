@@ -17,25 +17,16 @@
 #include "match3Dfeature.h"
 #include "Img.hh"
 
-//! TimedMultiCameraImage 構造体のそれぞれの画像の歪み補正マップを作成する。
-extern int createUndistortionMapFromTimedMultiCameraImage(const Img::TimedMultiCameraImage& frame,
-                                                           IplImage*** mapx,
-                                                           IplImage*** mapy);
-
 //! TimedMultiCameraImage 画像データを、歪み補正をして OpenCV の IplImage
 //! 構造体形式に変換する。
 //! 画像 1 枚ごとに個別の IplImage 構造体を作成する。
 //! 画像は、channel 数 3 で確保する。
 extern IplImage** convertTimedMultiCameraImageToUndistortIplImage(const Img::TimedMultiCameraImage& frame,
-                                                                   IplImage*** mapx,
-                                                                   IplImage*** mapy);
+                                                                  CalibParam& calib);
 
 //! convertTimedMultiCameraImageToUndistortIplImage によって
 //! 確保されたメモリを開放する
-extern void freeUndistortIplImage(IplImage** resultImage,
-                                  IplImage** undistortMapX,
-                                  IplImage** undistortMapY,
-                                  int imageNum);
+extern void freeUndistortIplImage(IplImage** resultImage, int imageNum);
 
 //! TimedMultiCameraImage 画像データを、OpenCV の IplImage 構造体形式に変換する。
 //! 画像 1 枚ごとに個別の IplImage 構造体を作成する。
