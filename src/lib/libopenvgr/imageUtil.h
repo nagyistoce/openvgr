@@ -35,7 +35,7 @@ extern IplImage** convertTimedMultiCameraImageToIplImage(const Img::TimedMultiCa
 
 //! TimedMultiCameraImage 画像データを、RecogImage 構造体形式に変換する。
 //! 画像は 1 枚ごとに個別の RecogImage 構造体を作成する。
-extern RecogImage** convertTimedMultiCameraImageToRecogImage(const Img::TimedMultiCameraImage& frame);
+extern RecogImage** convertTimedMultiCameraImageToRecogImage(const Img::TimedMultiCameraImage& frame, const bool color_mode = false);
 
 //! convertTimedMultiCameraImageToRecogImage によって
 //! 確保されたメモリを開放する
