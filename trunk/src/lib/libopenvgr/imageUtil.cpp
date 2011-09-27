@@ -211,7 +211,6 @@ convertTimedMultiCameraImageToRecogImage(const Img::TimedMultiCameraImage& frame
       channelNum = 1;
     }
   int imageSize = imageWidth * imageHeight * channelNum;
-  fprintf(stderr, "Channel (%s): %d\n", __FUNCTION__, channelNum);
 
   RecogImage** resultImage = (RecogImage**) malloc(imageNum * sizeof(RecogImage *));
   if (resultImage == NULL)
