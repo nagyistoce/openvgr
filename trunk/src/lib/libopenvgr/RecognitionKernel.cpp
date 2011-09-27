@@ -74,11 +74,11 @@ RecognitionKernel(RecogImage** image,
   param.imgsize = colsize * rowsize;
 
   // 画像の歪みを補正する
-  undistortImage(image[0], image[0], &calib.CameraL);
-  undistortImage(image[1], image[1], &calib.CameraR);
+  undistortImage(image[0], &calib.CameraL, image[0], &calib.CameraL);
+  undistortImage(image[1], &calib.CameraR, image[1], &calib.CameraR);
   if (imageNum > 2)
     {
-      undistortImage(image[2], image[2], &calib.CameraV);
+      undistortImage(image[2], &calib.CameraV, image[2], &calib.CameraV);
     }
 
   unsigned char* edgeL = (unsigned char*) calloc(colsize * rowsize, sizeof(unsigned char));
