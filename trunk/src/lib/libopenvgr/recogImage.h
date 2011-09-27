@@ -14,7 +14,6 @@
 #define _RECOGIMAGE_H
 
 #include <cv.h>
-#include <highgui.h>
 
 #include "common.h"
 #include "calib.h"
@@ -24,18 +23,21 @@ typedef struct _recogImage
   int colsize;
   int rowsize;
   int bytePerPixel;
-  unsigned char *pixel;
+  unsigned char* pixel;
 } RecogImage;
 
 // 画像メモリの生成
-RecogImage *constructImage (const int colsize, const int rowsize,
-                            const int bytePerPixel);
+RecogImage* constructImage(const int colsize, const int rowsize,
+                           const int bytePerPixel);
+
+// OpenCV画像からの変換
+RecogImage* convertImage(const cv::Mat& cvimg);
 
 // 画像メモリの解放
-void destructImage (RecogImage * image);
+void destructImage (RecogImage* image);
 
 // RGB画像からGray画像への変換
-void rgb2grayImage (RecogImage * target, RecogImage * source);
+void rgb2grayImage (RecogImage* target, RecogImage* source);
 
 // 歪み補正画像の作成
 void undistortImage(const RecogImage* src, RecogImage* dst, CameraParam* cp);
