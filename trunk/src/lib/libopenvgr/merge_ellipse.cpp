@@ -1045,6 +1045,7 @@ search_another_arc(int	step,
 		   int	i0,
 		   MergeEllipseArrays	*me,
 		   Features2D_old	*f_e,
+		   Features2D_old	*f2D,
 		   const ParamEllipseIW *paramE
 		   )
 {
@@ -1079,7 +1080,7 @@ search_another_arc(int	step,
 	  
 	  if(result_try == TRY_ELLIPSE_OK)
 	    {
-	      if(add_new_multi_ellipse(f_e, &ellipse, paramE)
+	      if(add_new_multi_ellipse(f2D, &ellipse, paramE)
 		 == ADD_NEW_MULTI_ELLIPSE_NG)
 		{
 		  return ANOTHER_EXIST_ERROR;
@@ -1087,7 +1088,7 @@ search_another_arc(int	step,
 	    }
 
 	  //another_exist = ANOTHER_EXIST_OK;
-	  next_ret = search_another_arc(step+1, i+1, me, f_e, paramE);
+	  next_ret = search_another_arc(step+1, i+1, me, f_e, f2D, paramE);
 
 	  if(next_ret == ANOTHER_EXIST_ERROR){
 	    return ANOTHER_EXIST_ERROR;
@@ -1224,7 +1225,7 @@ merge_ellipse(Features2D_old	*f2D,
   }
   for(iFeature = 0; iFeature < me.nFeature0; iFeature++){
     me.flist[0] = iFeature;
-    if(search_another_arc(1, iFeature+1, &me, &f_e, paramE) ==
+    if(search_another_arc(1, iFeature+1, &me, &f_e, f2D, paramE) ==
        ANOTHER_EXIST_ERROR){
       free_arrays(&me, &f_e);
       return MERGE_ELLIPSE_NG;
