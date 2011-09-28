@@ -103,13 +103,10 @@ RecognitionKernel(RecogImage** image,
     }
 
   model.calib = &calib;
-  model.image[0] = image[0]->pixel;
-  model.image[1] = image[1]->pixel;
   model.edge[0] = edgeL;
   model.edge[1] = edgeR;
   if (imageNum > 2)
     {
-      model.image[2] = image[2]->pixel;
       model.edge[2] = edgeV;
     }
 
@@ -291,7 +288,7 @@ RecognitionKernel(RecogImage** image,
   stime = GetTickCount();
 
   // シーンとモデルデータを照合して認識を実行する。
-  Match = matchFeatures3D(scene, model, edgeL, edgeR, edgeV, param);
+  Match = matchFeatures3D(scene, model, param);
 
   etime = GetTickCount();
   dtime3 = etime - stime;
