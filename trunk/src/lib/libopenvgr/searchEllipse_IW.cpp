@@ -93,7 +93,7 @@ static  int dg[NDIR4] = {1, 0, -1, 0};
 #define LOOP_EXIT_WHOLE  (1)
 #define LOOP_EXIT_NORMAL (2)
 
-static int
+int
 mod_nPoint(int  n,
            int  nPoint)
 {
@@ -437,7 +437,7 @@ advance_next_curve(int  ds,
   return;
 }
 
-static void
+void
 addArcSum(SumSet* sum,
           const int* pointX,
           const double* offsetD)
@@ -682,18 +682,20 @@ avec_to_ellipse(int k_min_error,
 
 // ２次曲線の係数と、特定の点からのおおよその距離を求める
 // 簡易計算法なので厳密ではない
-static double
+double
 distanceAConic(const double coef[6],
                const int* point)
 {
-  double D = (coef[0] * point[0]*point[0] +
-              coef[1] * point[0]*point[1] +
-              coef[2] * point[1]*point[1] +
-              coef[3] * point[0] +
-              coef[4] * point[1] +
+  double D = (coef[0] * (double)point[0] * (double)point[0] +
+              coef[1] * (double)point[0] * (double)point[1] +
+              coef[2] * (double)point[1] * (double)point[1] +
+              coef[3] * (double)point[0] +
+              coef[4] * (double)point[1] +
               coef[5]);
-  const double dx = 2.0 * coef[0] * point[0] + coef[1] * point[1] + coef[3];
-  const double dy = 2.0 * coef[2] * point[1] + coef[1] * point[0] + coef[4];
+  const double dx = (2.0 * coef[0] * (double)point[0]
+		     + coef[1] * (double)point[1] + coef[3]);
+  const double dy = (2.0 * coef[2] * (double)point[1]
+		     + coef[1] * (double)point[0] + coef[4]);
   const double inc = sqrt(dx * dx + dy * dy);
   
   if (inc < VISION_EPS)
@@ -812,7 +814,7 @@ sum_to_P_static(const SumSet* sum,
   return;
 }
 
-static void
+void
 sum_to_P_dynamic(const SumSet* sum,
                  Ellipse* ellipse)
 {
@@ -912,7 +914,7 @@ sum_to_P_dynamic(const SumSet* sum,
   return;
 }
 
-static void
+void
 P_to_avec_and_fix(Ellipse* ellipse)
 {
   int iroot, idim;
@@ -1094,10 +1096,11 @@ point_to_ellipse(int  start1,
   return POINT_TO_ELLIPSE_SUCCESS;
 }
 
+/* moved to ellipseIW.h
 #define CHECK_ELLIPSE_NG  (0)
 #define CHECK_ELLIPSE_OK  (1)
-
-static int
+*/
+int
 check_ellipse_cond(Ellipse* ellipse,
                    const ParamEllipseIW* paramE)
 {
