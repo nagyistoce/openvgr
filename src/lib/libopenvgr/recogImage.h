@@ -42,9 +42,6 @@ void rgb2grayImage (RecogImage* target, RecogImage* source);
 // 歪み補正画像の作成
 void undistortImage(const RecogImage* src, const CameraParam* cp, RecogImage* dst, CameraParam* cp_dst);
 
-// 歪み補正画像の作成(IplImage用)
-void undistortImage(const IplImage* src, IplImage* dst, CameraParam* cp);
-
 // 画像メモリのファイル出力　デバッグ用
 void writeRecogImage(const char* filename, const RecogImage* img);
 #endif // _RECOGIMAGE_H
