@@ -82,6 +82,9 @@ typedef struct _offset_prop_ {
 //     double eval[NDIM3],
 //     double thresh_sa);
 
+void	addArcSum(SumSet* sum,
+		  const int* pointX,
+		  const double* offsetD);
 
 #define SEARCH_FEATURES2_OK (1)
 #define SEARCH_FEATURES2_NG (0)
@@ -89,6 +92,30 @@ int searchEllipseIW(Features2D_old* f2D,
                     int iTrack,
                     const ParamEllipseIW* paramE);
 
-int merge_ellipse(Features2D_old	*f2D);
+void	sum_to_P_dynamic(const SumSet* sum,
+			 Ellipse* ellipse);
+
+void	P_to_avec_and_fix(Ellipse* ellipse);
+
+void	avec_to_ellipse(int k_min_error,
+			Ellipse* ellipse 
+			);
+
+#define CHECK_ELLIPSE_NG  (0)
+#define CHECK_ELLIPSE_OK  (1)
+int	check_ellipse_cond(Ellipse* ellipse,
+			   const ParamEllipseIW* paramE);
+
+int	mod_nPoint(int  n,
+		   int  nPoint);
+
+double	distanceAConic(const double coef[6],
+		       const int* point);
+
+#define MERGE_ELLIPSE_OK (0)
+#define MERGE_ELLIPSE_NG (1)
+
+int merge_ellipse(Features2D_old	*f2D,
+		  const ParamEllipseIW* paramE);
 
 #endif

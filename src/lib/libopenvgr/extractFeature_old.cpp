@@ -2265,7 +2265,11 @@ extractFeatures_old(unsigned char* edge,   // エッジ画像
         }
 
       // 新マージ関数
-      merge_ellipse(features);
+      if(merge_ellipse(features, paramEIW) == MERGE_ELLIPSE_NG)
+	{
+          clearFeatures2Dpointer(&features);
+          goto ending; // メモリ確保失敗
+	}
 
       // 半径が短い楕円を排除 （typeにConicType_Unknown をセットする）
       tmpFeature = features->feature;
