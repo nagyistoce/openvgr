@@ -97,7 +97,6 @@ typedef struct Features3D
   Vertex* Vertices;             //!< ３次元頂点特徴
   int numOfCircles;             //!< ３次元円特徴数
   Circle* Circles;              //!< ３次元円特徴
-  uchar* image[3];              //!< 原画像ポインタ
   uchar* edge[3];               //!< エッジ画像ポインタ
   int pointCounts;              //!< ２次元評価のための全評価点数
   double traceCounts;           //!< ２次元評価に用いた評価点数
@@ -138,10 +137,7 @@ void freeFeatures3D(Features3D* feature);
 //! 戻り値：認識結果
 Match3Dresults matchFeatures3D(Features3D& scene,    // シーンの３次元特徴情報
                                Features3D& model,    // モデルの３次元特徴情報
-                               unsigned char* edgeL, // １番目の画像のエッジ画像
-			       unsigned char* edgeR, // ２番目の画像のエッジ画像
-			       unsigned char* edgeV, // ３番目の画像のエッジ画像
-			       Parameters& parameters); // 全パラメータ
+                               Parameters& parameters); // 全パラメータ
 
 //! ２円を使った照合
 //! 戻り値：認識結果

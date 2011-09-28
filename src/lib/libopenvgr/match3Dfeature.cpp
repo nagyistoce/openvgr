@@ -466,9 +466,6 @@ createDistanceTranceformImages(const Features3D& model,
 Match3Dresults
 matchFeatures3D(Features3D& scene,             // シーンの３次元特徴情報
                 Features3D& model,             // モデルの３次元特徴情報
-                unsigned char* edgeL,          // １番目の画像のエッジ画像
-                unsigned char* edgeR,          // ２番目の画像のエッジ画像 
-                unsigned char* edgeV,          // ３番目の画像のエッジ画像 
                 Parameters& parameters)        // 全パラメータ
 {
   Match3Dresults Match = { 0 };
