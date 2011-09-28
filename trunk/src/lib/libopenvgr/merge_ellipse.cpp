@@ -236,38 +236,69 @@ debug_track_data(char	*imgname,
 
 static int
 initial_arrays(Features2D_old	*f2D,
-	       MergeEllipseArrays	*me)
+	       MergeEllipseArrays	*me,
+	       Features2D_old	*f_e)
 {
-  int	iFeature;
+  int	iFeature, jFeature;
 
-  me->tab = (int **)calloc(f2D->nFeature, sizeof(int *));
+  // f_e のセット
+  f_e->nFeature = 0;
+  for(iFeature = 0; iFeature < f2D->nFeature; iFeature++)
+    {
+      if(f2D->feature[iFeature].type == ConicType_Ellipse)
+	{
+	  f_e->nFeature++;
+	}
+    }
+
+  f_e->nAlloc = f_e->nFeature;
+  f_e->nTrack = f2D->nTrack;
+  f_e->track = f2D->track;
+  f_e->feature = (Feature2D_old *)calloc(f_e->nFeature,
+					 sizeof(Feature2D_old));
+
+  if(f_e->feature == NULL)
+    {
+      return INITIAL_ARRAYS_NG;
+    }
+
+  for(iFeature = jFeature = 0; iFeature < f2D->nFeature; iFeature++)
+    {
+      if(f2D->feature[iFeature].type == ConicType_Ellipse)
+	{
+	  f_e->feature[jFeature] = f2D->feature[iFeature];
+	  jFeature++;
+	}
+    }
+
+  me->tab = (int **)calloc(f_e->nFeature, sizeof(int *));
   if(me->tab == NULL){
     return INITIAL_ARRAYS_NG;
   }
 
-  me->tab[0] = (int *)calloc(f2D->nFeature*f2D->nFeature, sizeof(int));
+  me->tab[0] = (int *)calloc(f_e->nFeature*f_e->nFeature, sizeof(int));
   if(me->tab[0] == NULL){
     return INITIAL_ARRAYS_NG;
   }
 
-  for(iFeature = 1; iFeature < f2D->nFeature; iFeature++){
-    me->tab[iFeature] = me->tab[iFeature-1] + f2D->nFeature;
+  for(iFeature = 1; iFeature < f_e->nFeature; iFeature++){
+    me->tab[iFeature] = me->tab[iFeature-1] + f_e->nFeature;
   }
 
-  me->eterm = (EllipseTerminal*)calloc(f2D->nFeature,
+  me->eterm = (EllipseTerminal*)calloc(f_e->nFeature,
 				       sizeof(EllipseTerminal));
   if(me->eterm == NULL)
     {
       return INITIAL_ARRAYS_NG;
     }
 
-  me->flist = (int*)calloc(f2D->nFeature, sizeof(int));
+  me->flist = (int*)calloc(f_e->nFeature, sizeof(int));
   if(me->flist == NULL)
     {
       return INITIAL_ARRAYS_NG;
     }
 
-  me->sum = (SumSet*)calloc(f2D->nFeature, sizeof(SumSet));
+  me->sum = (SumSet*)calloc(f_e->nFeature, sizeof(SumSet));
   if(me->sum == NULL)
     {
       return INITIAL_ARRAYS_NG;
@@ -279,8 +310,14 @@ initial_arrays(Features2D_old	*f2D,
 // MergeEllipseArrays の配列メモリ開放
 
 static void
-free_arrays(MergeEllipseArrays	*me)
+free_arrays(MergeEllipseArrays	*me,
+	    Features2D_old	*f_e)
 {
+  if(f_e->feature)
+    {
+      free(f_e->feature);
+      f_e->feature = NULL;
+    }
   if(me->tab){
     if(me->tab[0]){
       free(me->tab[0]);
@@ -409,7 +446,7 @@ set_maxmin_part(EllipseTerminal	*ei)
 
 // 楕円の端点接線の計算
 static void
-set_eterminal(Features2D_old	*f2D,
+set_eterminal(Features2D_old	*f_e,
 	      int	iFeature,
 	      EllipseTerminal	*ei)
 {
@@ -425,7 +462,7 @@ set_eterminal(Features2D_old	*f2D,
   double	theta, prev_theta;
   double	modify_theta;
 
-  e0 = &(f2D->feature[iFeature]);
+  e0 = &(f_e->feature[iFeature]);
 
   if(e0->type != ConicType_Ellipse){
     ei->flag = NOELLIPSE;
@@ -476,8 +513,8 @@ set_eterminal(Features2D_old	*f2D,
 
   // 角度が±Piをまたがるかどうかをチェックしておき、角度の比較をする場合に修正する 
 
-  point = f2D->track[e0->nTrack].Point;
-  nPoint = f2D->track[e0->nTrack].nPoint;
+  point = f_e->track[e0->nTrack].Point;
+  nPoint = f_e->track[e0->nTrack].nPoint;
   start = e0->start;
   goal = e0->end;
   if(goal < start) goal += nPoint;
@@ -1007,7 +1044,7 @@ static int
 search_another_arc(int	step,
 		   int	i0,
 		   MergeEllipseArrays	*me,
-		   Features2D_old	*f2D,
+		   Features2D_old	*f_e,
 		   const ParamEllipseIW *paramE
 		   )
 {
@@ -1036,13 +1073,13 @@ search_another_arc(int	step,
 	{
 	  me->flist[step] = i;
 
-	  result_try = try_ellipse_merge(step+1, me, f2D, &ellipse, paramE);
+	  result_try = try_ellipse_merge(step+1, me, f_e, &ellipse, paramE);
 	    /*if(try_ellipse_merge(step+1, me, f2D, &ellipse, paramE)
 	      == TRY_ELLIPSE_OK)*/
 	  
 	  if(result_try == TRY_ELLIPSE_OK)
 	    {
-	      if(add_new_multi_ellipse(f2D, &ellipse, paramE)
+	      if(add_new_multi_ellipse(f_e, &ellipse, paramE)
 		 == ADD_NEW_MULTI_ELLIPSE_NG)
 		{
 		  return ANOTHER_EXIST_ERROR;
@@ -1050,7 +1087,7 @@ search_another_arc(int	step,
 	    }
 
 	  //another_exist = ANOTHER_EXIST_OK;
-	  next_ret = search_another_arc(step+1, i+1, me, f2D, paramE);
+	  next_ret = search_another_arc(step+1, i+1, me, f_e, paramE);
 
 	  if(next_ret == ANOTHER_EXIST_ERROR){
 	    return ANOTHER_EXIST_ERROR;
@@ -1066,15 +1103,15 @@ search_another_arc(int	step,
 static void
 set_sum(int	iFeature,
 	MergeEllipseArrays	*me,
-	Features2D_old	*f2D)
+	Features2D_old	*f_e)
 {
   Feature2D_old	*tmpf;
   Track	*tmpt;
   int	i;
   const double	offset_zero[NDIM2] = {0.0,0.0};
 
-  tmpf = &f2D->feature[iFeature];
-  tmpt = &f2D->track[tmpf->nTrack];
+  tmpf = &f_e->feature[iFeature];
+  tmpt = &f_e->track[tmpf->nTrack];
 
   if(tmpf->start < tmpf->end){
     for(i = tmpf->start; i <= tmpf->end; i++){
@@ -1103,15 +1140,16 @@ int
 merge_ellipse(Features2D_old	*f2D,
 	      const ParamEllipseIW* paramE)
 {
+  Features2D_old	f_e = { 0 }; // 楕円のみのローカル構造体
   MergeEllipseArrays	me = { 0 };
   int	iFeature;
   int	jFeature;
   int	found_pair;
 
   // ローカル配列構造体の malloc
-  if(initial_arrays(f2D, &me) == INITIAL_ARRAYS_NG)
+  if(initial_arrays(f2D, &me, &f_e) == INITIAL_ARRAYS_NG)
     {
-      free_arrays(&me);
+      free_arrays(&me, &f_e);
 
       return MERGE_ELLIPSE_NG;
     }
@@ -1132,19 +1170,19 @@ merge_ellipse(Features2D_old	*f2D,
   */
 
   // 各楕円の端点接線の計算（全周の楕円かどうかのフラグも立てる）
-  for(iFeature = 0; iFeature < f2D->nFeature; iFeature++){
-    set_eterminal(f2D, iFeature, &me.eterm[iFeature]);
+  for(iFeature = 0; iFeature < f_e.nFeature; iFeature++){
+    set_eterminal(&f_e, iFeature, &me.eterm[iFeature]);
   }
 
   // 参照table の作成 楕円の弧の範囲に他の楕円の中心があるか
-  for(iFeature = 0; iFeature < f2D->nFeature; iFeature++){
-    for(jFeature = 0; jFeature < f2D->nFeature; jFeature++){
+  for(iFeature = 0; iFeature < f_e.nFeature; iFeature++){
+    for(jFeature = 0; jFeature < f_e.nFeature; jFeature++){
       if(jFeature == iFeature){
 	me.tab[iFeature][jFeature] = REF_SELF;
       }else{
 	me.tab[iFeature][jFeature]
 	  = check_center_zone(&me.eterm[iFeature],
-			      &f2D->feature[jFeature]);
+			      &f_e.feature[jFeature]);
       }
     }
   }
@@ -1152,25 +1190,25 @@ merge_ellipse(Features2D_old	*f2D,
   //debug_print_tab(f2D->nFeature, me.tab);
 
   // Sum の計算
-  for(iFeature = 0; iFeature < f2D->nFeature; iFeature++){
+  for(iFeature = 0; iFeature < f_e.nFeature; iFeature++){
     me.flist[iFeature] = 0;
   }
-  for(iFeature = 0; iFeature < f2D->nFeature; iFeature++)
+  for(iFeature = 0; iFeature < f_e.nFeature; iFeature++)
     {
       if(me.flist[iFeature] == 0)
 	{
 	  found_pair = 0;
 	  for(jFeature = iFeature+1;
-	      jFeature < f2D->nFeature && found_pair == 0; jFeature++)
+	      jFeature < f_e.nFeature && found_pair == 0; jFeature++)
 	    {
 	      if(me.tab[iFeature][jFeature] == REF_OK &&
 		 me.tab[jFeature][iFeature] == REF_OK)
 		{
-		  set_sum(iFeature, &me, f2D);
+		  set_sum(iFeature, &me, &f_e);
 		  me.flist[iFeature] = 1;
 		  if(me.flist[jFeature] == 0)
 		    {
-		      set_sum(jFeature, &me, f2D);
+		      set_sum(jFeature, &me, &f_e);
 		      me.flist[jFeature] = 1;
 		    }
 		  found_pair = 1;
@@ -1180,20 +1218,20 @@ merge_ellipse(Features2D_old	*f2D,
     }
 
   // 組み合わせ
-  me.nFeature0 = f2D->nFeature;
+  me.nFeature0 = f_e.nFeature;
   for(iFeature = 0; iFeature < me.nFeature0; iFeature++){
     me.flist[iFeature] = -1;
   }
   for(iFeature = 0; iFeature < me.nFeature0; iFeature++){
     me.flist[0] = iFeature;
-    if(search_another_arc(1, iFeature+1, &me, f2D, paramE) ==
+    if(search_another_arc(1, iFeature+1, &me, &f_e, paramE) ==
        ANOTHER_EXIST_ERROR){
-      free_arrays(&me);
+      free_arrays(&me, &f_e);
       return MERGE_ELLIPSE_NG;
     };
   }
 
-  free_arrays(&me);
+  free_arrays(&me, &f_e);
 
   return MERGE_ELLIPSE_OK;
 }
