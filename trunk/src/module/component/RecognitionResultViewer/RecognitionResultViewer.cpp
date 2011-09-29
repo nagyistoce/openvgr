@@ -151,6 +151,9 @@ RTC::ReturnCode_t RecognitionResultViewer::onActivated(RTC::UniqueId ec_id)
   // モデルファイル一覧の読み込み。
   // モデル ID とモデルファイル名の組を読み込んで、保持しておく。
   int ret = loadModelListFile((char*) m_recogModelListPath.c_str(), &m_modelList);
+#ifdef RECOGNITION_TEST
+  printf( "RecognitionResultViewer::onActivated:RECOGNITION_TEST:m_recogModelListPath=%s\n", m_recogModelListPath.c_str());
+#endif
   if (ret != 0)
     {
       m_RecognitionResultViewer.setModelList(NULL);

@@ -203,6 +203,11 @@ RecognitionKernel(RecogImage** image,
       return Match;
     }
 
+#ifdef RECOGNITION_TEST
+    printf( "RecognitionKernel:RECOGNITION_TEST:StereoPair=%d\n", pairing);
+    fflush(stdout);
+#endif
+
   // 2D 処理時間計測
   etime = GetTickCount();
   dtime1 = etime - stime;
