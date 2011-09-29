@@ -310,12 +310,20 @@ detectEdge(unsigned int* eStrength2, unsigned char* eDirection,
       diffHorizontal3(diffHorizontal, gray, colsize, rowsize);
       diffVertical3(diffVertical, gray, colsize, rowsize);
       scale = 8.0;
+#ifdef RECOGNITION_TEST
+      printf( "extractEdge::detectEdge:RECOGNITION_TEST:Sobel 3x3\n" );
+      fflush(stdout);
+#endif 		//RECOGNITION_TEST
       break;
 
     case 1:                    // Sobel 5x5
       diffHorizontal5(diffHorizontal, gray, colsize, rowsize);
       diffVertical5(diffVertical, gray, colsize, rowsize);
       scale = 96.0;
+#ifdef RECOGNITION_TEST
+      printf( "extractEdge::detectEdge:RECOGNITION_TEST:Sobel 5x5\n" );
+      fflush(stdout);
+#endif 		//RECOGNITION_TEST
       break;
 
     default:

@@ -148,9 +148,13 @@ RTC::ReturnCode_t Recognition::onActivated(RTC::UniqueId ec_id)
   // モデルファイル一覧の読み込み。
   // モデル ID とモデルファイル名の組を読み込んで、保持しておく。
   int ret = loadModelListFile((char*) m_recogModelListPath.c_str(), &m_modelList);
+#ifdef RECOGNITION_TEST
+  printf( "Recognition::onActivated:RECOGNITION_TEST:m_recogModelListPath=%s\n", m_recogModelListPath.c_str());
+#endif
   if (ret != 0)
     {
       m_Recognition.setModelList(NULL);
+      fprintf(stderr, "Recognition::onActivated:モデルファイル一覧の読み込みに失敗しました。[%d]\n", ret);
       return RTC::BAD_PARAMETER;
     }
 
@@ -158,16 +162,25 @@ RTC::ReturnCode_t Recognition::onActivated(RTC::UniqueId ec_id)
 
   // 認識設定ファイルのパスを設定する。
   m_Recognition.setRecogParameterPath((char*) m_recogParameterFilePath.c_str());
+#ifdef RECOGNITION_TEST
+  printf( "Recognition::onActivated:RECOGNITION_TEST:m_recogParameterFilePath=%s\n", m_recogParameterFilePath.c_str());
+#endif
 
   // 設定された認識設定ファイルをよみこむ。
   ret = m_Recognition.loadRecogParameter();
   if (ret != 0)
     {
+      fprintf(stderr, "Recognition::onActivated:認識パラメータファイルの読み込みに失敗しました。[%d]\n", ret);
       return RTC::BAD_PARAMETER;
     }
 
   // デバッグ用パラメータを設定する。
   m_Recognition.setDebugParameter( m_DebugText, m_DebugImage, m_DebugDisplay );
+#ifdef RECOGNITION_TEST
+  printf( "Recognition::onActivated:RECOGNITION_TEST:m_DebugText=%d\n", m_DebugText);
+  printf( "Recognition::onActivated:RECOGNITION_TEST:m_DebugImage=%d\n", m_DebugImage);
+  printf( "Recognition::onActivated:RECOGNITION_TEST:m_DebugDisplay=%d\n", m_DebugDisplay);
+#endif
   ret = m_Recognition.loadDebugParameter();
   if (ret != 0)
     {
@@ -222,18 +235,26 @@ RTC::ReturnCode_t Recognition::onExecute(RTC::UniqueId ec_id)
       m_Recognition.getCurrentRecogParameter(&param);
 
 #ifdef RECOGNITION_TEST
-      printf( "Recognition::onExecute:StereoPair=%d\n", param.pairing);
-      printf( "Recognition::onExecute:OutputCandNum=%d\n", param.outputCandNum);
-      printf( "Recognition::onExecute:EdgeDetectFunction=%d\n", param.feature2D.edgeDetectFunction);
-      printf( "Recognition::onExecute:EdgeStrength=%f\n", param.feature2D.edgeStrength);
-      printf( "Recognition::onExecute:MaxErrorOfLineFit=%f\n", param.feature2D.maxErrorofLineFit);
-      printf( "Recognition::onExecute:MaxErrorOfConicFit=%f\n", param.feature2D.maxErrorofConicFit);
-      printf( "Recognition::onExecute:OverlapRatioLine=%f\n", param.feature2D.overlapRatioLine);
-      printf( "Recognition::onExecute:OverlapRatioCircle=%f\n", param.feature2D.overlapRatioCircle);
-      printf( "Recognition::onExecute:HDMax(max_distance_end_points)=%f\n", param.feature2D.max_distance_end_points);
-      printf( "Recognition::onExecute:StereoError=%f\n", param.stereo.ethr);
-      printf( "Recognition::onExecute:MatchEdge=%d\n", param.match.edge);
-      printf( "Recognition::onExecute:MinLengthLine2D=%f\n", param.feature2D.min_length_line);
+      printf( "Recognition::onExecute:RECOGNITION_TEST:StereoPair=%d\n", param.pairing);
+      printf( "Recognition::onExecute:RECOGNITION_TEST:OutputCandNum=%d\n", param.outputCandNum);
+      printf( "Recognition::onExecute:RECOGNITION_TEST:EdgeDetectFunction=%d\n", param.feature2D.edgeDetectFunction);
+      printf( "Recognition::onExecute:RECOGNITION_TEST:EdgeStrength=%f\n", param.feature2D.edgeStrength);
+      printf( "Recognition::onExecute:RECOGNITION_TEST:MaxErrorOfLineFit=%f\n", param.feature2D.maxErrorofLineFit);
+      printf( "Recognition::onExecute:RECOGNITION_TEST:MaxErrorOfConicFit=%f\n", param.feature2D.maxErrorofConicFit);
+      printf( "Recognition::onExecute:RECOGNITION_TEST:OverlapRatioLine=%f\n", param.feature2D.overlapRatioLine);
+      printf( "Recognition::onExecute:RECOGNITION_TEST:OverlapRatioCircle=%f\n", param.feature2D.overlapRatioCircle);
+      printf( "Recognition::onExecute:RECOGNITION_TEST:HDMax(max_distance_end_points)=%f\n", param.feature2D.max_distance_end_points);
+      printf( "Recognition::onExecute:RECOGNITION_TEST:IW_Condition=%d\n", param.paramEIW.Condition);
+      printf( "Recognition::onExecute:RECOGNITION_TEST:IW_MinLength=%d\n", param.paramEIW.MinLength);
+      printf( "Recognition::onExecute:RECOGNITION_TEST:IW_MinShortRadPrev=%f\n",param.paramEIW.MinShortRadPrev );
+      printf( "Recognition::onExecute:RECOGNITION_TEST:IW_MinShortRadPost=%f\n", param.paramEIW.MinShortRadPost );
+      printf( "Recognition::onExecute:RECOGNITION_TEST:IW_ThMeanError=%f\n", param.paramEIW.ThMeanError);
+      printf( "Recognition::onExecute:RECOGNITION_TEST:IW_ThMaxError=%f\n", param.paramEIW.ThMaxError);
+      printf( "Recognition::onExecute:RECOGNITION_TEST:IW_OffsetMode=%d\n", param.paramEIW.OffsetMode);
+      printf( "Recognition::onExecute:RECOGNITION_TEST:Amin=%f\n", param.stereo.amax);
+      printf( "Recognition::onExecute:RECOGNITION_TEST:StereoError=%f\n", param.stereo.ethr);
+      printf( "Recognition::onExecute:RECOGNITION_TEST:MinLengthLine2D=%f\n", param.feature2D.min_length_line);
+      fflush(stdout);
 #endif //RECOGNITION_TEST
 
       TimedRecognitionResult pos;

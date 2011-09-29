@@ -8,7 +8,7 @@
 	$(CC) -c $(CPPFLAGS) $(CFLAGS) $(INCLUDES) -o $@ $<
 
 .cpp.o:
-	$(CXX) -c $(CPPFLAGS) $(CXXFLAGS) $(INCLUDES) -o $@ $<
+	$(CXX) -c $(CPPFLAGS) $(CXXFLAGS) $(INCLUDES) $(DEFS) -o $@ $<
 
 OPENCVINC = -I/usr/include/opencv
 RTMINC = -I`rtm-config --prefix`/include/rtm/idl
@@ -40,6 +40,9 @@ COMOBJS = calib.o calibUtil.o recogParameter.o\
           drawing.o mathmisc.o \
           searchEllipse_IW.o RecognitionKernel.o \
 	  merge_ellipse.o
+
+#DEFS =
+DEFS = -DRECOGNITION_TEST
 
 all: libopenvgr_misc.a libopenvgr.a
 
