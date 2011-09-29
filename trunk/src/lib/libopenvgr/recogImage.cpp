@@ -157,52 +157,6 @@ rgb2grayImage(RecogImage* target, RecogImage* source)
           dimg = simg;
         }
     }
-#if 0
-  if (target->bytePerPixel == 1)
-    {                           // RGB->GRAY
-      const int size = (target->colsize) * (target->rowsize);
-      unsigned char* tar = target->pixel;
-      unsigned char* src = source->pixel;
-      int c;
-      int r, g, b;
-      for (c = 0; c < size; c++)
-        {
-          r = *(src++);
-          g = *(src++);
-          b = *(src++);
-#if 0
-#if 0
-          //Grey 画像は0.299 * Red + 0.587 * Green + 0.114 * Blue で計算している。
-          *(tar++) = 0.299 * r + 0.587 * g + 0.114 * b;
-#else
-          // 256 倍して int のままで計算する。
-          *(tar++) = (76 * r + 150 * g + 29 * b) / 256;
-#endif
-#else
-#if 1
-          *(tar++) = (r + g + b) / 3;
-#else
-          // green 成分のみ使用
-          *(tar++) = g;
-#endif
-#endif
-        }
-    }
-  else
-    {                           // GRAY->RGB
-      const int size = (target->colsize) * (target->rowsize);
-      unsigned char* tar = target->pixel;
-      unsigned char* src = source->pixel;
-      int c;
-      for (c = 0; c < size; c++)
-        {
-          int c = *(src++);
-          *(tar++) = c;
-          *(tar++) = c;
-          *(tar++) = c;
-        }
-    }
-#endif
   return;
 }
 
