@@ -62,7 +62,6 @@ IW_MinShortRadPrev 2.0
 IW_MinShortRadPost 2.0
 IW_ThMeanError 0.5
 IW_ThMaxError  2.0
-IW_OffsetMode  0
 
 #
 # ステレオ対応用パラメータ
