@@ -190,7 +190,7 @@ read_measure3d_config(char *fname, CvStereoBMState *state)
   state->preFilteredImg0 = NULL;
   state->preFilteredImg1 = NULL;
   state->slidingSumBuf = NULL;
-#if (!defined(CV_VERSION))
+#if (!defined(CV_VERSION)) \
   || (((CV_MAJOR_VERSION) == 2) && ((CV_MINOR_VERSION) == 0))
   state->dbmin = NULL;
   state->dbmax = NULL;
