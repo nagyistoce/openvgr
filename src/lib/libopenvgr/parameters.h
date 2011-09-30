@@ -65,7 +65,8 @@ typedef struct ParametersFeature2D
   double min_length_ellipse_axisL;
   //! 楕円の軸長の閾値（画素）
   double max_length_ellipse_axisL;
-
+  //! 検出しない特徴のフラグ
+  int no_search_features;
 } ParametersFeature2D;
 
 //! ステレオ対応処理用パラメータ

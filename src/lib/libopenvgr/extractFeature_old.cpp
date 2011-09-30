@@ -2086,6 +2086,7 @@ extractFeatures_old(unsigned char* edge,   // エッジ画像
   int colsize = parameters.colsize;
   int rowsize = parameters.rowsize;
   int imgsize = parameters.imgsize;
+  int no_search = parameters.feature2D.no_search_features;
   int i, ii, f, n, cx, cy, istart, iend;
   int* pt;
   int eflag;
@@ -2197,7 +2198,7 @@ extractFeatures_old(unsigned char* edge,   // エッジ画像
         }
     }
 
-  if (model.numOfVertices > 0)
+  if (model.numOfVertices > 0 && !(no_search & NO_SEARCH_VERTEX))
     {
       // 2直線の組み合わせで端点の距離が閾値以内でなす角度が閾値以上の場合に頂点を生成する
       if (Line2Vertex(lineFeatures, features, parameters) < 0)
@@ -2217,7 +2218,7 @@ extractFeatures_old(unsigned char* edge,   // エッジ画像
         }
     }
   
-  if (model.numOfCircles > 0)
+  if (model.numOfCircles > 0 && !(no_search & NO_SEARCH_ELLIPSE))
     {
       // 第2ループ：楕円、双曲線を検出し、featuresに保存
       for (iTrack = 0; iTrack < features->nTrack; iTrack++)

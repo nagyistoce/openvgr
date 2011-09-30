@@ -35,4 +35,7 @@ typedef enum StereoPairing     // ステレオの画像の組み合わせ指定
   TBL_AND
 } StereoPairing;
 
+#define NO_SEARCH_VERTEX  1
+#define NO_SEARCH_ELLIPSE 2
+
 #endif // _COMMON_H

@@ -271,13 +271,13 @@ RecognitionKernel(RecogImage** image,
   Features3D scene = { 0 };
 
   // 二次元頂点のステレオデータから三次元頂点情報の復元
-  if (model.numOfVertices > 0)
+  if (model.numOfVertices > 0 && !(param.feature2D.no_search_features & NO_SEARCH_VERTEX))
     {
       reconstruct_hyperbola_to_vertex3D(features, cs, camParam, edges, &scene, param);
     }
 
   // 二次元楕円のステレオデータから三次元真円情報の復元
-  if (model.numOfCircles > 0)
+  if (model.numOfCircles > 0 && !(param.feature2D.no_search_features & NO_SEARCH_ELLIPSE))
     {
       reconstruct_ellipse2D_to_circle3D(features, cs, camParam, edges, &scene, param);
     }
