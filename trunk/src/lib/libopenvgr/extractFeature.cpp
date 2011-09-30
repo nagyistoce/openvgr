@@ -921,6 +921,7 @@ ovgr::extractFeatures(const unsigned char* edge,   // エッジ画像
   const double line_thres = parameters.feature2D.maxErrorofLineFit;
   const double ellipse_thres = parameters.feature2D.maxErrorofConicFit;
   const int min_points = parameters.feature2D.minFragment;
+  const int no_search = parameters.feature2D.no_search_features;
 
   const int colsize = parameters.colsize;
   const int rowsize = parameters.rowsize;
@@ -933,7 +934,7 @@ ovgr::extractFeatures(const unsigned char* edge,   // エッジ画像
   cv::findContours(temp_img, contours, CV_RETR_LIST, CV_CHAIN_APPROX_NONE);
 
   /* 直線を探す */
-  if (model.numOfVertices > 0)
+  if (model.numOfVertices > 0 && !(no_search & NO_SEARCH_VERTEX))
     {
       contours_temp = contours;
       std::list<LineFeature2D> lf = extract_lines(contours_temp, line_thres, min_points, 50);
@@ -955,7 +956,7 @@ ovgr::extractFeatures(const unsigned char* edge,   // エッジ画像
     }
 
   /* 楕円を探す */
-  if (model.numOfCircles > 0)
+  if (model.numOfCircles > 0 && !(no_search & NO_SEARCH_ELLIPSE))
     {
       contours_temp = contours;
       std::list<EllipseFeature> ef = extract_ellipses(contours_temp, ellipse_thres, min_points, 100);
@@ -978,6 +979,8 @@ Features2D
 ovgr::ImageToFeature2D(unsigned char* src, unsigned char* edge,
                        const Parameters& parameters, const Features3D& model)
 {
+  const int no_search = parameters.feature2D.no_search_features;
+
   //extractEdge_new(edge, src, EEsearchedLarge, parameters);
   extractEdge(edge, src, EEsearchedLarge, parameters);
 
@@ -988,14 +991,14 @@ ovgr::ImageToFeature2D(unsigned char* src, unsigned char* edge,
   cv::Mat gray(parameters.rowsize, parameters.colsize, CV_8UC1, src), color;
   //cv::imwrite("edge.png", cv::Mat(parameters.rowsize, parameters.colsize, CV_8UC1, edge) * 255);
 
-  if (model.numOfVertices > 0)
+  if (model.numOfVertices > 0 && !(no_search & NO_SEARCH_VERTEX))
     {
       cv::cvtColor(gray, color, CV_GRAY2RGB);
       ovgr::draw_VertexFeatures(color, features.vertex);
       //cv::imwrite("vertex.png", color);
     }
 
-  if (model.numOfCircles > 0)
+  if (model.numOfCircles > 0 && !(!(no_search & NO_SEARCH_ELLIPSE)))
     {
       cv::cvtColor(gray, color, CV_GRAY2RGB);
       ovgr::draw_EllipseFeatures(color, features.ellipse);

@@ -70,6 +70,8 @@ setDefaultRecogParameter(Parameters& param)
   param.feature2D.min_length_ellipse_axisL = 10.0;      // 楕円の軸長の閾値
   param.feature2D.max_length_ellipse_axisL = 50.0;      // 楕円の軸長の閾値
 
+  param.feature2D.no_search_features = 0; // 検出しない特徴
+
   param.stereo.rdif = 5;        // 対応円半径許容差
   param.stereo.ndif = 10;       // 対応円法線角度許容差
 
@@ -116,6 +118,7 @@ enum paramKey
   eOverlapRatioCircle,
   eMinLengthLine2D,
   eHDMax,
+  eNoSearchFeatures,
 
   eDepN,
   eDepF,
@@ -150,6 +153,7 @@ static const char* paramKeyString[] = {
   "OverlapRatioCircle",
   "MinLengthLine2D",
   "HDMax",
+  "NoSearchFeatures", 
 
   "DepN",
   "DepF",
@@ -265,6 +269,10 @@ loadRecogParameter(char* path, Parameters& param)
             case eHDMax:
               // 頂点生成時の端点間距離最大値
               param.feature2D.max_distance_end_points = atof(p);
+              break;
+            case eNoSearchFeatures:
+              // 検出しない特徴
+              param.feature2D.no_search_features = atoi(p);
               break;
 
             case eDepN:
