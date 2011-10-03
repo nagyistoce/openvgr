@@ -109,7 +109,10 @@ shrinkMatch3Dresults(Match3Dresults* Match)
         }
       Match->Results[num].n = num;
     }
-
+  if (num == 0)
+    {
+      return;
+    }
   if ((memory = (MatchResult*) realloc(Match->Results, num * sizeof(MatchResult))) == NULL)
     {
       return;
