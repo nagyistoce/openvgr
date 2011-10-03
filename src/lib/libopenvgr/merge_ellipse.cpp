@@ -1196,23 +1196,20 @@ merge_ellipse(Features2D_old	*f2D,
   }
   for(iFeature = 0; iFeature < f_e.nFeature; iFeature++)
     {
-      if(me.flist[iFeature] == 0)
+      for(jFeature = iFeature+1; jFeature < f_e.nFeature; jFeature++)
 	{
-	  found_pair = 0;
-	  for(jFeature = iFeature+1;
-	      jFeature < f_e.nFeature && found_pair == 0; jFeature++)
+	  if(me.tab[iFeature][jFeature] == REF_OK &&
+	     me.tab[jFeature][iFeature] == REF_OK)
 	    {
-	      if(me.tab[iFeature][jFeature] == REF_OK &&
-		 me.tab[jFeature][iFeature] == REF_OK)
+	      if(me.flist[jFeature] == 0)
 		{
 		  set_sum(iFeature, &me, &f_e);
 		  me.flist[iFeature] = 1;
-		  if(me.flist[jFeature] == 0)
-		    {
-		      set_sum(jFeature, &me, &f_e);
-		      me.flist[jFeature] = 1;
-		    }
-		  found_pair = 1;
+		}
+	      if(me.flist[jFeature] == 0)
+		{
+		  set_sum(jFeature, &me, &f_e);
+		  me.flist[jFeature] = 1;
 		}
 	    }
 	}
