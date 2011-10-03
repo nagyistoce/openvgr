@@ -1552,8 +1552,8 @@ searchEllipseIW(Features2D_old* f2D,
           if (mod_nPoint(start, nPoint) == mod_nPoint(start0, nPoint)
               && len > len1)
             {
-              goal1 = goal;
               len1 = len;
+              goal1 = start0 + len1 - 1;
               sum1 = sum;
             }
 
@@ -1632,8 +1632,8 @@ searchEllipseIW(Features2D_old* f2D,
                       // 新しいループを開始
                       tracking = TRACKING_ON;
                       start0 = start;
-                      goal0 = goal1 = goal;
-                      len0 = (goal0 + nPoint - start0 +1) % nPoint;
+		      len0 = len1 = len;
+                      goal0 = goal1 = start0 + len0 - 1;
                       sum0 = tmpsum = sum;
                       turn = 0;
                       // (start-1,goal)の点列をチェック
@@ -1715,8 +1715,8 @@ searchEllipseIW(Features2D_old* f2D,
                       // 新しいループを開始
                       tracking = TRACKING_ON;
                       start0 = start;
-                      goal0 = goal1 = goal;
-                      len0 = (goal0 + nPoint - start0 +1) % nPoint;
+		      len0 = len1 = len;
+                      goal0 = goal1 = start0 + len0 - 1;
                       sum0 = tmpsum = sum;
                       turn = 0;
                       // (start-1,goal)の点列をチェック
