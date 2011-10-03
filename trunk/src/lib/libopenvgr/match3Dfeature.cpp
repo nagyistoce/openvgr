@@ -101,6 +101,11 @@ shrinkMatch3Dresults(Match3Dresults* Match)
   MatchResult* memory = NULL;
   int num;
 
+  if (Match->Results == NULL)
+    {
+      return;
+    }
+
   for (num = 0; num < Match->numOfResults; ++num)
     {
       if (Match->Results[num].score < 0.0)
