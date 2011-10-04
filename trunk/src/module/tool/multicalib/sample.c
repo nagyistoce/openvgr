@@ -146,6 +146,10 @@ show_help (const char *prog_name)
 
   printf ("\n");
 
+  printf ("<in a live mode>\n");
+  printf ("p\t\tsave showing images in png format.\n");
+
+  printf ("\n");
   printf ("<in a detection mode>\n");
   printf ("[ret]\t\tadd current detection result to a queue.\n");
   printf ("W (shift-w)\twrite the queue to stdout or a specified file (-o <filename>).\n");
