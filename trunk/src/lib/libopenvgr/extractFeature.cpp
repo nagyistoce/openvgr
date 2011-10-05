@@ -1070,11 +1070,12 @@ ovgr::create_old_features_from_new_one(const Features2D& features)
           t->Point = (int*) calloc(2*n, sizeof(int));
           if (t->Point == NULL)
             {
-              while (i >= 0)
+              while (i > 0)
                 {
-                  free(old_features->track[i].Point);
                   --i;
-                }
+                  free(old_features->track[i].Point);
+                  old_features->track[i].Point = NULL;
+                }              
               goto error_point;
             }
           t->nPoint = n;
@@ -1111,10 +1112,12 @@ ovgr::create_old_features_from_new_one(const Features2D& features)
         t->Point = (int*) calloc(2*n, sizeof(int));
         if (t->Point == NULL)
           {
-            while (i + nv >= 0)
+            size_t j = i + nv;
+            while (j > 0)
               {
-                free(old_features->track[i + nv].Point);
-                --i;
+                --j;
+                free(old_features->track[j].Point);
+                old_features->track[j].Point = NULL;
               }
             goto error_point;
           }
