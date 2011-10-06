@@ -321,6 +321,11 @@ reconstruct_hyperbola_to_vertex3D(const std::vector<const ovgr::Features2D*> fea
   // 表裏の特徴をつくるため元の2倍の領域を確保する
   scene->numOfVertices = scene_temp.size() * 2;
 
+  if ( parameters.dbgtext )
+    {
+      printVertex(scene_temp);
+    }
+
   scene->Vertices = (Vertex*) calloc(scene->numOfVertices, sizeof(Vertex));
   if (scene->Vertices == NULL)
     {

@@ -28,4 +28,6 @@ int drawCircleCandidate(const uchar* edge,
                         const Parameters& parameters,
                         const CameraParam* cameraParam);
 
+int printVertex(const std::vector< ::Vertex>& vertex);
+
 #endif /* _DEBUGUTIL_H */
