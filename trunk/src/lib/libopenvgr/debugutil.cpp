@@ -460,3 +460,44 @@ drawCircleCandidate(const uchar* edge,
 
   return 0;
 }
+
+
+// Vertex の出力
+int
+printVertex(const std::vector< ::Vertex>& vertex)
+{
+  FILE* fp;
+  size_t i;
+  char filename[PATH_MAX+1] = {0};
+
+  snprintf(filename, sizeof(filename), "vertex3D.txt");
+  fp = fopen(filename, "w");
+  if (fp == NULL)
+    {
+      return VISION_FILE_OPEN_ERROR;
+    }
+  else 
+    {
+      fprintf(fp, "%d 3\n", vertex.size() * 4);
+      for (i = 0; i < vertex.size(); i++)
+        {
+          fprintf(fp, "%f %f %f\n", 
+                  vertex[i].tPose[3][0], vertex[i].tPose[3][1], vertex[i].tPose[3][2]);
+          fprintf(fp, "%f %f %f\n", 
+                  vertex[i].tPose[3][0] + vertex[i].endpoint1[0], 
+                  vertex[i].tPose[3][1] + vertex[i].endpoint1[1], 
+                  vertex[i].tPose[3][2] + vertex[i].endpoint1[2]);
+          fprintf(fp, "%f %f %f\n", 
+                  vertex[i].tPose[3][0], vertex[i].tPose[3][1], vertex[i].tPose[3][2]);
+          fprintf(fp, "%f %f %f\n", 
+                  vertex[i].tPose[3][0] + vertex[i].endpoint2[0], 
+                  vertex[i].tPose[3][1] + vertex[i].endpoint2[1], 
+                  vertex[i].tPose[3][2] + vertex[i].endpoint2[2]);
+        }
+    }
+
+  fclose(fp);
+
+  return 0;
+}
+
