@@ -132,11 +132,11 @@ reconstruct_vertex3D(::Vertex vertex[2],
 
       // 3次元端点位置
       error = calculateLR2XYZ(vertex[num].endpoint1, corres_pos[0][0], corres_pos[1][0],
-                      const_cast<CameraParam*>(&cp1), const_cast<CameraParam*>(&cp2));
+                              const_cast<CameraParam*>(&cp1), const_cast<CameraParam*>(&cp2));
       //fprintf(stderr, "error: % 10.3g ", error);
 
       error = calculateLR2XYZ(vertex[num].endpoint2, corres_pos[0][1], corres_pos[1][1],
-                      const_cast<CameraParam*>(&cp1), const_cast<CameraParam*>(&cp2));
+                              const_cast<CameraParam*>(&cp1), const_cast<CameraParam*>(&cp2));
       //fprintf(stderr, "% 10.3g\n", error);
 
       for (int i = 0; i < 3; ++i)
@@ -150,7 +150,7 @@ reconstruct_vertex3D(::Vertex vertex[2],
       printf("\n");
 #endif
 
-      double vangle;
+      double vangle, length[2];
       CvMat vec1, vec2;
       CvMat normal, bisector, perpendicular;
 
@@ -160,9 +160,8 @@ reconstruct_vertex3D(::Vertex vertex[2],
       getDirectionVector(position, vertex[num].endpoint2, vertex[num].direction2, &vec2);
 
       // 頂点を構成する線分の成す角を求める
-      vangle = cvDotProduct(&vec1, &vec2);
-      vangle = (acos(vangle) / M_PI) * 180.0;
-      vertex[num].angle = vangle;
+      vangle = acos(cvDotProduct(&vec1, &vec2));
+      vertex[num].angle = vangle * 180.0 / M_PI;
 
       // 以下の３つのベクトルを用いて姿勢を表す行列をつくる
       // 頂点の法線を求める
@@ -182,6 +181,17 @@ reconstruct_vertex3D(::Vertex vertex[2],
           vertex[num].tPose[3][i] = vpos[i];
         }
       vertex[num].tPose[3][3] = 1.0;
+
+      // 3次元端点位置
+      length[0] = getNormV3(vertex[num].endpoint1);
+      vertex[num].endpoint1[0] = length[0] * sin(vangle / 2.0);
+      vertex[num].endpoint1[1] = length[0] * cos(vangle / 2.0);
+      vertex[num].endpoint1[2] = 0.0;
+
+      length[1] = getNormV3(vertex[num].endpoint2);
+      vertex[num].endpoint2[0] = length[1] * -sin(vangle / 2.0);
+      vertex[num].endpoint2[1] = length[1] * cos(vangle / 2.0);
+      vertex[num].endpoint2[2] = 0.0;
 
       vertex[num].n = -1;
       vertex[num].side = M3DF_FRONT;
