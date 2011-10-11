@@ -461,7 +461,6 @@ drawCircleCandidate(const uchar* edge,
   return 0;
 }
 
-
 // Vertex の出力
 int
 printVertex(const std::vector< ::Vertex>& vertex)
@@ -469,7 +468,11 @@ printVertex(const std::vector< ::Vertex>& vertex)
   FILE* fp;
   size_t i;
   char filename[PATH_MAX+1] = {0};
-
+  double psrc[4], pdst[4];
+  cv::Mat src = cv::Mat(4, 1, CV_64FC1, psrc);
+  cv::Mat dst = cv::Mat(4, 1, CV_64FC1, pdst);
+  
+  psrc[3] = 1.0;
   snprintf(filename, sizeof(filename), "vertex3D.txt");
   fp = fopen(filename, "w");
   if (fp == NULL)
@@ -481,18 +484,23 @@ printVertex(const std::vector< ::Vertex>& vertex)
       fprintf(fp, "%d 3\n", vertex.size() * 4);
       for (i = 0; i < vertex.size(); i++)
         {
+          cv::Mat T = cv::Mat(4, 4, CV_64FC1, const_cast<double(*)[4]>(vertex[i].tPose));
           fprintf(fp, "%f %f %f\n", 
                   vertex[i].tPose[3][0], vertex[i].tPose[3][1], vertex[i].tPose[3][2]);
-          fprintf(fp, "%f %f %f\n", 
-                  vertex[i].tPose[3][0] + vertex[i].endpoint1[0], 
-                  vertex[i].tPose[3][1] + vertex[i].endpoint1[1], 
-                  vertex[i].tPose[3][2] + vertex[i].endpoint1[2]);
+          psrc[0] = vertex[i].endpoint1[0];
+          psrc[1] = vertex[i].endpoint1[1];
+          psrc[2] = vertex[i].endpoint1[2];
+          psrc[3] = 1.0;
+          dst = T.t() * src;
+          fprintf(fp, "%f %f %f\n", pdst[0], pdst[1], pdst[2]);
           fprintf(fp, "%f %f %f\n", 
                   vertex[i].tPose[3][0], vertex[i].tPose[3][1], vertex[i].tPose[3][2]);
-          fprintf(fp, "%f %f %f\n", 
-                  vertex[i].tPose[3][0] + vertex[i].endpoint2[0], 
-                  vertex[i].tPose[3][1] + vertex[i].endpoint2[1], 
-                  vertex[i].tPose[3][2] + vertex[i].endpoint2[2]);
+          psrc[0] = vertex[i].endpoint2[0];
+          psrc[1] = vertex[i].endpoint2[1];
+          psrc[2] = vertex[i].endpoint2[2];
+          psrc[3] = 1.0;
+          dst = T.t() * src;
+          fprintf(fp, "%f %f %f\n", pdst[0], pdst[1], pdst[2]);
         }
     }
 
