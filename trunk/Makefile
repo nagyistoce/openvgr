@@ -11,6 +11,9 @@ all:
 	  (cd $$subdir && $(MAKE) $@) || exit 1; \
 	done
 
+test: clean
+	$(MAKE) all "DEFS=-DRECOGNITION_TEST"
+
 clean: clean-recursive clean-local
 
 clean-recursive:
