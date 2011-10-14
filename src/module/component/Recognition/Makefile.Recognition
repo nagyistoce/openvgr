@@ -32,8 +32,6 @@ OPTFLAGS = -O2
 #OPTFLAGS =
 
 CXXFLAGS = -Wall -g $(OPTFLAGS) `rtm-config --cflags` -I. -I$(LIBDIR) `pkg-config --cflags opencv`
-DEFS =
-#DEFS = -DRECOGNITION_TEST
 LDFLAGS  = `rtm-config --libs` -L$(LIBDIR) -lopenvgr $(OPENCVLIBS)
 SHFLAGS  = -shared
 
@@ -66,6 +64,8 @@ all: Recognition.so RecognitionComp
 RecognitionComp: RecognitionComp.o $(OBJS) $(LIBDIR)/libopenvgr.a
 	$(CXX) -o $@ $(OBJS) RecognitionComp.o $(LDFLAGS) 
 
+test:
+	$(MAKE) all "DEFS=-DRECOGNITION_TEST"
 
 clean: clean_objs clean_skelstub
 	rm -f *~

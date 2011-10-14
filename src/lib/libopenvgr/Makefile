@@ -41,8 +41,6 @@ COMOBJS = calib.o calibUtil.o recogParameter.o\
           searchEllipse_IW.o RecognitionKernel.o \
 	  merge_ellipse.o
 
-DEFS =
-#DEFS = -DRECOGNITION_TEST
 
 all: libopenvgr_misc.a libopenvgr.a
 
@@ -59,6 +57,9 @@ match3Dfeature.o pairedcircle.o score2d.o: common.h
 Img.hh :
 	$(IDLC) $(IDLFLAGS) $(IDLDIR)/Img.idl
 	/bin/rm Img*.cc
+
+test: clean
+	$(MAKE) all "DEFS=-DRECOGNITION_TEST"
 
 clean:
 	$(RM) libopenvgr_misc.a libopenvgr.a $(OBJS) *.o *.hh *~
