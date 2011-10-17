@@ -413,90 +413,17 @@ thinEdge(unsigned char* thin, unsigned char* gray, Parameters parameters)
           else
             {
               thin[n2] = EEcandidate;   // エッジ点の候補
-              switch (eDirection[n2] % 4)
+              // エッジと垂直な方向にある隣の点と比べて極大か調べる
+              n3 = (row + dv[direction][1]) * colsize + (col + dv[direction][0]);
+              if (cmpDirection(eDirection[n3], direction) && eStrength2[n3] > center)
                 {
-                case 2:
-                  {    // 右上に伸びるエッジ (斜め col+, row+ 方向に変化が大きい
-                    n3 = (row - 1) * colsize + (col - 1);
-                    if (cmpDirection(eDirection[n3], direction))
-                      {         // 同じ方向のエッジなら比較する
-                        if (eStrength2[n3] > center)
-                          {
-                            thin[n2] = EEerasedThin;    // 近傍極大ではない
-                          }
-                      }
-                    n3 = (row + 1) * colsize + (col + 1);
-                    if (cmpDirection(eDirection[n3], direction))
-                      {         // 同じ方向のエッジなら比較する
-                        if (eStrength2[n3] >= center)
-                          {
-                            thin[n2] = EEerasedThin;    // 近傍極大ではない
-                          }
-                      }
-                    break;
-                  }
-                case 1:
-                  {             // 横に伸びるエッジ (縦 row 方向に変化が大きい)
-                    n3 = (row - 1) * colsize + (col);
-                    if (cmpDirection(eDirection[n3], direction))
-                      {         // 同じ方向のエッジなら比較する
-                        if (eStrength2[n3] > center)
-                          {
-                            thin[n2] = EEerasedThin;    // 近傍極大ではない
-                          }
-                      }
-                    n3 = (row + 1) * colsize + (col);
-                    if (cmpDirection(eDirection[n3], direction))
-                      {         // 同じ方向のエッジなら比較する
-                        if (eStrength2[n3] >= center)
-                          {
-                            thin[n2] = EEerasedThin;    // 近傍極大ではない
-                          }
-                      }
-                    break;
-                  }
-                case 0:
-                  {    // 右下に伸びるエッジ  (斜め col+, row- 方向に変化が大きい
-                    n3 = (row - 1) * colsize + (col + 1);
-                    if (cmpDirection(eDirection[n3], direction))
-                      {         // 同じ方向のエッジなら比較する
-                        if (eStrength2[n3] > center)
-                          {
-                            thin[n2] = EEerasedThin;    // 近傍極大ではない
-                          }
-                      }
-                    n3 = (row + 1) * colsize + (col - 1);
-                    if (cmpDirection(eDirection[n3], direction))
-                      {         // 同じ方向のエッジなら比較する
-                        if (eStrength2[n3] >= center)
-                          {
-                            thin[n2] = EEerasedThin;    // 近傍極大ではない
-                          }
-                      }
-                    break;
-                  }
-                case 3:
-                  {             // 縦にのびるエッジ (横 col 方向に変化が大きい）
-                    n3 = (row) * colsize + (col - 1);
-                    if (cmpDirection(eDirection[n3], direction))
-                      {         // 同じ方向のエッジなら比較する
-                        if (eStrength2[n3] > center)
-                          {
-                            thin[n2] = EEerasedThin;    // 近傍極大ではない
-                          }
-                      }
-                    n3 = (row) * colsize + (col + 1);
-                    if (cmpDirection(eDirection[n3], direction))
-                      {         // 同じ方向のエッジなら比較する
-                        if (eStrength2[n3] >= center)
-                          {
-                            thin[n2] = EEerasedThin;    // 近傍極大ではない
-                          }
-                      }
-                    break;
-                  }
-                default:
-                  /* nothing to do */;
+                  thin[n2] = EEerasedThin;
+                }
+
+              n3 = (row - dv[direction][1]) * colsize + (col - dv[direction][0]);
+              if (cmpDirection(eDirection[n3], direction) && eStrength2[n3] > center)
+                {
+                  thin[n2] = EEerasedThin;
                 }
             }
         }
