@@ -32,6 +32,7 @@ OPTFLAGS = -O2
 #OPTFLAGS =
 
 CXXFLAGS = -Wall -g $(OPTFLAGS) `rtm-config --cflags` -I. -I$(LIBDIR) `pkg-config --cflags opencv`
+DEFS =
 LDFLAGS  = `rtm-config --libs` -L$(LIBDIR) -lopenvgr $(OPENCVLIBS)
 SHFLAGS  = -shared
 

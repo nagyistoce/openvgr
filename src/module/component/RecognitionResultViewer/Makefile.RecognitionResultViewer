@@ -25,6 +25,7 @@ GTKLIBS   = `pkg-config gtk+-2.0 --libs`
 LIBDIR   = ../../../lib/libopenvgr
 
 CXXFLAGS = -Wall -g -O2 `rtm-config --cflags` -I. -I$(LIBDIR) `pkg-config --cflags opencv` $(GTKINCDIR)
+DEFS =
 LDFLAGS  = `rtm-config --libs` -L$(LIBDIR) -lopenvgr $(OPENCVLIBS) $(GTKLIBS)
 SHFLAGS  = -shared
 

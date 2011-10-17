@@ -41,6 +41,7 @@ COMOBJS = calib.o calibUtil.o recogParameter.o\
           searchEllipse_IW.o RecognitionKernel.o \
 	  merge_ellipse.o
 
+DEFS =
 
 all: libopenvgr_misc.a libopenvgr.a
 
