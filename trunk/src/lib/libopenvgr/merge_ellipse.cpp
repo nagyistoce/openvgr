@@ -875,7 +875,7 @@ try_ellipse_merge(int	step,
       sum_plus_sum(&tmpsum, &me->sum[me->flist[ifeature]]);
     }
 
-  sum_to_P_dynamic(&tmpsum, ellipse);
+  sum_to_P_dynamic(&tmpsum, ellipse, NULL); // using no offset
 
   P_to_avec_and_fix(ellipse);
 

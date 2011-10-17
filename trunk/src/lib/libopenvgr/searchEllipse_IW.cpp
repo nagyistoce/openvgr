@@ -816,7 +816,8 @@ sum_to_P_static(const SumSet* sum,
 
 void
 sum_to_P_dynamic(const SumSet* sum,
-                 Ellipse* ellipse)
+                 Ellipse* ellipse,
+		 OffsetProp* offsetProp)
 {
   double  dn;
 
@@ -908,8 +909,16 @@ sum_to_P_dynamic(const SumSet* sum,
   ellipse->P11[2][1] = sy;
   ellipse->P11[2][2] = dn;
 
-  ellipse->offset[0] = sum->x / sum->n;
-  ellipse->offset[1] = sum->y / sum->n;
+  if (offsetProp)
+    {
+      ellipse->offset[0] = sum->x / sum->n + offsetProp->d[0];
+      ellipse->offset[1] = sum->y / sum->n + offsetProp->d[1];
+    }
+  else
+    {
+      ellipse->offset[0] = sum->x / sum->n;
+      ellipse->offset[1] = sum->y / sum->n;
+    }
 
   return;
 }
@@ -992,6 +1001,43 @@ P_to_avec_and_fix(Ellipse* ellipse)
   return;
 }
 
+// 固有値の絶対値の比を比較し、最大値が閾値より大きければ 0 を返す
+#define CHECK_EIGEN_VALUE_RATIO_NG	(0)
+#define CHECK_EIGEN_VALUE_RATIO_OK	(1)
+static int
+check_eigen_value_ratio(Ellipse* ellipse,
+			double	th_ratio)
+{
+  double	maxd, mind, tmpd;
+  int	i;
+
+  maxd = mind = fabs(ellipse->eval[0]);
+
+  for (i = 1; i < NDIM_CONIC_HALF; i++)
+    {
+      tmpd = fabs(ellipse->eval[i]);
+      if (tmpd > maxd)
+	{
+	  maxd = tmpd;
+	}
+      else if (tmpd < mind)
+	{
+	  mind = tmpd;
+	}
+    }
+
+  if (mind == 0.0)
+    {
+      return CHECK_EIGEN_VALUE_RATIO_NG;
+    }
+
+  if (maxd / mind > th_ratio)
+    {
+      return CHECK_EIGEN_VALUE_RATIO_NG;
+    }
+
+  return CHECK_EIGEN_VALUE_RATIO_OK;
+}
 
 static int
 point_to_ellipse(int  start1,
@@ -1018,7 +1064,7 @@ point_to_ellipse(int  start1,
     {
       /* ELLIPSE_OFFSET_DYNAMIC:*/
       // set PXX matrix and ellipse->offset
-      sum_to_P_dynamic(sum, ellipse);
+      sum_to_P_dynamic(sum, ellipse, offsetProp);
     }
 
   // calc from P to a
@@ -1026,7 +1072,18 @@ point_to_ellipse(int  start1,
   // fix avec with ellips->offset
   P_to_avec_and_fix(ellipse);
 
-  if (ellipse->neval == 0)
+  //if (ellipse->neval == 0)
+  if (ellipse->neval < NDIM_CONIC_HALF)
+    {
+      for (idim = 0; idim < NDIM_CONIC_FULL; idim++)
+        {
+          ellipse->coef[idim] = 0.0; // not found
+        }
+      return POINT_TO_ELLIPSE_FAIL;
+    }
+
+  // 固有値の比が大きいときには排除する
+  if (check_eigen_value_ratio(ellipse, 1000.0) == CHECK_EIGEN_VALUE_RATIO_NG)
     {
       for (idim = 0; idim < NDIM_CONIC_FULL; idim++)
         {
@@ -1236,7 +1293,10 @@ check_next_curve(const int* point,
 {
   int vec_s, vec_g;
   int start1, goal1;
-  
+  SumSet	tmpsum;
+
+  tmpsum = *sum;
+
   dir = (dir + turn) % NDIR4;
 
   vec_s = ds[dir];
@@ -1257,7 +1317,9 @@ check_next_curve(const int* point,
     }
 
   // 失敗のときには　sum を元に戻す
-  modify_sum(point, nPoint, offsetProp, sum, start1, goal1, -vec_s, -vec_g);
+  //modify_sum(point, nPoint, offsetProp, sum, start1, goal1, -vec_s, -vec_g);
+  // 誤差を減らすためにコピーする
+  *sum = tmpsum;
 
   return CHECK_NEXT_FAIL;
 }
@@ -1411,15 +1473,8 @@ searchEllipseIW(Features2D_old* f2D,
   len1 = 0;
 
   offsetProp.mode = paramE->OffsetMode;
-  if (offsetProp.mode == ELLIPSE_OFFSET_STATIC)
-    {
-      offsetProp.d[0] = f2D->track[iTrack].offset[0];// 楕円係数計算時のオフセット
-      offsetProp.d[1] = f2D->track[iTrack].offset[1];
-    }
-  else
-    {
-      offsetProp.d[0] = offsetProp.d[1] = 0.0;
-    }
+  offsetProp.d[0] = f2D->track[iTrack].offset[0];// 楕円係数計算時のオフセット
+  offsetProp.d[1] = f2D->track[iTrack].offset[1];
 
   // もしtrackの長さが最小点列より小ならなにもしない
   if (nPoint < paramE->MinLength)
@@ -1493,8 +1548,10 @@ searchEllipseIW(Features2D_old* f2D,
           else 
             { // current=OK next=NG
               // advance start++ goal++
-              modify_sum(point, nPoint, &offsetProp, &sum, start, goal, DS_SHIFT, DG_SHIFT);
-              advance_next_curve(DS_SHIFT, DG_SHIFT, &start, &goal, &len, NULL, NULL, NULL, NULL);
+              modify_sum(point, nPoint, &offsetProp, &sum, start, goal,
+			 DS_SHIFT, DG_SHIFT);
+              advance_next_curve(DS_SHIFT, DG_SHIFT, &start, &goal, &len,
+				 NULL, NULL, NULL, NULL);
               gapcount++;
               
               if (start >= nPoint)
@@ -1508,32 +1565,38 @@ searchEllipseIW(Features2D_old* f2D,
           // advance one of four points
           // check left, fwd, right
           if (check_next_curve(point, nPoint, &offsetProp, start, goal, dir,
-                               TURN_LEFT, &ellipse, &sum, paramE) == CHECK_NEXT_SUCCESS)
+                               TURN_LEFT, &ellipse, &sum, paramE)
+	      == CHECK_NEXT_SUCCESS)
             // check left
             {
               // advance left
               turn--;
               dir = (dir + TURN_LEFT) % NDIR4;
-              advance_next_curve(ds[dir], dg[dir], &start, &goal, &len, &max_curve_len, 
+              advance_next_curve(ds[dir], dg[dir], &start, &goal, &len,
+				 &max_curve_len, 
                                  &ellipse, &max_f2D, paramE);
             }
           else if (check_next_curve(point, nPoint, &offsetProp, start, goal, dir,
-                                    TURN_FORWARD, &ellipse, &sum, paramE) == CHECK_NEXT_SUCCESS)
+                                    TURN_FORWARD, &ellipse, &sum, paramE)
+		   == CHECK_NEXT_SUCCESS)
             // check forward
             {
               // advance forward
               dir = (dir + TURN_FORWARD) % NDIR4;
-              advance_next_curve(ds[dir], dg[dir], &start, &goal, &len, &max_curve_len, 
+              advance_next_curve(ds[dir], dg[dir], &start, &goal, &len,
+				 &max_curve_len, 
                                  &ellipse, &max_f2D, paramE);
             }
           else if (check_next_curve(point, nPoint, &offsetProp, start, goal, dir,
-                                    TURN_RIGHT, &ellipse, &sum, paramE) == CHECK_NEXT_SUCCESS)
+                                    TURN_RIGHT, &ellipse, &sum, paramE)
+		   == CHECK_NEXT_SUCCESS)
             // check right
             {
               // advance right
               turn++;
               dir = (dir + TURN_RIGHT) % NDIR4;
-              advance_next_curve(ds[dir], dg[dir], &start, &goal, &len, &max_curve_len, 
+              advance_next_curve(ds[dir], dg[dir], &start, &goal, &len,
+				 &max_curve_len, 
                                  &ellipse, &max_f2D, paramE);
             }
           else 
@@ -1561,8 +1624,9 @@ searchEllipseIW(Features2D_old* f2D,
           if (mod_nPoint(goal, nPoint) == mod_nPoint(start + nPoint - 1, nPoint))
             // 一周点列判定
             {
-              if (add_new_ellipse(f2D, start, goal, &max_f2D, paramE, nPoint, iTrack, point) == 
-                  ADD_NEW_ELLIPSE_NG)
+              if (add_new_ellipse(f2D, start, goal, &max_f2D, paramE,
+				  nPoint, iTrack, point)
+                   == ADD_NEW_ELLIPSE_NG)
                 {
                   return SEARCH_FEATURES2_NG;
                 }
@@ -1604,7 +1668,8 @@ searchEllipseIW(Features2D_old* f2D,
                     {
                       // 全周の楕円が見つかった。それを登録して終了
                       if (add_new_ellipse(f2D, start, goal, &max_f2D, paramE,
-                                          nPoint, iTrack, point) == ADD_NEW_ELLIPSE_NG)
+                                          nPoint, iTrack, point)
+			  == ADD_NEW_ELLIPSE_NG)
                         {
                           return SEARCH_FEATURES2_NG;
                         }
@@ -1648,9 +1713,11 @@ searchEllipseIW(Features2D_old* f2D,
                                  dg[DIR_START_DEC]);
                       if (point_to_ellipse(start-1, goal, nPoint, point, 
                                            &tmpsum, &ellipse,
-                                           paramE, &offsetProp) == POINT_TO_ELLIPSE_SUCCESS)
+                                           paramE, &offsetProp)
+			  == POINT_TO_ELLIPSE_SUCCESS)
                         {
-                          if (check_ellipse_cond(&ellipse, paramE) == CHECK_ELLIPSE_OK)
+                          if (check_ellipse_cond(&ellipse, paramE)
+			      == CHECK_ELLIPSE_OK)
                             {
                               dir0 = dir = DIR_START_INC;
                             }
@@ -1663,7 +1730,8 @@ searchEllipseIW(Features2D_old* f2D,
                   if (len0 == paramE->MinLength)
                     {
                       if (add_new_ellipse(f2D, start, goal, &max_f2D, paramE,
-                                          nPoint, iTrack, point) == ADD_NEW_ELLIPSE_NG)
+                                          nPoint, iTrack, point)
+			  == ADD_NEW_ELLIPSE_NG)
                         {
                           return SEARCH_FEATURES2_NG;
                         }
@@ -1704,7 +1772,8 @@ searchEllipseIW(Features2D_old* f2D,
                     {
                       // 全周の楕円が見つかった。それを登録して終了
                       if (add_new_ellipse(f2D, start, goal, &max_f2D, paramE,
-                                          nPoint, iTrack, point) == ADD_NEW_ELLIPSE_NG)
+                                          nPoint, iTrack, point)
+			  == ADD_NEW_ELLIPSE_NG)
                         {
                           return SEARCH_FEATURES2_NG;
                         }
@@ -1734,7 +1803,8 @@ searchEllipseIW(Features2D_old* f2D,
                                            paramE, &offsetProp)
                           == POINT_TO_ELLIPSE_SUCCESS)
                         {
-                          if (check_ellipse_cond(&ellipse, paramE) == CHECK_ELLIPSE_OK)
+                          if (check_ellipse_cond(&ellipse, paramE)
+			      == CHECK_ELLIPSE_OK)
                             {
                               dir0 = dir = DIR_START_INC;
                             }
@@ -1747,7 +1817,8 @@ searchEllipseIW(Features2D_old* f2D,
                   // max_f2D を登録し、ループを抜ける
                   // add new feature
                   if (add_new_ellipse(f2D, start, goal, &max_f2D, paramE,
-                                      nPoint, iTrack, point) == ADD_NEW_ELLIPSE_NG)
+                                      nPoint, iTrack, point)
+		      == ADD_NEW_ELLIPSE_NG)
                     {
                       return SEARCH_FEATURES2_NG;
                     }

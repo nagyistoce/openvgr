@@ -93,7 +93,8 @@ int searchEllipseIW(Features2D_old* f2D,
                     const ParamEllipseIW* paramE);
 
 void	sum_to_P_dynamic(const SumSet* sum,
-			 Ellipse* ellipse);
+			 Ellipse* ellipse,
+			 OffsetProp* offsetProp);
 
 void	P_to_avec_and_fix(Ellipse* ellipse);
 
