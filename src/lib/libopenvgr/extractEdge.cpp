@@ -284,7 +284,7 @@ edgeDirection(const double horizontal, const double vertical)
 // eStrength2 は強度の２乗を返す
 static int
 detectEdge(unsigned int* eStrength2, unsigned char* eDirection,
-	   unsigned char* gray, Parameters parameters)
+           unsigned char* gray, Parameters parameters)
 {
   int colsize = parameters.colsize;
   int rowsize = parameters.rowsize;
@@ -337,7 +337,7 @@ detectEdge(unsigned int* eStrength2, unsigned char* eDirection,
         {
           n2 = n1 + col;
           eStrength2[n2] = (unsigned int) (pow((double) diffVertical[n2] / scale, 2) +
-					   pow((double) diffHorizontal[n2] / scale, 2)) * fp_scale;
+                                           pow((double) diffHorizontal[n2] / scale, 2)) * fp_scale;
           eDirection[n2] = edgeDirection(diffHorizontal[n2], diffVertical[n2]);
         }
     }
