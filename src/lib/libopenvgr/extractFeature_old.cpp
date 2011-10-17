@@ -2266,17 +2266,17 @@ extractFeatures_old(unsigned char* edge,   // エッジ画像
         }
 
       // 新マージ関数
-      fprintf(stderr, "nFeature=%d nTrack=%d\n",
-	      features->nFeature, features->nTrack);
-      system("date");
+      //fprintf(stderr, "nFeature=%d nTrack=%d\n",
+      //      features->nFeature, features->nTrack);
+      //system("date");
       if(merge_ellipse(features, paramEIW) == MERGE_ELLIPSE_NG)
 	{
           clearFeatures2Dpointer(&features);
           goto ending; // メモリ確保失敗
 	}
-      fprintf(stderr, "nFeature=%d \n",
-	      features->nFeature);
-      system("date");
+      //fprintf(stderr, "nFeature=%d \n",
+      //      features->nFeature);
+      //system("date");
 
       // 半径が短い楕円を排除 （typeにConicType_Unknown をセットする）
       tmpFeature = features->feature;
@@ -2329,17 +2329,17 @@ extractFeatures_old(unsigned char* edge,   // エッジ画像
         }
 
       // 新マージ関数
-      fprintf(stderr, "nFeature=%d nTrack=%d\n",
-	      ellipseFeatures->nFeature, ellipseFeatures->nTrack);
-      system("date");
+      //fprintf(stderr, "nFeature=%d nTrack=%d\n",
+      //      ellipseFeatures->nFeature, ellipseFeatures->nTrack);
+      //system("date");
       if(merge_ellipse(ellipseFeatures, paramEIW) == MERGE_ELLIPSE_NG)
 	{
           clearFeatures2Dpointer(&ellipseFeatures);
           goto ending; // メモリ確保失敗
 	}
-      fprintf(stderr, "nFeature=%d \n",
-	      ellipseFeatures->nFeature);
-      system("date");
+      //fprintf(stderr, "nFeature=%d \n",
+      //      ellipseFeatures->nFeature);
+      //system("date");
 
       // 半径が短い楕円を排除 （typeにConicType_Unknown をセットする）
       tmpFeature = ellipseFeatures->feature;
