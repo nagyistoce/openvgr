@@ -26,7 +26,7 @@
 // 1: 下   col0 row+ 方向
 // 2: 右下 col+ row+ 方向
 // 3: 右   col+ row0 方向
-// 4: 左上 col+ row- 方向
+// 4: 右上 col+ row- 方向
 // 5: 上   col0 row- 方向
 // 6: 左上 col- row- 方向
 // 7: 左   col- row0 方向
