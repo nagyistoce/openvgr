@@ -52,8 +52,7 @@ compareResultScore(const void* c1,     // 評価値１
 
   if (r2->score == r1->score)
     {
-      // 認識結果ベクトル値でもソートする
-      return comparePropertyVector(r1->vec, r2->vec);
+      return 0;
     }
   else if (r2->score > r1->score)
     {
@@ -75,7 +74,6 @@ getResultScore(MatchResult* results,   // 認識結果情報
                double weight)          // 評価値の重みづけ
 {
   int i, j, num;
-  int status;
 
   // 認識結果ベクトル（位置＋回転ベクトル）の値でソートする
   qsort(results, numOfResults, sizeof(MatchResult), compareResultScore);
@@ -96,12 +94,6 @@ getResultScore(MatchResult* results,   // 認識結果情報
           if (results[j].score == -1)
             {
               continue;
-            }
-          // 認識結果が全く同じ場合は評価値に -1 を入れて評価不要とする
-          status = comparePropertyVector(results[i].vec, results[j].vec);
-          if (status == 0)
-            {
-              results[j].score = -1;
             }
         }
 
