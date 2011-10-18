@@ -265,8 +265,7 @@ matchVertices(Features3D scene, Features3D model,
               Match.Results[k].scene[1] = scene.Vertices[i].side;
               Match.Results[k].model[0] = model.Vertices[j].n;
               Match.Results[k].model[1] = model.Vertices[j].side;
-              // 認識結果の行列を７次元のベクトル（位置＋回転）としてもあらわす
-              getPropertyVector(Match.Results[k].mat, Match.Results[k].vec);
+
               if (++k >= numOfVerResults)
               {
                 goto breakout;
@@ -335,8 +334,7 @@ matchCircles(Features3D scene, Features3D model,
                   Match.Results[k].scene[1] = scene.Circles[i].side;
                   Match.Results[k].model[0] = model.Circles[j].n;
                   Match.Results[k].model[1] = model.Circles[j].side;
-                  // 認識結果の行列を７次元のベクトル（位置＋回転）としてもあらわす
-                  getPropertyVector(Match.Results[k].mat, Match.Results[k].vec);
+
                   if (++k >= numOfCirResults)
                     {
                       goto breakout;
