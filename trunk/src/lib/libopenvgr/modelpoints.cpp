@@ -533,12 +533,14 @@ calcEvaluationValue2D_on_line(Features3D* model, const cv::Point& p1, const cv::
 static double
 calcEvaluationValue2D(Features3D* model, int p_camera, 
                       MatchResult* result,
-                      const cv::Mat& dstImage)
+                      const cv::Mat& dstImage,
+                      cv::Mat* plot)
 {
   Vertex vertex;
   double score;
-  cv::Mat plot = cv::Mat::zeros(cv::Size(model->calib->colsize, model->calib->rowsize), CV_8UC1);
   int i, j;
+
+  *plot = cv::Mat::zeros(cv::Size(model->calib->colsize, model->calib->rowsize), CV_8UC1);
 
 #ifdef PROJECT_DEBUG
   cv::Mat dstImage_norm = 
@@ -582,8 +584,8 @@ calcEvaluationValue2D(Features3D* model, int p_camera,
       mult_tPose(pos3d, vertex.tPose, vertex.endpoint2);
       projectXYZ2LRwithTrans(model, result->mat, p_camera, pos3d, &pos2d[2]);
 
-      score += (calcEvaluationValue2D_on_line(model, pos2d[0], pos2d[1], dstImage, &plot, result)
-                + calcEvaluationValue2D_on_line(model, pos2d[1], pos2d[2], dstImage, &plot, result));
+      score += (calcEvaluationValue2D_on_line(model, pos2d[0], pos2d[1], dstImage, plot, result)
+                + calcEvaluationValue2D_on_line(model, pos2d[1], pos2d[2], dstImage, plot, result));
 # ifdef PROJECT_DEBUG
       cv::line(dstImage_color, pos2d[0], pos2d[1], color, lineThickness, CV_AA);
       cv::line(dstImage_color, pos2d[1], pos2d[2], color, lineThickness, CV_AA);
@@ -656,7 +658,7 @@ calcEvaluationValue2D(Features3D* model, int p_camera,
                 cv::line(dstImage_color, curve[(j+1)%2], curve[j%2], color, lineThickness, CV_AA);
 # endif
                 score += calcEvaluationValue2D_on_line(model, curve[(j+1)%2], curve[j%2], dstImage,
-                                                       &plot, result);
+                                                       plot, result);
               }
           }
           
@@ -687,7 +689,7 @@ calcEvaluationValue2D(Features3D* model, int p_camera,
                         cv::line(dstImage_color, curve[(k+1)%2], curve[k%2], color, lineThickness, CV_AA);
 # endif
                         score += calcEvaluationValue2D_on_line(model, curve[(k+1)%2], curve[k%2], 
-                                                               dstImage, &plot, result);
+                                                               dstImage, plot, result);
                       }
                   }
                 else if (nangle[j] == 2)
@@ -711,7 +713,7 @@ calcEvaluationValue2D(Features3D* model, int p_camera,
                         cv::line(dstImage_color, curve[(k+1)%2], curve[k%2], color, lineThickness, CV_AA);
 # endif
                         score += calcEvaluationValue2D_on_line(model, curve[(k+1)%2], curve[k%2], 
-                                                               dstImage, &plot, result);
+                                                               dstImage, plot, result);
                       }
                   }
               }
@@ -724,9 +726,9 @@ calcEvaluationValue2D(Features3D* model, int p_camera,
 # endif
                 // 遮蔽輪郭線(円筒の側面)を評価
                 score += calcEvaluationValue2D_on_line(model, pos[0][0], pos[1][1], 
-                                                       dstImage, &plot, result);
+                                                       dstImage, plot, result);
                 score += calcEvaluationValue2D_on_line(model, pos[0][1], pos[1][0], 
-                                                       dstImage, &plot, result);
+                                                       dstImage, plot, result);
               }
           }
 
@@ -753,31 +755,33 @@ calcEvaluationValue2DMultiCameras(Features3D* model,      // モデルの３次�
                                   const std::vector<cv::Mat>& dstImages)  // 距離変換画像
 {
   double score = 0.0;
+  cv::Mat plot = cv::Mat::zeros(cv::Size(model->calib->colsize, model->calib->rowsize), CV_8UC1);
+
   result->npoint = 0;
   result->cpoint = 0;
 
   switch (pairing)
     {
     case DBL_LR:
-      score = calcEvaluationValue2D(model, 0, result, dstImages[0]);
-      score += calcEvaluationValue2D(model, 1, result, dstImages[1]);
+      score = calcEvaluationValue2D(model, 0, result, dstImages[0], &plot);
+      score += calcEvaluationValue2D(model, 1, result, dstImages[1], &plot);
       break;
 
     case DBL_LV:
-      score = calcEvaluationValue2D(model, 0, result, dstImages[0]);
-      score += calcEvaluationValue2D(model, 2, result, dstImages[2]);
+      score = calcEvaluationValue2D(model, 0, result, dstImages[0], &plot);
+      score += calcEvaluationValue2D(model, 2, result, dstImages[2], &plot);
       break;
 
     case DBL_RV:
-      score = calcEvaluationValue2D(model, 1, result, dstImages[1]);
-      score += calcEvaluationValue2D(model, 2, result, dstImages[2]);
+      score = calcEvaluationValue2D(model, 1, result, dstImages[1], &plot);
+      score += calcEvaluationValue2D(model, 2, result, dstImages[2], &plot);
       break;
 
     case TBL_OR:
     case TBL_AND:
-      score = calcEvaluationValue2D(model, 0, result, dstImages[0]);
-      score += calcEvaluationValue2D(model, 1, result, dstImages[1]);
-      score += calcEvaluationValue2D(model, 2, result, dstImages[2]);
+      score = calcEvaluationValue2D(model, 0, result, dstImages[0], &plot);
+      score += calcEvaluationValue2D(model, 1, result, dstImages[1], &plot);
+      score += calcEvaluationValue2D(model, 2, result, dstImages[2], &plot);
       break;
     }
 
