@@ -798,7 +798,7 @@ extractEdge(unsigned char* edge,       // エッジ画像
             const int threshold,       // エッジ閾値
             Parameters parameters)     // 全パラメータ
 {
-  int i;
+  int i, width = 0, w;
   int colsize = parameters.colsize;
   int rowsize = parameters.rowsize;
   int imgsize = parameters.imgsize;
@@ -823,26 +823,42 @@ extractEdge(unsigned char* edge,       // エッジ画像
     }
 
   // 画像の端をゼロリセット
-  // 上辺
-  for (i = 1; i < colsize - 1; i++)
+  switch (parameters.feature2D.edgeDetectFunction)
     {
-      edge[i] = 0;
+    case 0: // Sobel 3x3
+      width = 2;
+      break;
+
+    case 1: // Sobel 5x5
+      width = 3;
+      break;
+
+    default:
+      width = 1;
+      break;
     }
-  // 下辺
-  for (i = 1; i < colsize - 1; i++)
+
+  for (w = 0; w < width; w++)
     {
-      edge[(rowsize - 1) * colsize + i] = 0;
+      for (i = 1; i < colsize - 1; i++)
+        {
+          // 上辺
+          edge[w * colsize + i] = 0;
+          // 下辺
+          edge[(rowsize - 1 - (width - 1 - w)) * colsize + i] = 0;
+        }
     }
-  // 左辺
-  for (i = 0; i < rowsize; i++)
+  for (i = width; i < rowsize - (width - 1); i++)
     {
-      edge[i * colsize] = 0;
+      for (w = 0; w < width; w++)
+        {
+          // 左辺
+          edge[i * colsize + w] = 0;
+          // 右辺
+          edge[i * colsize + colsize - 1 - (width - 1 - w)] = 0;
+        }
     }
-  // 右辺
-  for (i = 0; i < rowsize; i++)
-    {
-      edge[i * colsize + colsize - 1] = 0;
-    }
+
   return 0;
 }
 
