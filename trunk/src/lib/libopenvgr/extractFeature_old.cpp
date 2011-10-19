@@ -69,7 +69,7 @@ clearFeatures2Dpointer(Features2D_old** features)
 {
   if (features)
     {
-      destructFeatures( *features );
+      destructFeatures(*features);
       *features = NULL;
     }
 }
@@ -574,7 +574,7 @@ compareAndAddFeature(Features2D_old* features, Feature2D_old* feature,
     {
       if (overlap == -1)
         {
-          if ( addFeature(features, feature) < 0 )
+          if (addFeature(features, feature) < 0)
             {
               return -1;
             }
@@ -796,7 +796,7 @@ Line2Vertex(Features2D_old* lineFeatures, Features2D_old* features, Parameters p
           feature.nTrack = -1;
 
           // 特徴を保存
-          if ( addFeature(features, &feature) < 0 )
+          if (addFeature(features, &feature) < 0)
             {
               return -1;
             }
@@ -867,8 +867,8 @@ searchLineFeatures(unsigned char* work, Features2D_old* features,
             {
               memorizeFeature(&feature, error, type, start, end,
                               coef, point, nPoint, nTrack);
-              if ( compareAndAddFeature(features, &feature, sFeature,
-                                        nPoint, parameters) < 0 )
+              if (compareAndAddFeature(features, &feature, sFeature,
+                                       nPoint, parameters) < 0)
                 {
                   return -1; // 特徴メモリ確保失敗
                 }
@@ -1247,7 +1247,7 @@ mergeFeatures(Features2D_old* dstFeatures, Features2D_old* srcFeatures)
   for (f = 0; f < srcFeatures->nFeature; f++)
     {
       feature = &srcFeatures->feature[f];
-      if ( addFeature(dstFeatures, feature) < 0 )
+      if (addFeature(dstFeatures, feature) < 0)
         {
           return -1; // メモリ確保失敗
         }
@@ -1818,7 +1818,7 @@ Ellipse2Ellipse2(Features2D_old* features,
       else
         {
           // ペアがなかったものは、そのまま追加する
-          //addFeature( newFeatures, &ellipseFeatures->feature[f1]);
+          //addFeature(newFeatures, &ellipseFeatures->feature[f1]);
         }
     }
 
@@ -2122,10 +2122,10 @@ extractFeatures_old(unsigned char* edge,   // エッジ画像
     }
 
 #if 0
-  if ( parameters.dbgimag )
+  if (parameters.dbgimag)
     {
       // 輪郭点の保存
-      if ( drawTrackPoints( features, parameters ) )
+      if (drawTrackPoints(features, parameters))
         {
           // 画像メモリがとれなかった
           goto ending;
@@ -2188,10 +2188,10 @@ extractFeatures_old(unsigned char* edge,   // エッジ画像
         }
     }
 
-  if ( parameters.dbgimag )
+  if (parameters.dbgimag)
     {
       // 直線検出結果カラー表示・保存
-      if ( drawDetectedLines( edge, lineFeatures, parameters ) )
+      if (drawDetectedLines(edge, lineFeatures, parameters))
         {
           // 画像メモリがとれなかった
           goto ending;
@@ -2207,10 +2207,10 @@ extractFeatures_old(unsigned char* edge,   // エッジ画像
           goto ending; // メモリ確保失敗
         }
 
-      if ( parameters.dbgimag )
+      if (parameters.dbgimag)
         {
           // 頂点特徴抽出結果カラー表示・保存
-          if ( drawDetectedVertices( features, parameters ) )
+          if (drawDetectedVertices(features, parameters))
             {
               // 画像メモリがとれなかった
               goto ending;
@@ -2224,7 +2224,7 @@ extractFeatures_old(unsigned char* edge,   // エッジ画像
       for (iTrack = 0; iTrack < features->nTrack; iTrack++)
         {
           //if (searchFeatures(work, features, iTrack, parameters) < 0)
-	  if(searchEllipseIW(features, iTrack, paramEIW) == SEARCH_FEATURES2_NG)
+          if(searchEllipseIW(features, iTrack, paramEIW) == SEARCH_FEATURES2_NG)
             {
               clearFeatures2Dpointer(&features);
               goto ending; // メモリ確保失敗
@@ -2270,10 +2270,10 @@ extractFeatures_old(unsigned char* edge,   // エッジ画像
       //      features->nFeature, features->nTrack);
       //system("date");
       if(merge_ellipse(features, paramEIW) == MERGE_ELLIPSE_NG)
-	{
+        {
           clearFeatures2Dpointer(&features);
           goto ending; // メモリ確保失敗
-	}
+        }
       //fprintf(stderr, "nFeature=%d \n",
       //      features->nFeature);
       //system("date");
@@ -2281,16 +2281,16 @@ extractFeatures_old(unsigned char* edge,   // エッジ画像
       // 半径が短い楕円を排除 （typeにConicType_Unknown をセットする）
       tmpFeature = features->feature;
       for (f = 0; f < features->nFeature; f++)
-	{
+        {
           if (tmpFeature[f].type == ConicType_Ellipse)
             {
-	      if (tmpFeature[f].axis[0] < paramEIW->MinShortRadPost ||
-		  tmpFeature[f].axis[1] < paramEIW->MinShortRadPost)
-		{
-		  tmpFeature[f].type = ConicType_Unknown;
-		}
-	    }
-	}
+              if (tmpFeature[f].axis[0] < paramEIW->MinShortRadPost ||
+                  tmpFeature[f].axis[1] < paramEIW->MinShortRadPost)
+                {
+                  tmpFeature[f].type = ConicType_Unknown;
+                }
+            }
+        }
 
       // 楕円検出結果から、複数の楕円のデータを使って、楕円当てはめを行い、マージする
       if (Ellipse2Ellipse(features, features, parameters) < 0)
@@ -2320,8 +2320,8 @@ extractFeatures_old(unsigned char* edge,   // エッジ画像
       // 第3ループ：楕円を検出し、ellipseFeaturesに保存
       for (iTrack = 0; iTrack < ellipseFeatures->nTrack; iTrack++)
         {
-          //if (searchFeatures(work, ellipseFeatures, iTrack, parameters) < 0 )
-	  if(searchEllipseIW(ellipseFeatures, iTrack, paramEIW) == SEARCH_FEATURES2_NG)
+          //if (searchFeatures(work, ellipseFeatures, iTrack, parameters) < 0)
+          if(searchEllipseIW(ellipseFeatures, iTrack, paramEIW) == SEARCH_FEATURES2_NG)
             {
               clearFeatures2Dpointer(&features);
               goto ending; // メモリ確保失敗
@@ -2333,10 +2333,10 @@ extractFeatures_old(unsigned char* edge,   // エッジ画像
       //      ellipseFeatures->nFeature, ellipseFeatures->nTrack);
       //system("date");
       if(merge_ellipse(ellipseFeatures, paramEIW) == MERGE_ELLIPSE_NG)
-	{
+        {
           clearFeatures2Dpointer(&ellipseFeatures);
           goto ending; // メモリ確保失敗
-	}
+        }
       //fprintf(stderr, "nFeature=%d \n",
       //      ellipseFeatures->nFeature);
       //system("date");
@@ -2344,16 +2344,16 @@ extractFeatures_old(unsigned char* edge,   // エッジ画像
       // 半径が短い楕円を排除 （typeにConicType_Unknown をセットする）
       tmpFeature = ellipseFeatures->feature;
       for (f = 0; f < ellipseFeatures->nFeature; f++)
-	{
+        {
           if (tmpFeature[f].type == ConicType_Ellipse)
             {
-	      if (tmpFeature[f].axis[0] < paramEIW->MinShortRadPost ||
-		  tmpFeature[f].axis[1] < paramEIW->MinShortRadPost)
-		{
-		  tmpFeature[f].type = ConicType_Unknown;
-		}
-	    }
-	}
+              if (tmpFeature[f].axis[0] < paramEIW->MinShortRadPost ||
+                  tmpFeature[f].axis[1] < paramEIW->MinShortRadPost)
+                {
+                  tmpFeature[f].type = ConicType_Unknown;
+                }
+            }
+        }
 
       // 楕円に当てはめられたエッジ情報を上書き保存する
       tmpFeature = ellipseFeatures->feature;
@@ -2481,10 +2481,10 @@ extractFeatures_old(unsigned char* edge,   // エッジ画像
             }
         }
 
-      if ( parameters.dbgimag )
+      if (parameters.dbgimag)
         {
           // 楕円検出結果カラー表示・保存
-          if ( drawDetectedEllipses( edge, features, parameters ) )
+          if (drawDetectedEllipses(edge, features, parameters))
             {
               // 画像メモリがとれなかった
               goto ending;
@@ -2512,10 +2512,10 @@ ImageToFeature2D_old(unsigned char* src,    // 原画像
                      Parameters parameters, // 全パラメータ
                      Features3D model)      // モデルの３次元特徴データ（２次元処理の切り替え用）
 {
-  if ( parameters.dbgimag )
+  if (parameters.dbgimag)
     {
       // 入力確認画像の出力
-      if ( drawInputImage( src, parameters ) )
+      if (drawInputImage(src, parameters))
         {
           // 画像メモリがとれなかった
           return NULL;
@@ -2523,16 +2523,16 @@ ImageToFeature2D_old(unsigned char* src,    // 原画像
     }
 
   // エッジ点を抽出する
-  if ( extractEdge(edge, src, EEsearchedLarge, parameters) )
+  if (extractEdge(edge, src, EEsearchedLarge, parameters))
     {
       // 画像メモリがとれなかった
       return NULL;
     }
 
-  if ( parameters.dbgimag )
+  if (parameters.dbgimag)
     {
       // エッジ確認画像の出力
-      if ( drawEdgeImage( edge, parameters ) )
+      if (drawEdgeImage(edge, parameters))
         {
           // 画像メモリがとれなかった
           return NULL;
