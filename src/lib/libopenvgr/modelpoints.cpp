@@ -13,9 +13,12 @@
 #include <cv.h>
 #include <highgui.h>
 
+//#define USE_SET
 //#define USE_UNORDERED_SET
 
-#ifdef USE_UNORDERED_SET
+#ifdef USE_SET
+#include <set>
+#elif defined (USE_UNORDERED_SET)
 #include <tr1/unordered_set>
 #endif
 
@@ -34,7 +37,17 @@
 
 //#define PROJECT_DEBUG
 
-#ifdef USE_UNORDERED_SET
+#ifdef USE_SET
+struct PointLessThan
+{
+  bool operator()(const cv::Point& p1, const cv::Point& p2) const
+  {
+    return (p1.x < p2.x) ? true : (p1.x == p2.x) && (p1.y < p2.y);
+  }
+};
+
+typedef std::set<cv::Point, PointLessThan> plot_t;
+#elif defined (USE_UNORDERED_SET)
 struct HashPoint
 {
   std::tr1::hash<int> int_hash;
@@ -45,7 +58,9 @@ struct HashPoint
   }
 };
 
-typedef std::tr1::unordered_set<cv::Point, HashPoint> hash_plot_t;
+typedef std::tr1::unordered_set<cv::Point, HashPoint> plot_t;
+#else
+typedef std::vector<cv::Point> plot_t;
 #endif
 
 using namespace ovgr;
@@ -511,11 +526,7 @@ getPropertyVector(double mat[4][4],            // 合同変換行列
 static double
 calcEvaluationValue2D_on_line(Features3D* model, const cv::Point& p1, const cv::Point& p2, 
                               const cv::Mat& dstImage, 
-#ifndef USE_UNORDERED_SET
-                              std::vector<cv::Point>* plot,
-#else
-                              hash_plot_t* plot,
-#endif
+                              plot_t* plot,
                               MatchResult* result
 )
 {
@@ -534,10 +545,10 @@ calcEvaluationValue2D_on_line(Features3D* model, const cv::Point& p1, const cv::
       if (isValidPixelPosition(pcol, prow, model))
         {
           cv::Point p(pcol, prow);
-#ifndef USE_UNORDERED_SET
+#if !defined (USE_UNORDERED_SET) && !defined (USE_SET)
           std::vector<cv::Point>::iterator itr = std::find(plot->begin(), plot->end(), p);
 #else
-          hash_plot_t::iterator itr = plot->find(p);
+          plot_t::iterator itr = plot->find(p);
 #endif
           // 投影されていない場合
           if (itr == plot->end())
@@ -553,7 +564,7 @@ calcEvaluationValue2D_on_line(Features3D* model, const cv::Point& p1, const cv::
                   cpoint++;
                 }
 
-#ifndef USE_UNORDERED_SET
+#if !defined (USE_UNORDERED_SET) && !defined (USE_SET)
               plot->push_back(p);
 #else
               plot->insert(p);
@@ -578,11 +589,7 @@ calcEvaluationValue2D(Features3D* model, int p_camera,
   Vertex vertex;
   double score;
   int i, j;
-#ifndef USE_UNORDERED_SET
-  std::vector<cv::Point> plot;
-#else
-  hash_plot_t plot;
-#endif
+  plot_t plot;
 
 #ifdef PROJECT_DEBUG
   cv::Mat dstImage_norm = 
