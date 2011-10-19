@@ -752,10 +752,11 @@ double
 calcEvaluationValue2DMultiCameras(Features3D* model,      // モデルの３次元特徴情報
                                   StereoPairing& pairing, // ステレオペア情報
                                   MatchResult* result,    // 認識結果
-                                  const std::vector<cv::Mat>& dstImages)  // 距離変換画像
+                                  const std::vector<cv::Mat>& dstImages,  // 距離変換画像
+                                  cv::Mat* plot)
 {
   double score = 0.0;
-  cv::Mat plot = cv::Mat::zeros(cv::Size(model->calib->colsize, model->calib->rowsize), CV_8UC1);
+  //cv::Mat plot = cv::Mat::zeros(cv::Size(model->calib->colsize, model->calib->rowsize), CV_8UC1);
 
   result->npoint = 0;
   result->cpoint = 0;
@@ -763,25 +764,25 @@ calcEvaluationValue2DMultiCameras(Features3D* model,      // モデルの３次�
   switch (pairing)
     {
     case DBL_LR:
-      score = calcEvaluationValue2D(model, 0, result, dstImages[0], &plot);
-      score += calcEvaluationValue2D(model, 1, result, dstImages[1], &plot);
+      score = calcEvaluationValue2D(model, 0, result, dstImages[0], plot);
+      score += calcEvaluationValue2D(model, 1, result, dstImages[1], plot);
       break;
 
     case DBL_LV:
-      score = calcEvaluationValue2D(model, 0, result, dstImages[0], &plot);
-      score += calcEvaluationValue2D(model, 2, result, dstImages[2], &plot);
+      score = calcEvaluationValue2D(model, 0, result, dstImages[0], plot);
+      score += calcEvaluationValue2D(model, 2, result, dstImages[2], plot);
       break;
 
     case DBL_RV:
-      score = calcEvaluationValue2D(model, 1, result, dstImages[1], &plot);
-      score += calcEvaluationValue2D(model, 2, result, dstImages[2], &plot);
+      score = calcEvaluationValue2D(model, 1, result, dstImages[1], plot);
+      score += calcEvaluationValue2D(model, 2, result, dstImages[2], plot);
       break;
 
     case TBL_OR:
     case TBL_AND:
-      score = calcEvaluationValue2D(model, 0, result, dstImages[0], &plot);
-      score += calcEvaluationValue2D(model, 1, result, dstImages[1], &plot);
-      score += calcEvaluationValue2D(model, 2, result, dstImages[2], &plot);
+      score = calcEvaluationValue2D(model, 0, result, dstImages[0], plot);
+      score += calcEvaluationValue2D(model, 1, result, dstImages[1], plot);
+      score += calcEvaluationValue2D(model, 2, result, dstImages[2], plot);
       break;
     }
 

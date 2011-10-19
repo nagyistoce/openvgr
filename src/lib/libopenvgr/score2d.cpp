@@ -109,9 +109,10 @@ getResultScore(MatchResult* results,   // 認識結果情報
 #endif
   for (i = 0; i < num; i++)
     {
+      cv::Mat plot = cv::Mat::zeros(cv::Size(model->calib->colsize, model->calib->rowsize), CV_8UC1);
       // 距離変換画像を用いた評価値計算
       results[i].score = 
-        calcEvaluationValue2DMultiCameras(model, pairing, &results[i], dstImages) * weight;
+        calcEvaluationValue2DMultiCameras(model, pairing, &results[i], dstImages, &plot) * weight;
     }
 
   // 評価値でソート
