@@ -37,8 +37,7 @@ void getPropertyVector(double mat[4][4],       // 合同変換行列
 double calcEvaluationValue2DMultiCameras(Features3D* model,      // モデルの３次元特徴情報
                                          StereoPairing& pairing, // ステレオペア情報
                                          MatchResult* result,    // 認識結果
-                                         const std::vector<cv::Mat>& dstImages, // 距離変換画像
-                                         cv::Mat* plot);
+                                         const std::vector<cv::Mat>& dstImages); // 距離変換画像
 
 // 座標値が正しい範囲内か確認
 inline int
