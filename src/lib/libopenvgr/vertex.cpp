@@ -342,6 +342,9 @@ reconstruct_hyperbola_to_vertex3D(const std::vector<const ovgr::Features2D*> fea
       return;
     }
 
+#ifdef _OPENMP
+#pragma omp parallel for
+#endif
   for (size_t i = 0; i < scene_temp.size(); ++i)
     {
       scene_temp[i].n = i; // 通し番号
