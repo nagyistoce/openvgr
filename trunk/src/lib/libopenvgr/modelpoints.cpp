@@ -13,6 +13,12 @@
 #include <cv.h>
 #include <highgui.h>
 
+//#define USE_UNORDERED_SET
+
+#ifdef USE_UNORDERED_SET
+#include <tr1/unordered_set>
+#endif
+
 #include <algorithm>
 
 #include "common.h"
@@ -27,6 +33,20 @@
 #include "mathmisc.hpp"
 
 //#define PROJECT_DEBUG
+
+#ifdef USE_UNORDERED_SET
+struct HashPoint
+{
+  std::tr1::hash<int> int_hash;
+
+  size_t operator()(const cv::Point& p) const
+  {
+    return int_hash(p.x * p.y);
+  }
+};
+
+typedef std::tr1::unordered_set<cv::Point, HashPoint> hash_plot_t;
+#endif
 
 using namespace ovgr;
 
@@ -491,7 +511,13 @@ getPropertyVector(double mat[4][4],            // 合同変換行列
 static double
 calcEvaluationValue2D_on_line(Features3D* model, const cv::Point& p1, const cv::Point& p2, 
                               const cv::Mat& dstImage, 
-                              std::vector<cv::Point>* plotlist, MatchResult* result)
+#ifndef USE_UNORDERED_SET
+                              std::vector<cv::Point>* plot,
+#else
+                              hash_plot_t* plot,
+#endif
+                              MatchResult* result
+)
 {
   ovgr::PointsOnLine points(p1.x, p1.y, p2.x, p2.y);
   double score = 0.0;
@@ -508,10 +534,13 @@ calcEvaluationValue2D_on_line(Features3D* model, const cv::Point& p1, const cv::
       if (isValidPixelPosition(pcol, prow, model))
         {
           cv::Point p(pcol, prow);
-          std::vector<cv::Point>::iterator itr = std::find(plotlist->begin(), 
-                                                           plotlist->end(), p);
+#ifndef USE_UNORDERED_SET
+          std::vector<cv::Point>::iterator itr = std::find(plot->begin(), plot->end(), p);
+#else
+          hash_plot_t::iterator itr = plot->find(p);
+#endif
           // 投影されていない場合
-          if (itr == plotlist->end())
+          if (itr == plot->end())
             {
               float dist_value = dstImage.at<float>(prow, pcol);
               score += 1.0 / (double) (dist_value + 1.0);
@@ -524,7 +553,11 @@ calcEvaluationValue2D_on_line(Features3D* model, const cv::Point& p1, const cv::
                   cpoint++;
                 }
 
-              plotlist->push_back(p);
+#ifndef USE_UNORDERED_SET
+              plot->push_back(p);
+#else
+              plot->insert(p);
+#endif
             }
         }
     }
@@ -545,7 +578,11 @@ calcEvaluationValue2D(Features3D* model, int p_camera,
   Vertex vertex;
   double score;
   int i, j;
-  std::vector<cv::Point> plotlist;
+#ifndef USE_UNORDERED_SET
+  std::vector<cv::Point> plot;
+#else
+  hash_plot_t plot;
+#endif
 
 #ifdef PROJECT_DEBUG
   cv::Mat dstImage_norm = 
@@ -589,8 +626,8 @@ calcEvaluationValue2D(Features3D* model, int p_camera,
       mult_tPose(pos3d, vertex.tPose, vertex.endpoint2);
       projectXYZ2LRwithTrans(model, result->mat, p_camera, pos3d, &pos2d[2]);
 
-      score += (calcEvaluationValue2D_on_line(model, pos2d[0], pos2d[1], dstImage, &plotlist, result)
-                + calcEvaluationValue2D_on_line(model, pos2d[1], pos2d[2], dstImage, &plotlist, result));
+      score += (calcEvaluationValue2D_on_line(model, pos2d[0], pos2d[1], dstImage, &plot, result)
+                + calcEvaluationValue2D_on_line(model, pos2d[1], pos2d[2], dstImage, &plot, result));
 # ifdef PROJECT_DEBUG
       cv::line(dstImage_color, pos2d[0], pos2d[1], color, lineThickness, CV_AA);
       cv::line(dstImage_color, pos2d[1], pos2d[2], color, lineThickness, CV_AA);
@@ -663,7 +700,7 @@ calcEvaluationValue2D(Features3D* model, int p_camera,
                 cv::line(dstImage_color, curve[(j+1)%2], curve[j%2], color, lineThickness, CV_AA);
 # endif
                 score += calcEvaluationValue2D_on_line(model, curve[(j+1)%2], curve[j%2], dstImage,
-                                                       &plotlist, result);
+                                                       &plot, result);
               }
           }
           
@@ -694,7 +731,7 @@ calcEvaluationValue2D(Features3D* model, int p_camera,
                         cv::line(dstImage_color, curve[(k+1)%2], curve[k%2], color, lineThickness, CV_AA);
 # endif
                         score += calcEvaluationValue2D_on_line(model, curve[(k+1)%2], curve[k%2], 
-                                                               dstImage, &plotlist, result);
+                                                               dstImage, &plot, result);
                       }
                   }
                 else if (nangle[j] == 2)
@@ -718,7 +755,7 @@ calcEvaluationValue2D(Features3D* model, int p_camera,
                         cv::line(dstImage_color, curve[(k+1)%2], curve[k%2], color, lineThickness, CV_AA);
 # endif
                         score += calcEvaluationValue2D_on_line(model, curve[(k+1)%2], curve[k%2], 
-                                                               dstImage, &plotlist, result);
+                                                               dstImage, &plot, result);
                       }
                   }
               }
@@ -731,9 +768,9 @@ calcEvaluationValue2D(Features3D* model, int p_camera,
 # endif
                 // 遮蔽輪郭線(円筒の側面)を評価
                 score += calcEvaluationValue2D_on_line(model, pos[0][0], pos[1][1], 
-                                                       dstImage, &plotlist, result);
+                                                       dstImage, &plot, result);
                 score += calcEvaluationValue2D_on_line(model, pos[0][1], pos[1][0], 
-                                                       dstImage, &plotlist, result);
+                                                       dstImage, &plot, result);
               }
           }
 
