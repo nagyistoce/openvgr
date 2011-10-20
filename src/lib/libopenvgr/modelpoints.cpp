@@ -545,13 +545,29 @@ calcEvaluationValue2D_on_line(Features3D* model, const cv::Point& p1, const cv::
       if (isValidPixelPosition(pcol, prow, model))
         {
           cv::Point p(pcol, prow);
-#if !defined (USE_UNORDERED_SET) && !defined (USE_SET)
-          std::vector<cv::Point>::iterator itr = std::find(plot->begin(), plot->end(), p);
-#else
-          plot_t::iterator itr = plot->find(p);
+          bool is_unplot = false;
+#ifdef _OPENMP
+#pragma omp critical
 #endif
-          // 投影されていない場合
-          if (itr == plot->end())
+          {
+#if !defined (USE_UNORDERED_SET) && !defined (USE_SET)
+            std::vector<cv::Point>::iterator itr = std::find(plot->begin(), plot->end(), p);
+#else
+            plot_t::iterator itr = plot->find(p);
+#endif
+            is_unplot = (itr == plot->end());
+            // 投影されていない場合
+            if (is_unplot)
+              {
+#if !defined (USE_UNORDERED_SET) && !defined (USE_SET)
+              plot->push_back(p);
+#else
+              plot->insert(p);
+#endif
+              }
+          }
+
+          if (is_unplot)
             {
               float dist_value = dstImage.at<float>(prow, pcol);
               score += 1.0 / (double) (dist_value + 1.0);
@@ -563,12 +579,6 @@ calcEvaluationValue2D_on_line(Features3D* model, const cv::Point& p1, const cv::
                 {
                   cpoint++;
                 }
-
-#if !defined (USE_UNORDERED_SET) && !defined (USE_SET)
-              plot->push_back(p);
-#else
-              plot->insert(p);
-#endif
             }
         }
     }
