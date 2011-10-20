@@ -145,7 +145,7 @@ drawDetectedLines(const uchar* edge, const Features2D_old* lineFeatures, const P
 
   for (f = 0; f < lineFeatures->nFeature; f++)
     {
-      if (tmpFeature[f].type != ConicType_Line)
+      if (tmpFeature[f].type != ConicType_Line || tmpFeature[f].error < 0.0)
         {
           continue;
         }
