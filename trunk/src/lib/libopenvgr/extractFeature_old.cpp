@@ -2149,7 +2149,7 @@ mark_similar_lines(Features2D_old* lineFeatures, const double tolerance)
               else if (fabs(diff) <= VISION_EPS)
                 {
                   // 誤差がほぼ同じ線分のとき
-                  if (f_i->lineLength <= f_j->lineLength)
+                  if (f_i->lineLength >= f_j->lineLength)
                     {
                       f_j->error = -1.0;
                     }
