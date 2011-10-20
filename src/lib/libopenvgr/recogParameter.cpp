@@ -34,7 +34,7 @@ setDefaultRecogParameter(Parameters& param)
   param.feature2D.edgeStrength = 5.0;     // 検出するエッジの最低微分強度
 
   param.feature2D.maxErrorofLineFit = 0.5;  // 直線を当てはめるときの最大誤差
-  param.feature2D.max_distance_similar_line = 0.0;  // 同一の線分と見なす最大端点距離（画素）
+  param.feature2D.max_distance_similar_line = -1.0;  // 同一の線分と見なす最大端点距離（画素）
   param.feature2D.maxErrorofConicFit = 0.8;  // 二次曲線を当てはめるときの最大誤差
   param.feature2D.overlapRatioLine = 0.7;  // 直線、双曲線の特徴点を抽出する区間の重複可能な最大比率
   param.feature2D.overlapRatioCircle = 0.8;  // 楕円の特徴点を抽出する区間の重複可能な最大比率

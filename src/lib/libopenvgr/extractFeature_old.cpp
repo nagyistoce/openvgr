@@ -2242,7 +2242,7 @@ extractFeatures_old(unsigned char* edge,   // エッジ画像
     }
 
   // それぞれの端点が近い線分に印をつける(error < 0.0)
-  if (parameters.feature2D.max_distance_similar_line > 0.0)
+  if (parameters.feature2D.max_distance_similar_line >= 0.0)
     {
       mark_similar_lines(lineFeatures, parameters.feature2D.max_distance_similar_line);
     }
