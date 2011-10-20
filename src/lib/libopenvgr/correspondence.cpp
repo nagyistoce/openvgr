@@ -371,7 +371,6 @@ ovgr::make_corresponding_pairs(const Features2D& feature1, const CameraParam& cp
         }
     }
 #endif
-#endif
 
   return cp;
 }
