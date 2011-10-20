@@ -109,9 +109,10 @@ getResultScore(MatchResult* results,   // 認識結果情報
 #endif
   for (i = 0; i < num; i++)
     {
+      plot_t plot;
       // 距離変換画像を用いた評価値計算
       results[i].score = 
-        calcEvaluationValue2DMultiCameras(model, pairing, &results[i], dstImages) * weight;
+        calcEvaluationValue2DMultiCameras(model, pairing, &results[i], &plot, dstImages) * weight;
     }
 
   // 評価値でソート
