@@ -39,7 +39,7 @@ COMOBJS = calib.o calibUtil.o recogParameter.o\
           geometry.o extractFeature.o correspondence.o \
           drawing.o mathmisc.o \
           searchEllipse_IW.o RecognitionKernel.o \
-	  merge_ellipse.o
+          merge_ellipse.o
 
 DEFS =
 
