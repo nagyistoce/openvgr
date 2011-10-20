@@ -30,42 +30,30 @@ setDefaultRecogParameter(Parameters& param)
 
   // 認識パラメータの設定
 
-  param.feature2D.edgeDetectFunction = 0;       // エッジ検出アルゴリズム
-  param.feature2D.edgeStrength = 5.0;    // 検出するエッジの最低微分強度
+  param.feature2D.edgeDetectFunction = 0; // エッジ検出アルゴリズム
+  param.feature2D.edgeStrength = 5.0;     // 検出するエッジの最低微分強度
 
-  param.feature2D.maxErrorofLineFit = 0.5;
-  // 直線を当てはめるときの最大誤差
-  param.feature2D.maxErrorofConicFit = 0.8;
-  // 二次曲線を当てはめるときの最大誤差
-  param.feature2D.overlapRatioLine = 0.7;
-  // 直線、双曲線の特徴点を抽出する区間の重複可能な最大比率
-  param.feature2D.overlapRatioCircle = 0.8;
-  // 楕円の特徴点を抽出する区間の重複可能な最大比率
+  param.feature2D.maxErrorofLineFit = 0.5;  // 直線を当てはめるときの最大誤差
+  param.feature2D.max_distance_similar_line = 0.0;  // 同一の線分と見なす最大端点距離（画素）
+  param.feature2D.maxErrorofConicFit = 0.8;  // 二次曲線を当てはめるときの最大誤差
+  param.feature2D.overlapRatioLine = 0.7;  // 直線、双曲線の特徴点を抽出する区間の重複可能な最大比率
+  param.feature2D.overlapRatioCircle = 0.8;  // 楕円の特徴点を抽出する区間の重複可能な最大比率
 
-  param.feature2D.min_length_line = 15.0;         // 直線の最小長さ
-  param.feature2D.max_distance_end_points = 10.0; // 端点間距離の閾値
+  param.feature2D.min_length_line = 15.0;  // 直線の最小長さ
+  param.feature2D.max_distance_end_points = 10.0;  // 端点間距離の閾値
 
   // 以下は固定
-  param.feature2D.minFragment = 10;
-  // 検出するエッジの最低外周長
-  param.feature2D.max_length_delete_line = 30.0;
-  // 楕円検出直前に削除する直線の最大長さ
-  param.feature2D.min_radian_hyperbola = 15.0 / 180.0 * M_PI;
-  // 双曲線のなす角度閾値 (0, 180 度に近いものを除去する。)
-  param.feature2D.min_length_hyperbola_data = 2.0;
-  // 双曲線での中心からデータまでの距離の閾値
-  param.feature2D.min_length_hyperbola_vector = 10.0;
-  // 双曲線での中心から端点までの距離の閾値
+  param.feature2D.minFragment = 10;  // 検出するエッジの最低外周長
+  param.feature2D.max_length_delete_line = 30.0;  // 楕円検出直前に削除する直線の最大長さ
+  param.feature2D.min_radian_hyperbola = 15.0 / 180.0 * M_PI;  // 双曲線のなす角度閾値 (0, 180 度に近いものを除去する。)
+  param.feature2D.min_length_hyperbola_data = 2.0;      // 双曲線での中心からデータまでの距離の閾値
+  param.feature2D.min_length_hyperbola_vector = 10.0;   // 双曲線での中心から端点までの距離の閾値
   param.feature2D.min_length_ellipse_axis = 10.0;       // 楕円の軸長の閾値
-  param.feature2D.min_filling_ellipse = 0.2;    // 楕円の充填率の閾値
-  param.feature2D.max_flatness_ellipse = 4.0;
-  // 楕円の偏平率（長軸/短軸)
-  param.feature2D.max_distance_ellipse_grouping = 10.0;
-  // 中心距離判定閾値
-  param.feature2D.min_distance_ellipse_pairing = 0.0;
-  // 中心距離判定閾値
-  param.feature2D.max_distance_ellipse_pairing = 100.0;
-  // 中心距離判定閾値
+  param.feature2D.min_filling_ellipse = 0.2;            // 楕円の充填率の閾値
+  param.feature2D.max_flatness_ellipse = 4.0;           // 楕円の偏平率（長軸/短軸)
+  param.feature2D.max_distance_ellipse_grouping = 10.0; // 中心距離判定閾値
+  param.feature2D.min_distance_ellipse_pairing = 0.0;   // 中心距離判定閾値
+  param.feature2D.max_distance_ellipse_pairing = 100.0; // 中心距離判定閾値
   param.feature2D.min_length_ellipse_axisS = 5.0;       // 楕円の軸長の閾値
   param.feature2D.min_length_ellipse_axisL = 10.0;      // 楕円の軸長の閾値
   param.feature2D.max_length_ellipse_axisL = 50.0;      // 楕円の軸長の閾値
@@ -113,6 +101,7 @@ enum paramKey
   eEdgeDetectFunction,
   eEdgeStrength,
   eMaxErrorOfLineFit,
+  eMaxDistanceSimilarLine,
   eMaxErrorOfConicFit,
   eOverlapRatioLine,
   eOverlapRatioCircle,
@@ -148,6 +137,7 @@ static const char* paramKeyString[] = {
   "EdgeDetectFunction",
   "EdgeStrength",
   "MaxErrorOfLineFit",
+  "MaxDistanceSimilarLine",
   "MaxErrorOfConicFit",
   "OverlapRatioLine",
   "OverlapRatioCircle",
@@ -249,6 +239,10 @@ loadRecogParameter(char* path, Parameters& param)
             case eMaxErrorOfLineFit:
               // 直線を当てはめるときの最大誤差
               param.feature2D.maxErrorofLineFit = atof(p);
+              break;
+            case eMaxDistanceSimilarLine:
+              // 同一の線分と見なす最大端点距離（画素）
+              param.feature2D.max_distance_similar_line = atof(p);
               break;
             case eMaxErrorOfConicFit:
               // 二次曲線を当てはめるときの最大誤差

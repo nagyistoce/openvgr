@@ -29,6 +29,8 @@ typedef struct ParametersFeature2D
   int minFragment;
   //! 直線をあてはめる時の最大誤差（画素）
   double maxErrorofLineFit;
+  //! 同一の線分と見なす最大端点距離（画素）
+  double max_distance_similar_line;
   //! 二次曲線をあてはめる時の最大誤差（画素）
   double maxErrorofConicFit;
   //! 直線、双曲線の特徴点を抽出する区間の重複可能な最大比率（0.0〜1.0)

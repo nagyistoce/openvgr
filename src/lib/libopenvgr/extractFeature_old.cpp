@@ -2242,7 +2242,10 @@ extractFeatures_old(unsigned char* edge,   // エッジ画像
     }
 
   // それぞれの端点が近い線分に印をつける(error < 0.0)
-  mark_similar_lines(lineFeatures, 1.0);
+  if (parameters.feature2D.max_distance_similar_line > 0.0)
+    {
+      mark_similar_lines(lineFeatures, parameters.feature2D.max_distance_similar_line);
+    }
 
   // 直線に当てはめられたエッジ情報を上書き保存する
   tmpFeature = lineFeatures->feature;
