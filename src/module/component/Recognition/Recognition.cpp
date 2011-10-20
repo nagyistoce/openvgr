@@ -256,6 +256,7 @@ RTC::ReturnCode_t Recognition::onExecute(RTC::UniqueId ec_id)
       printf( "Recognition::onExecute:RECOGNITION_TEST:StereoError=%f\n", param.stereo.ethr);
       printf( "Recognition::onExecute:RECOGNITION_TEST:MinLengthLine2D=%f\n", param.feature2D.min_length_line);
       printf( "Recognition::onExecute:RECOGNITION_TEST:NoSearchFeatures=%d\n", param.feature2D.no_search_features);
+      printf( "Recognition::onExecute:RECOGNITION_TEST:MaxDistanceSimilarLine=%f\n", param.feature2D.max_distance_similar_line);
       fflush(stdout);
 #endif //RECOGNITION_TEST
 
