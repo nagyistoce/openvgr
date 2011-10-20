@@ -354,7 +354,6 @@ ovgr::make_corresponding_pairs(const Features2D& feature1, const CameraParam& cp
     }
 #endif
 
-#if 1
   // 楕円特徴
   cp.ellipse = create_feature_map(feature1.ellipse, cp1, feature2.ellipse, cp2, EllipseEvaluator(cp1, cp2, thres.ellipse_tolerance));
 
