@@ -30,7 +30,7 @@ struct PointLessThan
 {
   bool operator()(const cv::Point& p1, const cv::Point& p2) const
   {
-    return (p1.x < p2.x) ? true : (p1.x == p2.x) && (p1.y < p2.y);
+    return ((p1.x << 16) + p1.y) < ((p2.x << 16) + p2.y);
   }
 };
 
@@ -42,7 +42,7 @@ struct HashPoint
 
   size_t operator()(const cv::Point& p) const
   {
-    return int_hash(p.x * p.y);
+    return int_hash((p.x << 16) + p.y);
   }
 };
 
