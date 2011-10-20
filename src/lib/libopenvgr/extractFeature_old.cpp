@@ -644,6 +644,11 @@ Line2Vertex(Features2D_old* lineFeatures, Features2D_old* features, Parameters p
         {                       // 念のため直線の特徴であることを確認する
           continue;
         }
+      // 無効な線分
+      if (feature1->error < 0.0)
+        {
+          continue;
+        }
       // 直線の長さによる閾値処理
       if (feature1->lineLength < thr_lineLength)
         {
@@ -659,6 +664,10 @@ Line2Vertex(Features2D_old* lineFeatures, Features2D_old* features, Parameters p
           feature2 = &lineFeatures->feature[j];
           if (feature2->type != ConicType_Line)
             {                   // 念のため直線の特徴であることを確認する
+              continue;
+            }
+          if (feature2->error < 0.0)
+            {
               continue;
             }
           if (feature2->lineLength < thr_lineLength)
@@ -2077,6 +2086,88 @@ copyTrackPoints(Features2D_old* dstFeatures, Features2D_old* srcFeatures,
   return 0;
 }
 
+// 端点が近い線分に印をつける
+void
+mark_similar_lines(Features2D_old* lineFeatures, const double tolerance)
+{
+  const int num = lineFeatures->nFeature;
+  int i, j;
+
+  for (i = 0; i < num - 1; ++i)
+    {
+      Feature2D_old* f_i = &lineFeatures->feature[i];
+      const double err_i = f_i->error;
+
+      if (f_i->error < 0.0  || f_i->type != ConicType_Line)
+        {
+          continue;
+        }
+
+      for (j = i + 1; j < num; ++j)
+        {
+          Feature2D_old* f_j = &lineFeatures->feature[j];
+          double* is[2] = {&f_i->startSPoint[0], &f_i->startSPoint[1]};
+          double* ie[2] = {&f_i->endSPoint[0],   &f_i->endSPoint[1]};
+          double* js[2] = {&f_j->startSPoint[0], &f_j->startSPoint[1]};
+          double* je[2] = {&f_j->endSPoint[0],   &f_j->endSPoint[1]};
+          double distance[2][2];
+          bool is_similar = false;
+
+          if (f_j->error < 0.0  || f_j->type != ConicType_Line)
+            {
+              continue;
+            }
+
+          // 各端点の組み合わせの距離
+          distance[0][0] = hypot(*is[0] - *js[0], *is[1] - *js[1]);
+          distance[0][1] = hypot(*ie[0] - *je[0], *ie[1] - *je[1]);
+          distance[1][0] = hypot(*is[0] - *je[0], *is[1] - *je[1]);
+          distance[1][1] = hypot(*ie[0] - *js[0], *ie[1] - *js[1]);
+
+          if (distance[0][0] <= distance[1][0])
+            {
+              // 始点ー始点
+              is_similar = (distance[0][0] < tolerance && distance[0][1] < tolerance);
+            }
+          else
+            {
+              // 始点ー終点
+              is_similar = (distance[1][0] < tolerance && distance[1][1] < tolerance);
+            }
+
+          // 近い線分同士なら誤差が小さい・長い線分の方を残す
+          if (is_similar)
+            {
+              const double diff = f_j->error - err_i;
+
+              //printf("%d %d are similar\n", i, j);
+              if (diff > VISION_EPS)
+                {
+                  // f_iの誤差が小さい
+                  f_j->error = -1.0;
+                }
+              else if (fabs(diff) <= VISION_EPS)
+                {
+                  // 誤差がほぼ同じ線分のとき
+                  if (f_i->lineLength <= f_j->lineLength)
+                    {
+                      f_j->error = -1.0;
+                    }
+                  else
+                    {
+                      f_i->error = -1.0;
+                    }
+                }
+              else
+                {
+                  // f_jの誤差が小さい
+                  f_i->error = -1.0;
+                }
+            }
+        }
+    }
+}
+
 // 特徴点を取り出す
 Features2D_old*
 extractFeatures_old(unsigned char* edge,   // エッジ画像
@@ -2149,11 +2240,15 @@ extractFeatures_old(unsigned char* edge,   // エッジ画像
           goto ending; // メモリ確保失敗
         }
     }
+
+  // それぞれの端点が近い線分に印をつける(error < 0.0)
+  mark_similar_lines(lineFeatures, 1.0);
+
   // 直線に当てはめられたエッジ情報を上書き保存する
   tmpFeature = lineFeatures->feature;
   for (f = 0; f < lineFeatures->nFeature; f++)
     {
-      if (tmpFeature[f].type != ConicType_Line)
+      if (tmpFeature[f].type != ConicType_Line || tmpFeature[f].error < 0.0)
         {
           continue;
         }
