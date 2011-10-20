@@ -320,9 +320,6 @@ create_feature_map(const T& feature1, const CameraParam& cp1, const T& feature2,
         {
           if (eval_func(feature1[i], feature2[j]) == true)
             {
-#ifdef _OPENMP
-#pragma omp critical
-#endif
               fmap[i].push_back(j);
             }
         }
