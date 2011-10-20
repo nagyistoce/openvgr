@@ -13,15 +13,6 @@
 #include <cv.h>
 #include <highgui.h>
 
-//#define USE_SET
-//#define USE_UNORDERED_SET
-
-#ifdef USE_SET
-#include <set>
-#elif defined (USE_UNORDERED_SET)
-#include <tr1/unordered_set>
-#endif
-
 #include <algorithm>
 
 #include "common.h"
@@ -36,32 +27,6 @@
 #include "mathmisc.hpp"
 
 //#define PROJECT_DEBUG
-
-#ifdef USE_SET
-struct PointLessThan
-{
-  bool operator()(const cv::Point& p1, const cv::Point& p2) const
-  {
-    return (p1.x < p2.x) ? true : (p1.x == p2.x) && (p1.y < p2.y);
-  }
-};
-
-typedef std::set<cv::Point, PointLessThan> plot_t;
-#elif defined (USE_UNORDERED_SET)
-struct HashPoint
-{
-  std::tr1::hash<int> int_hash;
-
-  size_t operator()(const cv::Point& p) const
-  {
-    return int_hash(p.x * p.y);
-  }
-};
-
-typedef std::tr1::unordered_set<cv::Point, HashPoint> plot_t;
-#else
-typedef std::vector<cv::Point> plot_t;
-#endif
 
 using namespace ovgr;
 
@@ -594,12 +559,12 @@ calcEvaluationValue2D_on_line(Features3D* model, const cv::Point& p1, const cv::
 static double
 calcEvaluationValue2D(Features3D* model, int p_camera, 
                       MatchResult* result,
+                      plot_t* plot,
                       const cv::Mat& dstImage)
 {
   Vertex vertex;
   double score;
   int i, j;
-  plot_t plot;
 
 #ifdef PROJECT_DEBUG
   cv::Mat dstImage_norm = 
@@ -614,7 +579,7 @@ calcEvaluationValue2D(Features3D* model, int p_camera,
 #endif
 
   score = 0.0;
-
+  plot->clear();
 #ifdef _OPENMP
 #pragma omp parallel for private (vertex, j), reduction (+: score)
 #endif
@@ -643,8 +608,8 @@ calcEvaluationValue2D(Features3D* model, int p_camera,
       mult_tPose(pos3d, vertex.tPose, vertex.endpoint2);
       projectXYZ2LRwithTrans(model, result->mat, p_camera, pos3d, &pos2d[2]);
 
-      score += (calcEvaluationValue2D_on_line(model, pos2d[0], pos2d[1], dstImage, &plot, result)
-                + calcEvaluationValue2D_on_line(model, pos2d[1], pos2d[2], dstImage, &plot, result));
+      score += (calcEvaluationValue2D_on_line(model, pos2d[0], pos2d[1], dstImage, plot, result)
+                + calcEvaluationValue2D_on_line(model, pos2d[1], pos2d[2], dstImage, plot, result));
 # ifdef PROJECT_DEBUG
       cv::line(dstImage_color, pos2d[0], pos2d[1], color, lineThickness, CV_AA);
       cv::line(dstImage_color, pos2d[1], pos2d[2], color, lineThickness, CV_AA);
@@ -717,7 +682,7 @@ calcEvaluationValue2D(Features3D* model, int p_camera,
                 cv::line(dstImage_color, curve[(j+1)%2], curve[j%2], color, lineThickness, CV_AA);
 # endif
                 score += calcEvaluationValue2D_on_line(model, curve[(j+1)%2], curve[j%2], dstImage,
-                                                       &plot, result);
+                                                       plot, result);
               }
           }
           
@@ -748,7 +713,7 @@ calcEvaluationValue2D(Features3D* model, int p_camera,
                         cv::line(dstImage_color, curve[(k+1)%2], curve[k%2], color, lineThickness, CV_AA);
 # endif
                         score += calcEvaluationValue2D_on_line(model, curve[(k+1)%2], curve[k%2], 
-                                                               dstImage, &plot, result);
+                                                               dstImage, plot, result);
                       }
                   }
                 else if (nangle[j] == 2)
@@ -772,7 +737,7 @@ calcEvaluationValue2D(Features3D* model, int p_camera,
                         cv::line(dstImage_color, curve[(k+1)%2], curve[k%2], color, lineThickness, CV_AA);
 # endif
                         score += calcEvaluationValue2D_on_line(model, curve[(k+1)%2], curve[k%2], 
-                                                               dstImage, &plot, result);
+                                                               dstImage, plot, result);
                       }
                   }
               }
@@ -785,9 +750,9 @@ calcEvaluationValue2D(Features3D* model, int p_camera,
 # endif
                 // 遮蔽輪郭線(円筒の側面)を評価
                 score += calcEvaluationValue2D_on_line(model, pos[0][0], pos[1][1], 
-                                                       dstImage, &plot, result);
+                                                       dstImage, plot, result);
                 score += calcEvaluationValue2D_on_line(model, pos[0][1], pos[1][0], 
-                                                       dstImage, &plot, result);
+                                                       dstImage, plot, result);
               }
           }
 
@@ -811,6 +776,7 @@ double
 calcEvaluationValue2DMultiCameras(Features3D* model,      // モデルの３次元特徴情報
                                   StereoPairing& pairing, // ステレオペア情報
                                   MatchResult* result,    // 認識結果
+                                  plot_t* plot,           // 評価済みの点の記録用
                                   const std::vector<cv::Mat>& dstImages)  // 距離変換画像
 {
   double score = 0.0;
@@ -821,25 +787,25 @@ calcEvaluationValue2DMultiCameras(Features3D* model,      // モデルの３次�
   switch (pairing)
     {
     case DBL_LR:
-      score = calcEvaluationValue2D(model, 0, result, dstImages[0]);
-      score += calcEvaluationValue2D(model, 1, result, dstImages[1]);
+      score = calcEvaluationValue2D(model, 0, result, plot, dstImages[0]);
+      score += calcEvaluationValue2D(model, 1, result, plot, dstImages[1]);
       break;
 
     case DBL_LV:
-      score = calcEvaluationValue2D(model, 0, result, dstImages[0]);
-      score += calcEvaluationValue2D(model, 2, result, dstImages[2]);
+      score = calcEvaluationValue2D(model, 0, result, plot, dstImages[0]);
+      score += calcEvaluationValue2D(model, 2, result, plot, dstImages[2]);
       break;
 
     case DBL_RV:
-      score = calcEvaluationValue2D(model, 1, result, dstImages[1]);
-      score += calcEvaluationValue2D(model, 2, result, dstImages[2]);
+      score = calcEvaluationValue2D(model, 1, result, plot, dstImages[1]);
+      score += calcEvaluationValue2D(model, 2, result, plot, dstImages[2]);
       break;
 
     case TBL_OR:
     case TBL_AND:
-      score = calcEvaluationValue2D(model, 0, result, dstImages[0]);
-      score += calcEvaluationValue2D(model, 1, result, dstImages[1]);
-      score += calcEvaluationValue2D(model, 2, result, dstImages[2]);
+      score = calcEvaluationValue2D(model, 0, result, plot, dstImages[0]);
+      score += calcEvaluationValue2D(model, 1, result, plot, dstImages[1]);
+      score += calcEvaluationValue2D(model, 2, result, plot, dstImages[2]);
       break;
     }
 
