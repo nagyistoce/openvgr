@@ -481,7 +481,7 @@ printVertex(const std::vector< ::Vertex>& vertex)
     }
   else
     {
-      fprintf(fp, "%d 3\n", vertex.size() * 4);
+      fprintf(fp, "%zu 3\n", vertex.size() * 4);
       for (i = 0; i < vertex.size(); i++)
         {
           cv::Mat T = cv::Mat(4, 4, CV_64FC1, const_cast<double(*)[4]>(vertex[i].tPose));
