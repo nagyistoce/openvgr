@@ -338,7 +338,7 @@ RecognitionKernel(RecogImage** image,
       cs = ovgr::filter_corresponding_set(cps, ovgr::CorresAnd);
     }
 
-  printf("# vertex: %d, ellipse: %d\n", cs.vertex.size(), cs.ellipse.size());
+  printf("# vertex: %zu, ellipse: %zu\n", cs.vertex.size(), cs.ellipse.size());
 
   Features3D scene = { 0 };
 
