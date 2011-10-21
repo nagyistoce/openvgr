@@ -11,6 +11,11 @@
  * @date  \$Date::                            $
  */
 
+#ifndef __STDC_FORMAT_MACROS
+#define __STDC_FORMAT_MACROS
+#endif
+#include <inttypes.h>
+
 #include "Recognition.h"
 #include "execute3DRecognition.h"
 #include "visionErrorCode.h"
@@ -219,7 +224,7 @@ RTC::ReturnCode_t Recognition::onExecute(RTC::UniqueId ec_id)
       Img::TimedMultiCameraImage* frame = &(m_stereo3DData.data.mimg);
       if (frame->data.image_seq.length() > 0)
         {
-          printf("Image Accept: (%ld x %ld) x %ld\n",
+          printf("Image Accept: (%"PRId32" x %"PRId32") x %"PRIu32"\n",
 		 frame->data.image_seq[0].image.width,
 		 frame->data.image_seq[0].image.height,
 		 frame->data.image_seq.length());

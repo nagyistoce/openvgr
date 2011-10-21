@@ -1,15 +1,19 @@
-/*
+/* -*-C++-*-
  VisionSVC_impl.cpp
 
  Copyright (c) 2011 AIST  All Rights Reserved.
  Eclipse Public License v1.0 (http://www.eclipse.org/legal/epl-v10.html)
 */
-// -*-C++-*-
 /*!
  * @file  VisionSVC_impl.cpp
  * @brief Service implementation code of Vision.idl
  * @date \$Date::                            $
  */
+
+#ifndef __STDC_FORMAT_MACROS
+#define __STDC_FORMAT_MACROS
+#endif
+#include <inttypes.h>
 
 #include "VisionSVC_impl.h"
 
@@ -84,7 +88,7 @@ CORBA::Long RecognitionServiceSVC_impl::getModelID()
 void
 RecognitionServiceSVC_impl::setModelID(CORBA::Long ModelID)
 {
-  printf("Accept ModelID: %ld\n", ModelID);
+  printf("Accept ModelID: %"PRId32"\n", ModelID);
 
   if (ModelID < 0)
     {
