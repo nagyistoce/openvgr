@@ -20,7 +20,7 @@
 typedef struct Feature2D_old
 {
   ConicType type;               //!< 二次曲線の分類
-  double coef[6];               //!< 二次曲線の係数。a x^2 + bxy + c y^2 + d x + e y + f = 0, 
+  double coef[6];               //!< 二次曲線の係数。a x^2 + bxy + c y^2 + d x + e y + f = 0,
                                 //!< a = coef[0], ... , f = coef[5] に対応
   double center[2];             //!< 楕円中心または、双曲線の漸近線交点
   double startPoint[2];         //!< 曲線上の始点

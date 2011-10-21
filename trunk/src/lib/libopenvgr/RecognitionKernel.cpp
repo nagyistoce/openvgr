@@ -257,7 +257,7 @@ RecognitionKernel(RecogImage** image,
       }
       //param.feature2D.id = 1;
       param.feature2D.id = 2;
-      camParam[0] = &calib.CameraL;        
+      camParam[0] = &calib.CameraL;
       camParam[1] = &calib.CameraR;
       camParam[2] = &calib.CameraV;
       edges[0] = edgeL;

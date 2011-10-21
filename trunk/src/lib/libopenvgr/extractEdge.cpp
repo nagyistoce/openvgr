@@ -887,7 +887,7 @@ extractEdge_new(unsigned char* edge,       // エッジ画像
   cv::Canny(gray_image, edge_image, 60, 30);
 #if 0
   cv::imshow("image", edge_image);
-  cv::waitKey(-1);  
+  cv::waitKey(-1);
 #endif
 
   for (i = 0; i < rowsize; ++i)

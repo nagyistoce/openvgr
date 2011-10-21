@@ -106,14 +106,14 @@ getDistanceV2(V2 in1, V2 in2)
 }
 
 // ベクトルのなす角（ラジアン）
-double 
+double
 getAngle2D(double vec1[2], double vec2[2])
 {
   double dotproduct;
   double norm;
 
   dotproduct = vec1[0] * vec2[0] + vec1[1] * vec2[1];
-  norm = sqrt(vec1[0] * vec1[0] + vec1[1] * vec1[1]) * 
+  norm = sqrt(vec1[0] * vec1[0] + vec1[1] * vec1[1]) *
     sqrt(vec2[0] * vec2[0] + vec2[1] * vec2[1]);
 
   dotproduct = dotproduct / norm;
