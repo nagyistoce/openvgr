@@ -419,7 +419,7 @@ mergeMatch3Dresults(Match3Dresults* base, Match3Dresults* append)
 
 // 距離変換画像の生成
 static void
-createDistanceTranceformImages(const Features3D& model, 
+createDistanceTranceformImages(const Features3D& model,
                                std::vector<cv::Mat>* dstImages)
 {
   int numCameras;
@@ -430,7 +430,7 @@ createDistanceTranceformImages(const Features3D& model,
   numCameras = 3;
   for(i = 0; i < numCameras; i++)
     {
-      cv::Mat dstImage = 
+      cv::Mat dstImage =
         cv::Mat::zeros(cv::Size(model.calib->colsize, model.calib->rowsize), CV_32FC1);
 
       if (model.edge[i] != NULL)
@@ -452,9 +452,9 @@ createDistanceTranceformImages(const Features3D& model,
 
       dstImages->push_back(dstImage);
 #if 0
-      cv::Mat src_img_norm = 
+      cv::Mat src_img_norm =
         cv::Mat::zeros(cv::Size(model.calib->colsize, model.calib->rowsize), CV_8UC1);
-      cv::Mat dst_img_norm = 
+      cv::Mat dst_img_norm =
         cv::Mat::zeros(cv::Size(model.calib->colsize, model.calib->rowsize), CV_8UC1);
       cv::normalize((*dstImages)[i], dst_img_norm, 0.0, 1.0, CV_MINMAX);
       cv::normalize(src_img, src_img_norm, 0.0, 255.0, CV_MINMAX);

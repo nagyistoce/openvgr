@@ -143,7 +143,7 @@ static const char* paramKeyString[] = {
   "OverlapRatioCircle",
   "MinLengthLine2D",
   "HDMax",
-  "NoSearchFeatures", 
+  "NoSearchFeatures",
 
   "DepN",
   "DepF",

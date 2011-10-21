@@ -456,7 +456,7 @@ overlapFeatures(int* overlap, Features2D_old* features,
         }
     }
   // それ以外＝楕円の場合は精度優先
-  if ((feature2->type == ConicType_Ellipse) && 
+  if ((feature2->type == ConicType_Ellipse) &&
       (feature->type == ConicType_Ellipse))
     {
       if (len / (double) feature->nPoints > paramF2D.overlapRatioCircle)
@@ -557,7 +557,7 @@ memorizeFeature(Feature2D_old* feature, double error,
 
       feature->lineAngle = getAngle2D(vec1, vec2);
       feature->lineLength1 = sqrt(vec1[0] * vec1[0] + vec1[1] * vec1[1]);
-      feature->lineLength2 = sqrt(vec2[0] * vec2[0] + vec2[1] * vec2[1]);      
+      feature->lineLength2 = sqrt(vec2[0] * vec2[0] + vec2[1] * vec2[1]);
     }
 
   return;
@@ -618,14 +618,14 @@ Line2Vertex(Features2D_old* lineFeatures, Features2D_old* features, Parameters p
 {
   const int nLineFeature = lineFeatures->nFeature;      // 直線特徴の数
   Feature2D_old feature;                                // 最後にあてはまった特徴を記録しておく
-  Feature2D_old* feature1; 
+  Feature2D_old* feature1;
   Feature2D_old* feature2;                              // 比較する直線特徴
   double startp1[2], endp1[2], startp2[2], endp2[2];
   double dist[4];                                       // 端点ペア間距離
   int nMinPair;                                         // 最小端点間距離のペア番号
   double dx, dy, dx2, dy2;                              // 距離計算の変数
   double lineAngle;                                     // 2直線のなす角度
-  double vec1[2], vec2[2];                              // 角度を計算するベクトル  
+  double vec1[2], vec2[2];                              // 角度を計算するベクトル
 
   ParametersFeature2D paramF2D = parameters.feature2D;
   double thr_minD = paramF2D.max_distance_end_points;   // 端点間距離の閾値
@@ -1266,7 +1266,7 @@ mergeFeatures(Features2D_old* dstFeatures, Features2D_old* srcFeatures)
 
 // 楕円検出結果から、中心の近い複数を使って、精度の高い楕円検出を行う
 static int
-Ellipse2Ellipse(Features2D_old* features, Features2D_old* ellipseFeatures, 
+Ellipse2Ellipse(Features2D_old* features, Features2D_old* ellipseFeatures,
                 Parameters parameters)
 {
   double sum[5][5];             // 当てはめのための係数総和行列
@@ -1744,7 +1744,7 @@ Ellipse2Ellipse2(Features2D_old* features,
                                    newFeature.center, newFeature.ev,
                                    &newFeature.axis[0], &newFeature.axis[1]);
                   // 中心が画像外の時は、エラー
-                  if (newFeature.center[0] < 0.0 || 
+                  if (newFeature.center[0] < 0.0 ||
                       newFeature.center[0] > (double) (colsize - 1) ||
                       newFeature.center[1] < 0.0 ||
                       newFeature.center[1] > (double) (rowsize - 1))
@@ -1755,7 +1755,7 @@ Ellipse2Ellipse2(Features2D_old* features,
                   if (newFeature.axis[0] > newFeature.axis[1])
                     {
                       if (newFeature.axis[0] > thr_max_length_ellipse_axisL ||
-                          newFeature.axis[0] < thr_min_length_ellipse_axisL || 
+                          newFeature.axis[0] < thr_min_length_ellipse_axisL ||
                           newFeature.axis[1] < thr_min_length_ellipse_axisS)
                         {
                           continue;
@@ -2315,7 +2315,7 @@ extractFeatures_old(unsigned char* edge,   // エッジ画像
             }
         }
     }
-  
+
   if (model.numOfCircles > 0 && !(no_search & NO_SEARCH_ELLIPSE))
     {
       // 第2ループ：楕円、双曲線を検出し、featuresに保存
@@ -2587,7 +2587,7 @@ extractFeatures_old(unsigned char* edge,   // エッジ画像
               // 画像メモリがとれなかった
               goto ending;
             }
-        }  
+        }
 
     }
 

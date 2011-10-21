@@ -66,7 +66,7 @@ reconstruct_vertex3D(::Vertex vertex[2],
 
           double epi_line[3];
           double cross_pos[2][3];
-          
+
           // 第1カメラ画像上の点に対応する第2カメラ画像上の点
           calc_epipolar_line(epi_line, F, *pos[0][i], inv);
           s_cross3(cross_pos[1], epi_line, vf2.line_coef[pi]);
@@ -209,7 +209,7 @@ reconstruct_vertex3D(::Vertex vertex[2],
   return num;
 }
 
-void 
+void
 reconstruct_hyperbola_to_vertex3D(const std::vector<const ovgr::Features2D*> feature,
                                   const ovgr::CorrespondingSet& cs,
                                   const CameraParam* camParam[3],
@@ -271,7 +271,7 @@ reconstruct_hyperbola_to_vertex3D(const std::vector<const ovgr::Features2D*> fea
                         {new_f[1]->mid.x, new_f[1]->mid.y}};
       double pos3D[3] = {0.0, 0.0, 0.0};
       double error = calculateLR2XYZ(pos3D, pos[0], pos[1],
-                                     const_cast<CameraParam*>(camParam[c_index[0]]), 
+                                     const_cast<CameraParam*>(camParam[c_index[0]]),
                                      const_cast<CameraParam*>(camParam[c_index[1]]));
       if (error > ethr)
         {

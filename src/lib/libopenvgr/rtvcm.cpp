@@ -486,7 +486,7 @@ convertCircle(RTVCM_Circle src, Circle& dst)
 
   // 平行移動成分
   copyV3(src.center, dst.tPose[3]);
-  
+
   for (i = 0; i < 4; ++i)
     {
       dst.tPose[i][3] = (i < 3) ? 0.0 : 1.0;

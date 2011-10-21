@@ -99,7 +99,7 @@ void	sum_to_P_dynamic(const SumSet* sum,
 void	P_to_avec_and_fix(Ellipse* ellipse);
 
 void	avec_to_ellipse(int k_min_error,
-			Ellipse* ellipse 
+			Ellipse* ellipse
 			);
 
 #define CHECK_ELLIPSE_NG  (0)

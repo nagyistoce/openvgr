@@ -60,7 +60,7 @@ createDebugImage(const Parameters& parameters, bool color=false, const uchar* ed
   return image;
 }
 
-static void 
+static void
 outDebugImage(IplImage* image, const char* name, int id, int display)
 {
   char title[PATH_MAX+1] = {0};
@@ -120,7 +120,7 @@ drawEdgeImage(const uchar* edge, const Parameters& parameters)
 
 int
 drawDetectedLines(const uchar* edge, const Features2D_old* lineFeatures, const Parameters& parameters)
-{  
+{
   // 直線検出結果カラー表示・保存
   // 背景表示画像配列変数名：edge
   // 直線検出結果変数名：lineFeatures
@@ -233,7 +233,7 @@ drawDetectedVertices(const Features2D_old* features, const Parameters& parameter
 
 int
 drawTrackPoints(const Features2D_old* features, const Parameters& parameters)
-{  
+{
   int i, f, n, cx, cy;
   int* pt = NULL;
   int id = parameters.feature2D.id;
@@ -430,7 +430,7 @@ drawCircleCandidate(const uchar* edge,
       iy = roundoff(iPos.row);
       pt = cvPoint(ix, iy);
       cvLine(cvColorImage, pt, pt, green);
-      
+
       fprintf(fp, "%f %f %f\n", circle.center[0], circle.center[1], circle.center[2]);
 
       double axis[2][3];
@@ -471,7 +471,7 @@ printVertex(const std::vector< ::Vertex>& vertex)
   double psrc[4], pdst[4];
   cv::Mat src = cv::Mat(4, 1, CV_64FC1, psrc);
   cv::Mat dst = cv::Mat(4, 1, CV_64FC1, pdst);
-  
+
   psrc[3] = 1.0;
   snprintf(filename, sizeof(filename), "vertex3D.txt");
   fp = fopen(filename, "w");
@@ -479,13 +479,13 @@ printVertex(const std::vector< ::Vertex>& vertex)
     {
       return VISION_FILE_OPEN_ERROR;
     }
-  else 
+  else
     {
       fprintf(fp, "%d 3\n", vertex.size() * 4);
       for (i = 0; i < vertex.size(); i++)
         {
           cv::Mat T = cv::Mat(4, 4, CV_64FC1, const_cast<double(*)[4]>(vertex[i].tPose));
-          fprintf(fp, "%f %f %f\n", 
+          fprintf(fp, "%f %f %f\n",
                   vertex[i].tPose[3][0], vertex[i].tPose[3][1], vertex[i].tPose[3][2]);
           psrc[0] = vertex[i].endpoint1[0];
           psrc[1] = vertex[i].endpoint1[1];
@@ -493,7 +493,7 @@ printVertex(const std::vector< ::Vertex>& vertex)
           psrc[3] = 1.0;
           dst = T.t() * src;
           fprintf(fp, "%f %f %f\n", pdst[0], pdst[1], pdst[2]);
-          fprintf(fp, "%f %f %f\n", 
+          fprintf(fp, "%f %f %f\n",
                   vertex[i].tPose[3][0], vertex[i].tPose[3][1], vertex[i].tPose[3][2]);
           psrc[0] = vertex[i].endpoint2[0];
           psrc[1] = vertex[i].endpoint2[1];

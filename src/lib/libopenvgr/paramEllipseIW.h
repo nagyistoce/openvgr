@@ -52,7 +52,7 @@
 
 
 typedef struct _param_ellipse_IW_{
-  int		Condition; 
+  int		Condition;
   int		MinLength;   // default = 20
   double	MinShortRadPrev; // default = 2.0
   double	MinShortRadPost; // default = 2.0

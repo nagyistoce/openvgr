@@ -92,7 +92,7 @@ convertImage(const cv::Mat& cvimg)
     {
       cvimg.copyTo(refimg);
     }
-  
+
   // サイズなどの情報を設定
   image->colsize = cvimg.cols;
   image->rowsize = cvimg.rows;

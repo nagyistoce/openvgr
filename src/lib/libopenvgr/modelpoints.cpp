@@ -264,7 +264,7 @@ drawModelPoints(Features3D* model,     // モデルの３次元特徴情報
   cv::Mat cimg;
   cv::Scalar color;
   cv::Point p1, p2, p3;
-  
+
   color = cv::Scalar(0, 255, 0);
   cimg = cv::Mat(model->calib->rowsize, model->calib->colsize, CV_8UC3, img);
 
@@ -336,7 +336,7 @@ drawModelPoints(Features3D* model,     // モデルの３次元特徴情報
           {
             calc_xyz_of_circle(xyz, *circle[n], angle[n][j]);
             xyz[3] = 1.0;
-            
+
             projectXYZ2LRwithTrans(model, matrix, p_camera, xyz, &pos[n][j]);
           }
 
@@ -346,7 +346,7 @@ drawModelPoints(Features3D* model,     // モデルの３次元特徴情報
           {
             const int num = circle[n]->numOfTracePoints;
             cv::Point curve[2];
-            
+
             calc_xyz_of_circle(xyz, *circle[n], 0.0);
             xyz[3] = 1.0;
             projectXYZ2LRwithTrans(model, matrix, p_camera, xyz, &curve[0]);
@@ -361,7 +361,7 @@ drawModelPoints(Features3D* model,     // モデルの３次元特徴情報
                 cv::line(cimg, curve[(j+1)%2], curve[j%2], color, lineThickness, CV_AA);
               }
           }
-          
+
         // 円筒の描画
         if (n == 1)
           {
@@ -370,7 +370,7 @@ drawModelPoints(Features3D* model,     // モデルの３次元特徴情報
                 const int num = circle[j]->numOfTracePoints;
                 cv::Point curve[2];
                 int k;
-                    
+
                 if (is_visible(cp, matrix, circle[j]->tPose[3], circle[j]->tPose[2]))
                   {
                     // 円が見える場合
@@ -397,7 +397,7 @@ drawModelPoints(Features3D* model,     // モデルの３次元特徴情報
                     calc_xyz_of_circle(xyz, *circle[j], angle[j][0]);
                     xyz[3] = 1.0;
                     projectXYZ2LRwithTrans(model, matrix, p_camera, xyz, &curve[0]);
-                    
+
                     for (k = 1; k <= pnum; ++k)
                       {
                         double t = 2.0 * M_PI * (double)k / (double)num + angle[j][0];
@@ -489,8 +489,8 @@ getPropertyVector(double mat[4][4],            // 合同変換行列
 }
 
 static double
-calcEvaluationValue2D_on_line(Features3D* model, const cv::Point& p1, const cv::Point& p2, 
-                              const cv::Mat& dstImage, 
+calcEvaluationValue2D_on_line(Features3D* model, const cv::Point& p1, const cv::Point& p2,
+                              const cv::Mat& dstImage,
                               plot_t* plot,
                               MatchResult* result
 )
@@ -548,7 +548,7 @@ calcEvaluationValue2D_on_line(Features3D* model, const cv::Point& p1, const cv::
 
 // 各モデルの評価点を画像に投影して距離変換画像を参照し、２次元評価値を算出する
 static double
-calcEvaluationValue2D(Features3D* model, int p_camera, 
+calcEvaluationValue2D(Features3D* model, int p_camera,
                       MatchResult* result,
                       plot_t* plot,
                       const cv::Mat& dstImage)
@@ -558,10 +558,10 @@ calcEvaluationValue2D(Features3D* model, int p_camera,
   int i, j;
 
 #ifdef PROJECT_DEBUG
-  cv::Mat dstImage_norm = 
+  cv::Mat dstImage_norm =
     cv::Mat::zeros(cv::Size(model->calib->colsize, model->calib->rowsize), CV_8UC1);
   cv::normalize(dstImage, dstImage_norm, 0, 1, CV_MINMAX);
-  cv::Mat dstImage_color = 
+  cv::Mat dstImage_color =
     cv::Mat::zeros(cv::Size(model->calib->colsize, model->calib->rowsize), CV_8UC3);
   cv::cvtColor(dstImage_norm, dstImage_color, CV_GRAY2RGB);
 
@@ -645,7 +645,7 @@ calcEvaluationValue2D(Features3D* model, int p_camera,
           {
             calc_xyz_of_circle(xyz, *circle[n], angle[n][j]);
             xyz[3] = 1.0;
-            
+
             projectXYZ2LRwithTrans(model, result->mat, p_camera, xyz, &pos[n][j]);
           }
 
@@ -655,7 +655,7 @@ calcEvaluationValue2D(Features3D* model, int p_camera,
           {
             const int num = circle[n]->numOfTracePoints;
             cv::Point curve[2];
-            
+
             calc_xyz_of_circle(xyz, *circle[n], 0.0);
             xyz[3] = 1.0;
             projectXYZ2LRwithTrans(model, result->mat, p_camera, xyz, &curve[0]);
@@ -673,7 +673,7 @@ calcEvaluationValue2D(Features3D* model, int p_camera,
                                                        plot, result);
               }
           }
-          
+
         // 円筒の評価
         if (n == 1)
           {
@@ -682,7 +682,7 @@ calcEvaluationValue2D(Features3D* model, int p_camera,
                 const int num = circle[j]->numOfTracePoints;
                 cv::Point curve[2];
                 int k;
-                    
+
                 if (is_visible(cp, result->mat, circle[j]->tPose[3], circle[j]->tPose[2]))
                   {
                     // 円が見える場合
@@ -700,7 +700,7 @@ calcEvaluationValue2D(Features3D* model, int p_camera,
 # ifdef PROJECT_DEBUG
                         cv::line(dstImage_color, curve[(k+1)%2], curve[k%2], color, lineThickness, CV_AA);
 # endif
-                        score += calcEvaluationValue2D_on_line(model, curve[(k+1)%2], curve[k%2], 
+                        score += calcEvaluationValue2D_on_line(model, curve[(k+1)%2], curve[k%2],
                                                                dstImage, plot, result);
                       }
                   }
@@ -713,7 +713,7 @@ calcEvaluationValue2D(Features3D* model, int p_camera,
                     calc_xyz_of_circle(xyz, *circle[j], angle[j][0]);
                     xyz[3] = 1.0;
                     projectXYZ2LRwithTrans(model, result->mat, p_camera, xyz, &curve[0]);
-                    
+
                     for (k = 1; k <= pnum; ++k)
                       {
                         double t = 2.0 * M_PI * (double)k / (double)num + angle[j][0];
@@ -724,7 +724,7 @@ calcEvaluationValue2D(Features3D* model, int p_camera,
 # ifdef PROJECT_DEBUG
                         cv::line(dstImage_color, curve[(k+1)%2], curve[k%2], color, lineThickness, CV_AA);
 # endif
-                        score += calcEvaluationValue2D_on_line(model, curve[(k+1)%2], curve[k%2], 
+                        score += calcEvaluationValue2D_on_line(model, curve[(k+1)%2], curve[k%2],
                                                                dstImage, plot, result);
                       }
                   }
@@ -737,9 +737,9 @@ calcEvaluationValue2D(Features3D* model, int p_camera,
                 cv::line(dstImage_color, pos[0][1], pos[1][0], color, lineThickness, CV_AA);
 # endif
                 // 遮蔽輪郭線(円筒の側面)を評価
-                score += calcEvaluationValue2D_on_line(model, pos[0][0], pos[1][1], 
+                score += calcEvaluationValue2D_on_line(model, pos[0][0], pos[1][1],
                                                        dstImage, plot, result);
-                score += calcEvaluationValue2D_on_line(model, pos[0][1], pos[1][0], 
+                score += calcEvaluationValue2D_on_line(model, pos[0][1], pos[1][0],
                                                        dstImage, plot, result);
               }
           }
@@ -760,7 +760,7 @@ calcEvaluationValue2D(Features3D* model, int p_camera,
 
 // 使用した全画像を用いた２次元評価値計算。距離変換画像の利用
 // 戻り値：２次元評価値
-double 
+double
 calcEvaluationValue2DMultiCameras(Features3D* model,      // モデルの３次元特徴情報
                                   StereoPairing& pairing, // ステレオペア情報
                                   MatchResult* result,    // 認識結果

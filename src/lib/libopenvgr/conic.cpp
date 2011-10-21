@@ -492,7 +492,7 @@ fitConic(double sum[5][5],     // 二次曲線当てはめの微分係数行列
                  + coef[i][2] * offset[1] * offset[1] - coef[i][3] * offset[0]
                  - coef[i][4] * offset[1] + coef[i][5];
 
-      coef[i][3] = newcoef3; 
+      coef[i][3] = newcoef3;
       coef[i][4] = newcoef4;
       coef[i][5] = newcoef5;
     }
