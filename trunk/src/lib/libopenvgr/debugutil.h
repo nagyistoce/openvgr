@@ -13,6 +13,8 @@
 #ifndef _DEBUGUTIL_H
 #define _DEBUGUTIL_H
 
+#include <cstring>
+
 #include "stereo.h"
 
 int drawInputImage(const uchar* src, const Parameters& parameters);
@@ -29,5 +31,28 @@ int drawCircleCandidate(const uchar* edge,
                         const CameraParam* cameraParam);
 
 int printVertex(const std::vector< ::Vertex>& vertex);
+
+namespace ovgr
+{
+  template <class T>
+  struct EqualOp
+  {
+    bool operator()(const T& a, const T& b)
+    {
+      return memcmp(&a, &b, sizeof(T));
+    }
+  };
+
+  template <class T, class Equal = EqualOp<T> >
+  class VariableWatcher
+  {
+    T orig;
+    T* ptr;
+  public:
+    VariableWatcher(T& val) : orig(val), ptr(&val) {}
+    bool is_changed() {
+      return Equal()(orig, *ptr); }
+  };
+}
 
 #endif /* _DEBUGUTIL_H */
