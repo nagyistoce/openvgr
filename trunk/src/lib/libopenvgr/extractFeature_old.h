@@ -78,6 +78,8 @@ expandFeatures(Features2D_old* features);
 
 //! ステレオ画像の一枚から二次元特徴の抽出
 Features2D_old* ImageToFeature2D_old(unsigned char* src, unsigned char* edge,
-                                     Parameters parameters, Features3D model);
+                                     Parameters parameters, 
+                                     const int id, // データを識別するためのインデックス
+                                     Features3D model);
 
 #endif // _EXTRACTFEATURE_OLD_H

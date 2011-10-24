@@ -137,9 +137,6 @@ RecognitionKernel(RecogImage** image,
       pairing = DBL_LR;
     }
 
-  // 特徴データ識別 ID 番号
-  param.feature2D.id = 0;
-
   // 二次元特徴の抽出
 #ifdef _OPENMP
 #pragma omp parallel
@@ -155,18 +152,17 @@ RecognitionKernel(RecogImage** image,
 #pragma omp section
 #endif
         {
-          features0 = ImageToFeature2D_old(image[0]->pixel, edgeL, param, model);
+          features0 = ImageToFeature2D_old(image[0]->pixel, edgeL, param, 0, model);
           f0 = ovgr::create_new_features_from_old_one(features0, image[0]->pixel, &param);
         }
 #ifdef _OPENMP
 #pragma omp section
 #endif
         {
-          features1 = ImageToFeature2D_old(image[1]->pixel, edgeR, param, model);
+          features1 = ImageToFeature2D_old(image[1]->pixel, edgeR, param, 1, model);
           f1 = ovgr::create_new_features_from_old_one(features1, image[1]->pixel, &param);
         }
       }
-      param.feature2D.id = 1;
       camParam[0] = &calib.CameraL;
       camParam[1] = &calib.CameraR;
       edges[0] = edgeL;
@@ -182,18 +178,17 @@ RecognitionKernel(RecogImage** image,
 #pragma omp section
 #endif
         {
-          features0 = ImageToFeature2D_old(image[2]->pixel, edgeV, param, model);
+          features0 = ImageToFeature2D_old(image[2]->pixel, edgeV, param, 0, model);
           f0 = ovgr::create_new_features_from_old_one(features0, image[2]->pixel, &param);
         }
 #ifdef _OPENMP
 #pragma omp section
 #endif
         {
-          features1 = ImageToFeature2D_old(image[0]->pixel, edgeL, param, model);
+          features1 = ImageToFeature2D_old(image[0]->pixel, edgeL, param, 1, model);
           f1 = ovgr::create_new_features_from_old_one(features1, image[0]->pixel, &param);
         }
       }
-      param.feature2D.id = 1;
       camParam[0] = &calib.CameraV;
       camParam[1] = &calib.CameraL;
       edges[0] = edgeV;
@@ -209,18 +204,17 @@ RecognitionKernel(RecogImage** image,
 #pragma omp section
 #endif
         {
-          features0 = ImageToFeature2D_old(image[1]->pixel, edgeR, param, model);
+          features0 = ImageToFeature2D_old(image[1]->pixel, edgeR, param, 0, model);
           f0 = ovgr::create_new_features_from_old_one(features0, image[1]->pixel, &param);
         }
 #ifdef _OPENMP
 #pragma omp section
 #endif
         {
-          features1 = ImageToFeature2D_old(image[2]->pixel, edgeV, param, model);
+          features1 = ImageToFeature2D_old(image[2]->pixel, edgeV, param, 1, model);
           f1 = ovgr::create_new_features_from_old_one(features1, image[2]->pixel, &param);
         }
       }
-      param.feature2D.id = 1;
       camParam[0] = &calib.CameraR;
       camParam[1] = &calib.CameraV;
       edges[0] = edgeR;
@@ -237,26 +231,24 @@ RecognitionKernel(RecogImage** image,
 #pragma omp section
 #endif
         {
-          features0 = ImageToFeature2D_old(image[0]->pixel, edgeL, param, model);
+          features0 = ImageToFeature2D_old(image[0]->pixel, edgeL, param, 0, model);
           f0 = ovgr::create_new_features_from_old_one(features0, image[0]->pixel, &param);
         }
 #ifdef _OPENMP
 #pragma omp section
 #endif
         {
-          features1 = ImageToFeature2D_old(image[1]->pixel, edgeR, param, model);
+          features1 = ImageToFeature2D_old(image[1]->pixel, edgeR, param, 1, model);
           f1 = ovgr::create_new_features_from_old_one(features1, image[1]->pixel, &param);
         }
 #ifdef _OPENMP
 #pragma omp section
 #endif
         {
-          features2 = ImageToFeature2D_old(image[2]->pixel, edgeV, param, model);
+          features2 = ImageToFeature2D_old(image[2]->pixel, edgeV, param, 2, model);
           f2 = ovgr::create_new_features_from_old_one(features2, image[2]->pixel, &param);
         }
       }
-      //param.feature2D.id = 1;
-      param.feature2D.id = 2;
       camParam[0] = &calib.CameraL;
       camParam[1] = &calib.CameraR;
       camParam[2] = &calib.CameraV;

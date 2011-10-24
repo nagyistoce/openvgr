@@ -17,12 +17,14 @@
 
 #include "stereo.h"
 
-int drawInputImage(const uchar* src, const Parameters& parameters);
-int drawEdgeImage(const uchar* edge, const Parameters& parameters);
+int drawInputImage(const uchar* src, const Parameters& parameters, const int id);
+int drawEdgeImage(const uchar* edge, const Parameters& parameters, const int id);
 
-int drawDetectedLines(const uchar* edge, const Features2D_old* lineFeatures, const Parameters& parameters);
-int drawDetectedVertices(const Features2D_old* features, const Parameters& parameters);
-int drawDetectedEllipses(const uchar* edge, const Features2D_old* features, const Parameters& parameters);
+int drawDetectedLines(const uchar* edge, const Features2D_old* lineFeatures, const Parameters& parameters,
+                      const int id);
+int drawDetectedVertices(const Features2D_old* features, const Parameters& parameters, const int id);
+int drawDetectedEllipses(const uchar* edge, const Features2D_old* features, const Parameters& parameters,
+                         const int id);
 
 int drawCircleCandidate(const uchar* edge,
                         const std::vector<CircleCandidate>& candidates,
