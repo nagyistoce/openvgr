@@ -61,11 +61,15 @@ createDebugImage(const Parameters& parameters, bool color=false, const uchar* ed
 }
 
 static void
-outDebugImage(IplImage* image, const char* name, int id, int display)
+outDebugImage(IplImage* image, const char* name, const int id, int display)
 {
   char title[PATH_MAX+1] = {0};
   const int extlen = 5; // 拡張子分の余裕
   snprintf(title, sizeof(title)-extlen, "%s%d", name, id);
+
+#ifdef _OPENMP
+#pragma omp critical
+#endif
   if (display)
     {
       cvNamedWindow(title, 1);
@@ -73,6 +77,7 @@ outDebugImage(IplImage* image, const char* name, int id, int display)
       cvWaitKey(-1);
       cvDestroyWindow(title);
     }
+
   if (image->nChannels == 1)
     {
       strcat(title, ".pgm");
@@ -86,9 +91,8 @@ outDebugImage(IplImage* image, const char* name, int id, int display)
 }
 
 int
-drawInputImage(const uchar* src, const Parameters& parameters)
+drawInputImage(const uchar* src, const Parameters& parameters, const int id)
 {
-  int id = parameters.feature2D.id;
   int disp = parameters.dbgdisp;
   IplImage* cvGrayImage = createDebugImage(parameters);
   if (cvGrayImage == NULL)
@@ -102,9 +106,8 @@ drawInputImage(const uchar* src, const Parameters& parameters)
 }
 
 int
-drawEdgeImage(const uchar* edge, const Parameters& parameters)
+drawEdgeImage(const uchar* edge, const Parameters& parameters, const int id)
 {
-  int id = parameters.feature2D.id;
   int disp = parameters.dbgdisp;
   IplImage* cvGrayImage = createDebugImage(parameters);
   if (cvGrayImage == NULL)
@@ -119,7 +122,8 @@ drawEdgeImage(const uchar* edge, const Parameters& parameters)
 }
 
 int
-drawDetectedLines(const uchar* edge, const Features2D_old* lineFeatures, const Parameters& parameters)
+drawDetectedLines(const uchar* edge, const Features2D_old* lineFeatures, const Parameters& parameters,
+                  const int id)
 {
   // 直線検出結果カラー表示・保存
   // 背景表示画像配列変数名：edge
@@ -181,14 +185,14 @@ drawDetectedLines(const uchar* edge, const Features2D_old* lineFeatures, const P
       cvLine(cvColorImage, dpt, dpt, red);
     }
 
-  int id = parameters.feature2D.id;
   int disp = parameters.dbgdisp;
   outDebugImage(cvColorImage, "line", id, disp);
   return 0;
 }
 
 int
-drawDetectedVertices(const Features2D_old* features, const Parameters& parameters)
+drawDetectedVertices(const Features2D_old* features, const Parameters& parameters,
+                     const int id)
 {
   // 頂点特徴抽出結果カラー表示・保存
   // 背景表示画像なし
@@ -225,18 +229,16 @@ drawDetectedVertices(const Features2D_old* features, const Parameters& parameter
       cvLine(cvColorImage, pt1, pt1, white);
     }
 
-  int id = parameters.feature2D.id;
   int disp = parameters.dbgdisp;
   outDebugImage(cvColorImage, "Line2Vertex", id, disp);
   return 0;
 }
 
 int
-drawTrackPoints(const Features2D_old* features, const Parameters& parameters)
+drawTrackPoints(const Features2D_old* features, const Parameters& parameters, const int id)
 {
   int i, f, n, cx, cy;
   int* pt = NULL;
-  int id = parameters.feature2D.id;
   int disp = parameters.dbgdisp;
   int colsize = parameters.colsize;
   int rowsize = parameters.rowsize;
@@ -326,7 +328,8 @@ getEllipseProperty(const double coef[6],   // 楕円係数（入力）
 }
 
 int
-drawDetectedEllipses(const uchar* edge, const Features2D_old* features, const Parameters& parameters)
+drawDetectedEllipses(const uchar* edge, const Features2D_old* features, const Parameters& parameters,
+                     const int id)
 {
   // 楕円検出結果カラー表示・保存
   // 背景表示画像配列変数名：edge
@@ -381,7 +384,6 @@ drawDetectedEllipses(const uchar* edge, const Features2D_old* features, const Pa
       cvEllipse(cvColorImage, pt, axes, angle, 0, 360, blue);
     }
 
-  int id = parameters.feature2D.id;
   int disp = parameters.dbgdisp;
   outDebugImage(cvColorImage, "ellipse", id, disp);
   return 0;

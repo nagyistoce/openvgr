@@ -2172,6 +2172,7 @@ mark_similar_lines(Features2D_old* lineFeatures, const double tolerance)
 Features2D_old*
 extractFeatures_old(unsigned char* edge,   // エッジ画像
                     Parameters parameters, // 全パラメータ
+                    const int id,          // データを識別するためのインデックス
                     Features3D model)      // モデルの３次元特徴データ
 {
   int colsize = parameters.colsize;
@@ -2216,7 +2217,7 @@ extractFeatures_old(unsigned char* edge,   // エッジ画像
   if (parameters.dbgimag)
     {
       // 輪郭点の保存
-      if (drawTrackPoints(features, parameters))
+      if (drawTrackPoints(features, parameters, id))
         {
           // 画像メモリがとれなかった
           goto ending;
@@ -2289,7 +2290,7 @@ extractFeatures_old(unsigned char* edge,   // エッジ画像
   if (parameters.dbgimag)
     {
       // 直線検出結果カラー表示・保存
-      if (drawDetectedLines(edge, lineFeatures, parameters))
+      if (drawDetectedLines(edge, lineFeatures, parameters, id))
         {
           // 画像メモリがとれなかった
           goto ending;
@@ -2308,7 +2309,7 @@ extractFeatures_old(unsigned char* edge,   // エッジ画像
       if (parameters.dbgimag)
         {
           // 頂点特徴抽出結果カラー表示・保存
-          if (drawDetectedVertices(features, parameters))
+          if (drawDetectedVertices(features, parameters, id))
             {
               // 画像メモリがとれなかった
               goto ending;
@@ -2582,7 +2583,7 @@ extractFeatures_old(unsigned char* edge,   // エッジ画像
       if (parameters.dbgimag)
         {
           // 楕円検出結果カラー表示・保存
-          if (drawDetectedEllipses(edge, features, parameters))
+          if (drawDetectedEllipses(edge, features, parameters, id))
             {
               // 画像メモリがとれなかった
               goto ending;
@@ -2608,12 +2609,13 @@ Features2D_old*
 ImageToFeature2D_old(unsigned char* src,    // 原画像
                      unsigned char* edge,   // エッジ画像
                      Parameters parameters, // 全パラメータ
+                     const int id,          // データを識別するためのインデックス
                      Features3D model)      // モデルの３次元特徴データ（２次元処理の切り替え用）
 {
   if (parameters.dbgimag)
     {
       // 入力確認画像の出力
-      if (drawInputImage(src, parameters))
+      if (drawInputImage(src, parameters, id))
         {
           // 画像メモリがとれなかった
           return NULL;
@@ -2630,7 +2632,7 @@ ImageToFeature2D_old(unsigned char* src,    // 原画像
   if (parameters.dbgimag)
     {
       // エッジ確認画像の出力
-      if (drawEdgeImage(edge, parameters))
+      if (drawEdgeImage(edge, parameters, id))
         {
           // 画像メモリがとれなかった
           return NULL;
@@ -2638,7 +2640,7 @@ ImageToFeature2D_old(unsigned char* src,    // 原画像
     }
 
   // 特徴点を抽出する
-  Features2D_old* features = extractFeatures_old(edge, parameters, model);
+  Features2D_old* features = extractFeatures_old(edge, parameters, id, model);
 
   return features;
 }

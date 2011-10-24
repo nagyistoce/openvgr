@@ -19,8 +19,6 @@
 //! ２次元特徴抽出用パラメータ
 typedef struct ParametersFeature2D
 {
-  //! ID 番号
-  int id;
   //! エッジ検出アルゴリズム (0: Sobel3x3 1: Sobel 5x5)
   int edgeDetectFunction;
   //! 検出するエッジの最低微分強度
