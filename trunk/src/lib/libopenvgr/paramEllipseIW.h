@@ -48,8 +48,11 @@
 #define	DEF_PARAME_MIN_SHORT_RAD_POST	(2.0)
 #define	DEF_PARAME_TH_MEAN_ERROR	(0.5)
 #define	DEF_PARAME_TH_MAX_ERROR		(2.0)
+#define DEF_PARAME_TH_MEAN_ERROR_MERGING	(0.55)
+#define DEF_PARAME_TH_MAX_ERROR_MERGING	(2.2)
+#define DEF_PARAME_MIN_DETERMINANT	(1e-6)
+#define DEF_PARAME_MAX_EIGEN_VALUE_RATIO	(1000.0)
 #define	DEF_PARAME_OFFSET_MODE		(ELLIPSE_OFFSET_DYNAMIC)
-
 
 typedef struct _param_ellipse_IW_{
   int		Condition;
@@ -58,6 +61,10 @@ typedef struct _param_ellipse_IW_{
   double	MinShortRadPost; // default = 2.0
   double	ThMeanError;
   double	ThMaxError;
+  double	ThMeanErrorMerging; // used in merging
+  double	ThMaxErrorMerging; // used in merging
+  double	MinDeterminant; 
+  double	MaxEigenValueRatio;
   int		OffsetMode;
 }ParamEllipseIW;
 

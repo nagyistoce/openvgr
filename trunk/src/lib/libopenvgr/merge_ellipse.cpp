@@ -55,8 +55,9 @@
 #define ALL_REF_OK	(1)
 #define ALL_REF_NG	(0)
 
-#define TRY_ELLIPSE_OK	(1)
-#define TRY_ELLIPSE_NG	(0)
+#define TRY_ELLIPSE_TERMINATE	(0) // err is large, stop
+#define TRY_ELLIPSE_CONTINUE	(1) // err is middle, continue 
+#define TRY_ELLIPSE_REGISTER	(2) // err is small, register and continue
 
 typedef struct _EllipseTerminal_ {
   int	flag;  // ELLIPSE_TERMINAL_{WHOLE|PART},NOELLIPSE
@@ -877,7 +878,7 @@ try_ellipse_merge(int	step,
 
   sum_to_P_dynamic(&tmpsum, ellipse, NULL); // using no offset
 
-  P_to_avec_and_fix(ellipse);
+  P_to_avec_and_fix(ellipse, paramE);
 
   if (ellipse->neval == 0)
     {
@@ -885,7 +886,7 @@ try_ellipse_merge(int	step,
         {
           ellipse->coef[idim] = 0.0; // not found
         }
-      return TRY_ELLIPSE_NG;
+      return TRY_ELLIPSE_TERMINATE;
     }
 
   // 計算された係数の評価
@@ -946,15 +947,31 @@ try_ellipse_merge(int	step,
         }
       ellipse->rad[0] = ellipse->rad[1] = 0.0;
 
-      return TRY_ELLIPSE_NG;
+      return TRY_ELLIPSE_TERMINATE;
     }
 
   if (check_ellipse_cond(ellipse, paramE) == CHECK_ELLIPSE_NG)
     {
-      return TRY_ELLIPSE_NG;
+      switch (paramE->Condition)
+	{
+	case ELLIPSE_CONDITION_MEAN:
+	  if(ellipse->meanError > paramE->ThMeanErrorMerging)
+	    {
+	      return TRY_ELLIPSE_TERMINATE;
+	    }
+	  break;
+	case ELLIPSE_CONDITION_MAX:
+	  if (ellipse->maxError > paramE->ThMaxErrorMerging) 
+	    {
+	      return TRY_ELLIPSE_TERMINATE;
+	    }
+	  break;
+	}
+
+      return TRY_ELLIPSE_CONTINUE;
     }
 
-  return TRY_ELLIPSE_OK;
+  return TRY_ELLIPSE_REGISTER;
 }
 
 #define ADD_NEW_MULTI_ELLIPSE_OK  (1)
@@ -1078,7 +1095,7 @@ search_another_arc(int	step,
 	    /*if(try_ellipse_merge(step+1, me, f2D, &ellipse, paramE)
 	      == TRY_ELLIPSE_OK)*/
 
-	  if(result_try == TRY_ELLIPSE_OK)
+	  if (result_try == TRY_ELLIPSE_REGISTER)
 	    {
 	      if(add_new_multi_ellipse(f2D, &ellipse, paramE)
 		 == ADD_NEW_MULTI_ELLIPSE_NG)
@@ -1088,11 +1105,14 @@ search_another_arc(int	step,
 	    }
 
 	  //another_exist = ANOTHER_EXIST_OK;
-	  next_ret = search_another_arc(step+1, i+1, me, f_e, f2D, paramE);
-
-	  if(next_ret == ANOTHER_EXIST_ERROR){
-	    return ANOTHER_EXIST_ERROR;
-	  }
+	  if (result_try != TRY_ELLIPSE_TERMINATE)
+	    {
+	      next_ret = search_another_arc(step+1, i+1, me, f_e, f2D, paramE);
+	      if (next_ret == ANOTHER_EXIST_ERROR)
+		{
+		  return ANOTHER_EXIST_ERROR;
+		}
+	    }
 
 	  me->flist[step] = -1;
 	}
