@@ -418,7 +418,7 @@ drawCircleCandidate(const uchar* edge,
 
   FILE *fp;
   char fname[100];
-  sprintf(fname, "center%d.txt", pairing);
+  sprintf(fname, "center-circle%d.txt", pairing);
   fp = fopen(fname, "w");
 
   // 円の描画
@@ -446,7 +446,7 @@ drawCircleCandidate(const uchar* edge,
             {
               dst[j] = circle.radius * (axis[0][j] * cos(theta) + axis[1][j] * sin(theta)) + circle.center[j];
             }
-
+          fprintf(fp, "%f %f %f\n", dst[0], dst[1], dst[2]);
           projectXYZ2LR(&iPos, dst, (CameraParam*)cameraParam);
 
           ix = roundoff(iPos.col);
