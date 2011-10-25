@@ -54,7 +54,7 @@ libopenvgr.a: $(COMOBJS)
 calibUtil.o : Img.hh
 extractFeature.o: extractFeature.hpp
 match3Dfeature.o pairedcircle.o score2d.o: common.h
-modelpoints.o: modelpoints.h
+modelpoints.o score2d.o: modelpoints.h
 
 Img.hh :
 	$(IDLC) $(IDLFLAGS) $(IDLDIR)/Img.idl

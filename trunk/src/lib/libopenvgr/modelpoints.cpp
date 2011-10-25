@@ -512,7 +512,7 @@ calcEvaluationValue2D_on_line(Features3D* model, const cv::Point& p1, const cv::
           cv::Point p(pcol, prow);
 
 #if !defined (USE_UNORDERED_SET) && !defined (USE_SET)
-          std::vector<cv::Point>::iterator itr = std::find(plot->begin(), plot->end(), p);
+          plot_t::iterator itr = std::find(plot->begin(), plot->end(), p);
 #else
           plot_t::iterator itr = plot->find(p);
 #endif
