@@ -18,29 +18,6 @@
 #include "match3Dfeature.h"
 #include "score2d.h"
 
-// 認識結果ベクトルの比較
-static int
-comparePropertyVector(const double* vec1, const double* vec2)
-{
-  int i;
-  for (i = 0; i < 7; i++)
-    {
-      if (fabs(vec2[i] - vec1[i]) < VISION_EPS)
-        {
-          continue;
-        }
-      else if (vec2[i] > vec1[i])
-        {
-          return 1;
-        }
-      else
-        {
-          return -1;
-        }
-    }
-  return 0;
-}
-
 // 認識結果評価値の比較
 // 戻り値：比較結果
 int
@@ -50,18 +27,7 @@ compareResultScore(const void* c1,     // 評価値１
   const MatchResult* r1 = (const MatchResult*) c1;
   const MatchResult* r2 = (const MatchResult*) c2;
 
-  if (r2->score == r1->score)
-    {
-      return 0;
-    }
-  else if (r2->score > r1->score)
-    {
-      return 1;
-    }
-  else
-    {
-      return -1;
-    }
+  return (int)(r2->score - r1->score);
 }
 
 // 結果の２次元評価値算出
