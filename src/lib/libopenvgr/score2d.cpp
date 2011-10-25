@@ -73,50 +73,28 @@ getResultScore(MatchResult* results,   // 認識結果情報
                const std::vector<cv::Mat>& dstImages,
                double weight)          // 評価値の重みづけ
 {
-  int i, j, num;
-
-  // 認識結果ベクトル（位置＋回転ベクトル）の値でソートする
-  qsort(results, numOfResults, sizeof(MatchResult), compareResultScore);
-
-  num = 0;
-  // 完全に同じ位置姿勢の結果には評価不要の印をつける
-  for (i = 0; i < numOfResults; i++)
-    {
-      // 既に不要となった結果はスキップ
-      if (results[i].score == -1)
-        {
-          continue;
-        }
-
-      for (j = i + 1; j < numOfResults; j++)
-        {
-          // 既に不要となった結果はスキップ
-          if (results[j].score == -1)
-            {
-              continue;
-            }
-        }
-
-      ++num;
-    }
-
-  // 評価する結果を先頭に集める
-  qsort(results, numOfResults, sizeof(MatchResult), compareResultScore);
+  int i;
 
   // 評価
 #ifdef _OPENMP
 #pragma omp parallel for
 #endif
-  for (i = 0; i < num; i++)
+  for (i = 0; i < numOfResults; i++)
     {
       plot_t plot;
+
+      if (results[i].score < 0.0)
+        {
+          continue;
+        }
+
       // 距離変換画像を用いた評価値計算
       results[i].score =
         calcEvaluationValue2DMultiCameras(model, pairing, &results[i], &plot, dstImages) * weight;
     }
 
   // 評価値でソート
-  qsort(results, num, sizeof(MatchResult), compareResultScore);
+  qsort(results, numOfResults, sizeof(MatchResult), compareResultScore);
 
   return;
 }
