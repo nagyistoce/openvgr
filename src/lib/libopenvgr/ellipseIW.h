@@ -96,7 +96,8 @@ void	sum_to_P_dynamic(const SumSet* sum,
 			 Ellipse* ellipse,
 			 OffsetProp* offsetProp);
 
-void	P_to_avec_and_fix(Ellipse* ellipse);
+void	P_to_avec_and_fix(Ellipse* ellipse,
+			  const ParamEllipseIW* paramE);
 
 void	avec_to_ellipse(int k_min_error,
 			Ellipse* ellipse

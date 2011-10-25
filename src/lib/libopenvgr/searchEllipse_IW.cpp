@@ -856,7 +856,8 @@ sum_to_P_dynamic(const SumSet* sum,
 }
 
 void
-P_to_avec_and_fix(Ellipse* ellipse)
+P_to_avec_and_fix(Ellipse* ellipse,
+		  const ParamEllipseIW* paramE)
 {
   int iroot, idim;
 
@@ -867,6 +868,16 @@ P_to_avec_and_fix(Ellipse* ellipse)
   };
   double P11inv[NDIM_CONIC_HALF][NDIM_CONIC_HALF];
   // 逆行列の計算
+  // 行列式の判定
+  if (fabs((ellipse->P11[0][0] * ellipse->P11[1][1]-
+	    ellipse->P11[0][1] * ellipse->P11[1][0])/
+	   (ellipse->P11[0][0] * ellipse->P11[1][1]))
+      < paramE->MinDeterminant)  // usually 1e-6
+    {
+      ellipse->neval = 0;
+      return;
+    }
+
   CvMat vP11 = cvMat(NDIM_CONIC_HALF, NDIM_CONIC_HALF, CV_64FC1, ellipse->P11);
   CvMat vP11inv = cvMat(NDIM_CONIC_HALF, NDIM_CONIC_HALF, CV_64FC1, P11inv);
 
@@ -1002,7 +1013,7 @@ point_to_ellipse(int  start1,
   // calc from P to a
   // set ellipse->neval
   // fix avec with ellips->offset
-  P_to_avec_and_fix(ellipse);
+  P_to_avec_and_fix(ellipse, paramE);
 
   //if (ellipse->neval == 0)
   if (ellipse->neval < NDIM_CONIC_HALF)
@@ -1015,7 +1026,8 @@ point_to_ellipse(int  start1,
     }
 
   // 固有値の比が大きいときには排除する
-  if (check_eigen_value_ratio(ellipse, 1000.0) == CHECK_EIGEN_VALUE_RATIO_NG)
+  if (check_eigen_value_ratio(ellipse, paramE->MaxEigenValueRatio)
+      == CHECK_EIGEN_VALUE_RATIO_NG)
     {
       for (idim = 0; idim < NDIM_CONIC_FULL; idim++)
         {
@@ -1472,7 +1484,7 @@ searchEllipseIW(Features2D_old* f2D,
                                  &ellipse, &max_f2D, paramE);
               tracking = TRACKING_ON;
 
-              sum0 = sum;
+              sum0 = sum1 = sum;
               modify_sum(point, nPoint, &offsetProp, &sum0,
                          start, goal,
                          ds[(dir+2)%4], dg[(dir+2)%4]);
@@ -1589,7 +1601,7 @@ searchEllipseIW(Features2D_old* f2D,
                     loop_cond = LOOP_EXIT_WHOLE;
                     }
                   */
-                  sum = sum0;
+                  sum = sum1;
                   start = start0;
                   goal = goal1;
                   len = len1;
