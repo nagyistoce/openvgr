@@ -2391,6 +2391,7 @@ extractFeatures_old(unsigned char* edge,   // エッジ画像
             }
         }
 
+
       // 楕円検出結果から、複数の楕円のデータを使って、楕円当てはめを行い、マージする
       if (Ellipse2Ellipse(features, features, parameters) < 0)
         {
@@ -2543,6 +2544,20 @@ extractFeatures_old(unsigned char* edge,   // エッジ画像
           clearFeatures2Dpointer(&features);
           goto ending; // メモリ確保失敗
         }
+
+      // 楕円検出結果から使用点数の少ない楕円を排除
+      for (f = 0; f < features->nFeature; f++)
+	{
+          thisFeature = &features->feature[f];
+	  if (thisFeature->type == ConicType_Ellipse)
+	    {
+	      if(thisFeature->end - thisFeature->start + 1
+		 < paramEIW->PostMinLength)
+		{
+		  thisFeature->type = ConicType_Unknown;
+		}
+	    }
+	}
 
       // 楕円結果の重複除去
       for (f = 0; f < features->nFeature; f++)

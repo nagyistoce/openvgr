@@ -983,6 +983,9 @@ add_new_multi_ellipse(Features2D_old* f2D,
 		      //int start,
 		      //int goal,
 		      Ellipse	*ellipse,
+		      Features2D_old* f_e,
+		      int	*flist,
+		      int	step,
 		      const ParamEllipseIW* paramE
 		      //int nPoint,
 		      //int iTrack,
@@ -990,7 +993,7 @@ add_new_multi_ellipse(Features2D_old* f2D,
 		      )
 {
   int i, j;
-  Feature2D_old	*newf;
+  Feature2D_old	*newf, *tmpf;
 
   /* dummy for test*/
   // copy max_f2D to feature
@@ -1045,7 +1048,15 @@ add_new_multi_ellipse(Features2D_old* f2D,
       newf->endSPoint[i] = 0.0;
       newf->direction[i] = 0.0;
     }
-  newf->start = newf->end = newf->all = -1;
+  // sum of len info
+  newf->start = 0;
+  newf->all = 0;
+  for(i = 0; i < step; i++){
+    tmpf = &f_e->feature[flist[i]];
+    newf->all += tmpf->end - tmpf->start + 1;
+  }
+  newf->end = newf->all-1;
+
   newf->nPoints = newf->nTrack = -1;
   newf->lineLength = newf->lineLength1 = newf->lineLength2 = 0.0;
   newf->lineAngle = 0.0;
@@ -1097,7 +1108,9 @@ search_another_arc(int	step,
 
 	  if (result_try == TRY_ELLIPSE_REGISTER)
 	    {
-	      if(add_new_multi_ellipse(f2D, &ellipse, paramE)
+	      if(add_new_multi_ellipse(f2D, &ellipse,
+				       f_e, me->flist, step+1,
+				       paramE)
 		 == ADD_NEW_MULTI_ELLIPSE_NG)
 		{
 		  return ANOTHER_EXIST_ERROR;
