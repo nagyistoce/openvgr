@@ -86,6 +86,7 @@ setDefaultRecogParameter(Parameters& param)
 
   param.paramEIW.Condition = DEF_PARAME_CONDITION;
   param.paramEIW.MinLength = DEF_PARAME_MIN_LENGTH;
+  param.paramEIW.PostMinLength = DEF_PARAME_POST_MIN_LENGTH;
   param.paramEIW.MinShortRadPrev = DEF_PARAME_MIN_SHORT_RAD_PREV;
   param.paramEIW.MinShortRadPost = DEF_PARAME_MIN_SHORT_RAD_POST;
   param.paramEIW.ThMeanError = DEF_PARAME_TH_MEAN_ERROR;
@@ -125,6 +126,7 @@ enum paramKey
 
   eIwCondition,
   eIwMinLength,
+  eIwPostMinLength,
   eIwMinShortRadPrev,
   eIwMinShortRadPost,
   eIwThMeanError,
@@ -165,6 +167,7 @@ static const char* paramKeyString[] = {
 
   "IW_Condition",
   "IW_MinLength",
+  "IW_PostMinLength",
   "IW_MinShortRadPrev",
   "IW_MinShortRadPost",
   "IW_ThMeanError",
@@ -317,6 +320,9 @@ loadRecogParameter(char* path, Parameters& param)
               break;
             case eIwMinLength:
               param.paramEIW.MinLength = atoi(p);
+              break;
+            case eIwPostMinLength:
+              param.paramEIW.PostMinLength = atoi(p);
               break;
             case eIwMinShortRadPrev:
               param.paramEIW.MinShortRadPrev = atof(p);
