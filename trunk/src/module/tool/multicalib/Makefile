@@ -18,7 +18,7 @@ INCLUDES = -I$(LIBCAPTURE_DIR) $(shell pkg-config --cflags opencv)
 LIBDC1394 = -ldc1394
 OPENCV = $(shell pkg-config --libs opencv)
 
-TARGETS = sample genconf multicalib
+TARGETS = sample genconf reset_bus multicalib
 
 
 all: $(TARGETS)
@@ -27,6 +27,7 @@ sample: LDLIBS = -L$(LIBCAPTURE_DIR) -lcapture $(OPENCV) $(LIBDC1394) -lm
 sample: sample.o checker_data.o detect_checker.o
 
 genconf: LDLIBS += $(LIBDC1394)
+reset_bus: LDLIBS += $(LIBDC1394)
 
 multicalib: multicalib.o calib_proc.o calib_data.o camera_param.o quaternion.o optimizer.o
 
