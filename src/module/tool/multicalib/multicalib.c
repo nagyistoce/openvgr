@@ -11,6 +11,7 @@
 
 #include <unistd.h>
 #include <stdio.h>
+#include <time.h>
 
 #include <cv.h>
 #include <highgui.h>
@@ -235,7 +236,8 @@ output_params_yaml (const camera_param_t *params, const int ncamera, const doubl
 {
   CvFileStorage *fs = NULL;
 
-  char str[32];
+  char str[64];
+  time_t calib_time;
   int i;
 
   if (opt->ofile == NULL)
@@ -246,6 +248,10 @@ output_params_yaml (const camera_param_t *params, const int ncamera, const doubl
   fs = cvOpenFileStorage (opt->ofile, NULL, CV_STORAGE_WRITE);
 
   snprintf (str, sizeof (str), "error: %f", error);
+  cvWriteComment (fs, str, 0);
+
+  time(&calib_time);
+  strftime (str, sizeof (str), "date: %c", localtime(&calib_time));
   cvWriteComment (fs, str, 0);
 
   cvWriteInt (fs, "num_cameras", ncamera);
