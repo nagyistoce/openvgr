@@ -1407,6 +1407,9 @@ ovgr::create_new_features_from_old_one(const ::Features2D_old* old_features, uns
   //fprintf(stderr, "vertex : % d\n", features.vertex.size());
   //fprintf(stderr, "ellipse: % d\n", features.ellipse.size());
 #if 0
+#  ifdef _OPENMP
+#    pragma omp critical
+#  endif
   if (img != NULL && parameters != NULL)
     {
       cv::Mat gimg(parameters->rowsize, parameters->colsize, CV_8UC1, img), cimg;
