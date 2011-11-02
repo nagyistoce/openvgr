@@ -15,11 +15,19 @@ RTMINC = -I`rtm-config --prefix`/include/rtm/idl
 INCLUDES = $(OPENCVINC) $(RTMINC)
 
 CC = gcc
-CFLAGS = -O3 -march=native -Wall -pipe -fPIC
-#CFLAGS = -O3 -march=native -Wall -pipe -fPIC -fopenmp
-#CFLAGS = -g -O0 -march=native -Wall -pipe -fPIC
 
-CXX = g++
+ifeq ($(CC),icc)
+  CFLAGS = -O3 -Wall -pipe -fPIC -fopenmp
+  CXX = icpc
+  AR = xiar
+else
+  #CFLAGS = -O3 -march=native -Wall -pipe -fPIC
+  CFLAGS = -O3 -march=native -Wall -pipe -fPIC -fopenmp
+  #CFLAGS = -g -O0 -march=native -Wall -pipe -fPIC
+
+  CXX = g++
+endif
+
 CXXFLAGS = $(CFLAGS)
 
 IDLDIR   = ../../idl
