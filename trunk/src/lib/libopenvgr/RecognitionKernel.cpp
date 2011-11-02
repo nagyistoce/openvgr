@@ -24,10 +24,8 @@ static unsigned long
 GetTickCount()
 {
   struct timeval t;
-  double msec;
   gettimeofday(&t, NULL);
-  msec = (double) (t.tv_sec * 1.0E3 + t.tv_usec * 1.0E-3);
-  return (unsigned long) msec;
+  return (t.tv_sec & 0xfffff) * 1000 + t.tv_usec / 1000;
 }
 
 static void
