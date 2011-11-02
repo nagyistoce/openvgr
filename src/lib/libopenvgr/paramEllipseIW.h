@@ -44,14 +44,19 @@
 // 推奨初期値
 #define	DEF_PARAME_CONDITION	(ELLIPSE_CONDITION_MEAN)
 #define	DEF_PARAME_MIN_LENGTH	(20)
-#define	DEF_PARAME_POST_MIN_LENGTH	(100)
-#define	DEF_PARAME_MIN_SHORT_RAD_PREV	(2.0)
+//#define	DEF_PARAME_POST_MIN_LENGTH	(100)
+#define	DEF_PARAME_POST_MIN_LENGTH	(50)
+//#define	DEF_PARAME_MIN_SHORT_RAD_PREV	(2.0)
+#define	DEF_PARAME_MIN_SHORT_RAD_PREV	(1.0)
 #define	DEF_PARAME_MIN_SHORT_RAD_POST	(2.0)
-#define	DEF_PARAME_TH_MEAN_ERROR	(0.5)
+//#define	DEF_PARAME_TH_MEAN_ERROR	(0.5)
+#define	DEF_PARAME_TH_MEAN_ERROR	(0.4)
 #define	DEF_PARAME_TH_MAX_ERROR		(2.0)
-#define DEF_PARAME_TH_MEAN_ERROR_MERGING	(0.55)
+//#define DEF_PARAME_TH_MEAN_ERROR_MERGING	(0.55)
+#define DEF_PARAME_TH_MEAN_ERROR_MERGING	(0.44)
 #define DEF_PARAME_TH_MAX_ERROR_MERGING	(2.2)
-#define DEF_PARAME_MIN_DETERMINANT	(1e-6)
+//#define DEF_PARAME_MIN_DETERMINANT	(1e-6)
+#define DEF_PARAME_MIN_DETERMINANT	(1e-3)
 #define DEF_PARAME_MAX_EIGEN_VALUE_RATIO	(1000.0)
 #define	DEF_PARAME_OFFSET_MODE		(ELLIPSE_OFFSET_DYNAMIC)
 
@@ -59,7 +64,7 @@ typedef struct _param_ellipse_IW_{
   int		Condition;
   int		MinLength;   // default = 20
   int		PostMinLength;   // default = 100
-  double	MinShortRadPrev; // default = 2.0
+  double	MinShortRadPrev; 
   double	MinShortRadPost; // default = 2.0
   double	ThMeanError;
   double	ThMaxError;

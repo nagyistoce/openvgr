@@ -868,11 +868,15 @@ P_to_avec_and_fix(Ellipse* ellipse,
   };
   double P11inv[NDIM_CONIC_HALF][NDIM_CONIC_HALF];
   // 逆行列の計算
-  // 行列式の判定
-  if (fabs((ellipse->P11[0][0] * ellipse->P11[1][1]-
-	    ellipse->P11[0][1] * ellipse->P11[1][0])/
-	   (ellipse->P11[0][0] * ellipse->P11[1][1]))
-      < paramE->MinDeterminant)  // usually 1e-6
+  // 共分散行列から主軸方向の分散を計算し、ほとんどゼロなら直線
+  //lambda0 は短い法の分散で、誤差の２乗和なので、N*(MinDet)*(MinDet)と比較する
+  // 通常、MinDet == 1e-6
+  double lambda0 = (ellipse->P11[0][0]+ellipse->P11[1][1]
+		    -sqrt((ellipse->P11[0][0]-ellipse->P11[1][1])
+			  *(ellipse->P11[0][0]-ellipse->P11[1][1])
+			  +4.0*ellipse->P11[0][1]*ellipse->P11[1][0]))/2.0;
+  if (lambda0 < ellipse->P11[2][2]
+      * paramE->MinDeterminant*paramE->MinDeterminant)
     {
       ellipse->neval = 0;
       return;
@@ -1468,6 +1472,7 @@ searchEllipseIW(Features2D_old* f2D,
       if (tracking == TRACKING_OFF) // check minimum length
         {
     // 開始条件のチェック
+	  sum0 = sum1 = sum;
           if (check_track_start(point, nPoint, &offsetProp, start, goal, &dir,
                                 &ellipse, &sum, paramE, gapcount)
               == CHECK_TRACK_SUCCESS)
@@ -1484,10 +1489,10 @@ searchEllipseIW(Features2D_old* f2D,
                                  &ellipse, &max_f2D, paramE);
               tracking = TRACKING_ON;
 
-              sum0 = sum1 = sum;
+              /*sum0 = sum1 = sum;
               modify_sum(point, nPoint, &offsetProp, &sum0,
                          start, goal,
-                         ds[(dir+2)%4], dg[(dir+2)%4]);
+                         ds[(dir+2)%4], dg[(dir+2)%4]);*/
             }
           else
             { // current=OK next=NG
