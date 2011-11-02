@@ -256,6 +256,7 @@ RTC::ReturnCode_t Recognition::onExecute(RTC::UniqueId ec_id)
       printf( "Recognition::onExecute:RECOGNITION_TEST:IW_ThMeanError=%f\n", param.paramEIW.ThMeanError);
       printf( "Recognition::onExecute:RECOGNITION_TEST:IW_ThMaxError=%f\n", param.paramEIW.ThMaxError);
 //      printf( "Recognition::onExecute:RECOGNITION_TEST:IW_OffsetMode=%d\n", param.paramEIW.OffsetMode);
+      printf( "Recognition::onExecute:RECOGNITION_TEST:IW_PostMinLength=%d\n", param.paramEIW.PostMinLength);
       printf( "Recognition::onExecute:RECOGNITION_TEST:Amax=%f\n", param.stereo.amax);
       printf( "Recognition::onExecute:RECOGNITION_TEST:Amin=%f\n", param.stereo.amin);
       printf( "Recognition::onExecute:RECOGNITION_TEST:StereoError=%f\n", param.stereo.ethr);
