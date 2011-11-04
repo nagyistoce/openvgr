@@ -57,7 +57,7 @@
 #define DEF_PARAME_TH_MAX_ERROR_MERGING	(2.2)
 //#define DEF_PARAME_MIN_DETERMINANT	(1e-6)
 #define DEF_PARAME_MIN_DETERMINANT	(1e-3)
-#define DEF_PARAME_MAX_EIGEN_VALUE_RATIO	(1000.0)
+//#define DEF_PARAME_MAX_EIGEN_VALUE_RATIO	(1000.0)
 #define	DEF_PARAME_OFFSET_MODE		(ELLIPSE_OFFSET_DYNAMIC)
 
 typedef struct _param_ellipse_IW_{
@@ -71,7 +71,7 @@ typedef struct _param_ellipse_IW_{
   double	ThMeanErrorMerging; // used in merging
   double	ThMaxErrorMerging; // used in merging
   double	MinDeterminant; 
-  double	MaxEigenValueRatio;
+  //  double	MaxEigenValueRatio;
   int		OffsetMode;
 }ParamEllipseIW;
 
