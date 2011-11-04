@@ -94,7 +94,7 @@ setDefaultRecogParameter(Parameters& param)
   param.paramEIW.ThMeanErrorMerging = DEF_PARAME_TH_MEAN_ERROR_MERGING;
   param.paramEIW.ThMaxErrorMerging = DEF_PARAME_TH_MAX_ERROR_MERGING;
   param.paramEIW.MinDeterminant = DEF_PARAME_MIN_DETERMINANT;
-  param.paramEIW.MaxEigenValueRatio = DEF_PARAME_MAX_EIGEN_VALUE_RATIO;
+  // param.paramEIW.MaxEigenValueRatio = DEF_PARAME_MAX_EIGEN_VALUE_RATIO;
   param.paramEIW.OffsetMode = DEF_PARAME_OFFSET_MODE;
 }
 
@@ -134,7 +134,7 @@ enum paramKey
   eIwThMeanErrorMerging,
   eIwThMaxErrorMerging,
   eIwMinDeterminant,
-  eIwMaxEigenValueRatio,
+  //eIwMaxEigenValueRatio,
   eIwOffsetMode,
 
   eParamSentinel
@@ -175,7 +175,7 @@ static const char* paramKeyString[] = {
   "IW_ThMeanErrorMerging",
   "IW_ThMaxErrorMerging",
   "IW_MinDeterminant",
-  "IW_MaxEigenValueRatio",
+  //"IW_MaxEigenValueRatio",
   "IW_OffsetMode"
 };
 
@@ -345,9 +345,9 @@ loadRecogParameter(char* path, Parameters& param)
             case eIwMinDeterminant:
               param.paramEIW.MinDeterminant = atof(p);
               break;
-            case eIwMaxEigenValueRatio:
-              param.paramEIW.MaxEigenValueRatio = atof(p);
-              break;
+	      //case eIwMaxEigenValueRatio:
+              //param.paramEIW.MaxEigenValueRatio = atof(p);
+              //break;
             case eIwOffsetMode:
               param.paramEIW.OffsetMode = (atoi(p) != 0 ? ELLIPSE_OFFSET_STATIC : ELLIPSE_OFFSET_DYNAMIC);
               break;

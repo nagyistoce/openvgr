@@ -1029,16 +1029,16 @@ point_to_ellipse(int  start1,
       return POINT_TO_ELLIPSE_FAIL;
     }
 
-  // 固有値の比が大きいときには排除する
-  if (check_eigen_value_ratio(ellipse, paramE->MaxEigenValueRatio)
-      == CHECK_EIGEN_VALUE_RATIO_NG)
-    {
-      for (idim = 0; idim < NDIM_CONIC_FULL; idim++)
-        {
-          ellipse->coef[idim] = 0.0; // not found
-        }
-      return POINT_TO_ELLIPSE_FAIL;
-    }
+//  // 固有値の比が大きいときには排除する
+//  if (check_eigen_value_ratio(ellipse, paramE->MaxEigenValueRatio)
+//      == CHECK_EIGEN_VALUE_RATIO_NG)
+//    {
+//      for (idim = 0; idim < NDIM_CONIC_FULL; idim++)
+//        {
+//          ellipse->coef[idim] = 0.0; // not found
+//        }
+//      return POINT_TO_ELLIPSE_FAIL;
+//    }
 
   // 計算された係数の評価
   min_meanerror = -1.0;
