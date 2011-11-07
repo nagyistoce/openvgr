@@ -29,11 +29,35 @@
 
 #define _PARAM_ELLIPSE_IW_H_
 
-#define  ELLIPSE_CONDITION_MEAN (0)
-#define  ELLIPSE_CONDITION_MAX (1)
+enum paramEllipseIW_Ellipse_with_line_key
+  {
+    ENABLE_ELLIPSE_NONE, // 0
+    ENABLE_ELLIPSE_WITH_LINE, // 1
+    ENABLE_ELLIPSE_WITHOUT_LINE // 2
+  };
 
-#define ELLIPSE_OFFSET_STATIC	(0)
-#define ELLIPSE_OFFSET_DYNAMIC	(1)
+enum paramEllipseIW_Old_Merge_func_key
+  {
+    DISABLE_OLD_MERGE_FUNC, // 0
+    ENABLE_OLD_MERGE_FUNC // 1
+  };
+
+//#define  ELLIPSE_CONDITION_MEAN (0)
+//#define  ELLIPSE_CONDITION_MAX (1)
+
+enum paramEllipseIW_ErrCond_key
+  {
+    ELLIPSE_CONDITION_MEAN, // 0
+    ELLIPSE_CONDITION_MAX   // 1
+  };
+
+//#define ELLIPSE_OFFSET_STATIC	(0)
+//#define ELLIPSE_OFFSET_DYNAMIC	(1)
+enum paramEllipseIW_OffsetMode_key
+  {
+    ELLIPSE_OFFSET_STATIC,	
+    ELLIPSE_OFFSET_DYNAMIC
+  };
 
 // 最小値
 #define MINIMUM_MIN_LENGTH	(5)
@@ -59,6 +83,9 @@
 #define DEF_PARAME_MIN_DETERMINANT	(1e-3)
 //#define DEF_PARAME_MAX_EIGEN_VALUE_RATIO	(1000.0)
 #define	DEF_PARAME_OFFSET_MODE		(ELLIPSE_OFFSET_DYNAMIC)
+#define DEF_PARAME_SW_LINE_ELLIPSE	(ENABLE_ELLIPSE_WITH_LINE|\
+                                         ENABLE_ELLIPSE_WITHOUT_LINE)
+#define DEF_PARAME_SW_OLD_MERGE_FUNC	(ENABLE_OLD_MERGE_FUNC)
 
 typedef struct _param_ellipse_IW_{
   int		Condition;
@@ -73,6 +100,8 @@ typedef struct _param_ellipse_IW_{
   double	MinDeterminant; 
   //  double	MaxEigenValueRatio;
   int		OffsetMode;
+  int           SwLineEllipse;
+  int           SwOldMergeFunc;
 }ParamEllipseIW;
 
 #endif

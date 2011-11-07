@@ -96,6 +96,8 @@ setDefaultRecogParameter(Parameters& param)
   param.paramEIW.MinDeterminant = DEF_PARAME_MIN_DETERMINANT;
   // param.paramEIW.MaxEigenValueRatio = DEF_PARAME_MAX_EIGEN_VALUE_RATIO;
   param.paramEIW.OffsetMode = DEF_PARAME_OFFSET_MODE;
+  param.paramEIW.SwLineEllipse = DEF_PARAME_SW_LINE_ELLIPSE;
+  param.paramEIW.SwOldMergeFunc = DEF_PARAME_SW_OLD_MERGE_FUNC;
 }
 
 enum paramKey
@@ -134,8 +136,9 @@ enum paramKey
   eIwThMeanErrorMerging,
   eIwThMaxErrorMerging,
   eIwMinDeterminant,
-  //eIwMaxEigenValueRatio,
   eIwOffsetMode,
+  eIwSwLineEllipse,
+  eIwSwOldMergeFunc,
 
   eParamSentinel
 };
@@ -175,8 +178,9 @@ static const char* paramKeyString[] = {
   "IW_ThMeanErrorMerging",
   "IW_ThMaxErrorMerging",
   "IW_MinDeterminant",
-  //"IW_MaxEigenValueRatio",
-  "IW_OffsetMode"
+  "IW_OffsetMode",
+  "IW_SwLineEllipse",
+  "IW_SwOldMergeFunc"
 };
 
 //
@@ -206,6 +210,7 @@ loadRecogParameter(char* path, Parameters& param)
   char* p;
   int i = 0;
 
+  
   while (fgets(buffer, MAX_PATH, fp))
     {
       if ((buffer[0] == '\n') || (buffer[0] == '#'))
@@ -350,6 +355,12 @@ loadRecogParameter(char* path, Parameters& param)
               //break;
             case eIwOffsetMode:
               param.paramEIW.OffsetMode = (atoi(p) != 0 ? ELLIPSE_OFFSET_STATIC : ELLIPSE_OFFSET_DYNAMIC);
+              break;
+            case eIwSwLineEllipse:
+              param.paramEIW.SwLineEllipse = (atoi(p));
+              break;
+            case eIwSwOldMergeFunc:
+              param.paramEIW.SwOldMergeFunc = (atoi(p) != 0 ? ENABLE_OLD_MERGE_FUNC: DISABLE_OLD_MERGE_FUNC);
               break;
 
             default:
