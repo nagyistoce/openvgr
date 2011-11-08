@@ -98,6 +98,7 @@ setDefaultRecogParameter(Parameters& param)
   param.paramEIW.OffsetMode = DEF_PARAME_OFFSET_MODE;
   param.paramEIW.SwLineEllipse = DEF_PARAME_SW_LINE_ELLIPSE;
   param.paramEIW.SwOldMergeFunc = DEF_PARAME_SW_OLD_MERGE_FUNC;
+  param.paramEIW.ShortenEllipseMerging = DEF_SHORTEN_ELLIPSE_MERGING;
 }
 
 enum paramKey
@@ -131,15 +132,15 @@ enum paramKey
   eIwPostMinLength,
   eIwMinShortRadPrev,
   eIwMinShortRadPost,
-  eIwThMeanError,
-  eIwThMaxError,
   eIwThMeanErrorMerging,
   eIwThMaxErrorMerging,
+  eIwThMeanError,
+  eIwThMaxError,
   eIwMinDeterminant,
   eIwOffsetMode,
   eIwSwLineEllipse,
   eIwSwOldMergeFunc,
-
+  eIwShortenEllipseMerging,
   eParamSentinel
 };
 
@@ -173,14 +174,15 @@ static const char* paramKeyString[] = {
   "IW_PostMinLength",
   "IW_MinShortRadPrev",
   "IW_MinShortRadPost",
-  "IW_ThMeanError",
-  "IW_ThMaxError",
   "IW_ThMeanErrorMerging",
   "IW_ThMaxErrorMerging",
+  "IW_ThMeanError",
+  "IW_ThMaxError",
   "IW_MinDeterminant",
   "IW_OffsetMode",
   "IW_SwLineEllipse",
-  "IW_SwOldMergeFunc"
+  "IW_SwOldMergeFunc",
+  "IW_ShorenEllipseMerging"
 };
 
 //
@@ -354,13 +356,16 @@ loadRecogParameter(char* path, Parameters& param)
               //param.paramEIW.MaxEigenValueRatio = atof(p);
               //break;
             case eIwOffsetMode:
-              param.paramEIW.OffsetMode = (atoi(p) != 0 ? ELLIPSE_OFFSET_STATIC : ELLIPSE_OFFSET_DYNAMIC);
+              param.paramEIW.OffsetMode = (atoi(p) == 0 ? ELLIPSE_OFFSET_STATIC : ELLIPSE_OFFSET_DYNAMIC);
               break;
             case eIwSwLineEllipse:
               param.paramEIW.SwLineEllipse = (atoi(p));
               break;
             case eIwSwOldMergeFunc:
               param.paramEIW.SwOldMergeFunc = (atoi(p) != 0 ? ENABLE_OLD_MERGE_FUNC: DISABLE_OLD_MERGE_FUNC);
+              break;
+            case eIwShortenEllipseMerging:
+              param.paramEIW.ShortenEllipseMerging = (atoi(p));
               break;
 
             default:
