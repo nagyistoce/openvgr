@@ -22,8 +22,8 @@ ifeq ($(CC),icc)
   AR = xiar
 else
   #CFLAGS = -O3 -march=native -Wall -pipe -fPIC
-  #CFLAGS = -O3 -march=native -Wall -pipe -fPIC -fopenmp
-  CFLAGS = -g -O0 -march=native -Wall -pipe -fPIC
+  CFLAGS = -O3 -march=native -Wall -pipe -fPIC -fopenmp
+  #CFLAGS = -g -O0 -march=native -Wall -pipe -fPIC
 
   CXX = g++
 endif
