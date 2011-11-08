@@ -88,6 +88,7 @@ enum paramEllipseIW_OffsetMode_key
 #define DEF_PARAME_SW_LINE_ELLIPSE	(ENABLE_ELLIPSE_WITH_LINE|\
                                          ENABLE_ELLIPSE_WITHOUT_LINE)
 #define DEF_PARAME_SW_OLD_MERGE_FUNC	(ENABLE_OLD_MERGE_FUNC)
+#define DEF_SHORTEN_ELLIPSE_MERGING	(0)
 
 typedef struct _param_ellipse_IW_{
   int		Condition;
@@ -104,6 +105,7 @@ typedef struct _param_ellipse_IW_{
   int		OffsetMode;
   int           SwLineEllipse;
   int           SwOldMergeFunc;
+  int           ShortenEllipseMerging;
 }ParamEllipseIW;
 
 #endif
