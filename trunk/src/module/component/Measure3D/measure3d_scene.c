@@ -271,9 +271,9 @@ measure3d_scene(struct Img::TimedMultiCameraImage *in_data,
         {
           cvmSet(work->dcoef[iimg], k, 0, img_in[iimg].intrinsic.distortion_coefficient[k]);
         }
-      while (k++ < NDCOEF)
+      while (k < NDCOEF)
         {
-          cvmSet(work->dcoef[iimg], k, 0, 0.0);
+          cvmSet(work->dcoef[iimg], k++, 0, 0.0);
         }
     }
 
