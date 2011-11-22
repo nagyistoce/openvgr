@@ -57,6 +57,17 @@ freeVertexPoints(Vertex* ver)
   return;
 }
 
+// ワイヤフレームデータのメモリ解放
+static void
+freeWireframe(Wireframe* wire)
+{
+  if (wire->vertex != NULL)
+    {
+      free(wire->vertex);
+      wire->vertex = NULL;
+    }
+}
+
 // ３次元特徴データのメモリ解放
 void
 freeFeatures3D(Features3D* feature)
@@ -80,6 +91,8 @@ freeFeatures3D(Features3D* feature)
   free(feature->Circles);
   feature->Circles = NULL;
   feature->numOfCircles = 0;
+
+  freeWireframe(&feature->wireframe);
   return;
 }
 

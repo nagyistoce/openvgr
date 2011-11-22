@@ -12,7 +12,7 @@
 #include <iostream>
 #include <fstream>
 #include <string>
-#include <math.h>
+#include <cmath>
 
 #include "match3Dfeature.h"
 #include "vectorutil.h"
@@ -704,6 +704,152 @@ mark_rotational_symmetric_data(Feature* data, const int num_data, AuxFeature *au
     }
 }
 
+static int
+add_vertex(double* pos, int* num_vertices, double (**vertex)[3])
+{
+  int id, i;
+
+  for (i = 0; i < *num_vertices; ++i)
+    {
+      double distance = 0;
+      for (int j = 0; j < 3; ++j)
+        {
+          distance += pow((*vertex)[i][j] - pos[j], 2);
+        }
+      if (distance < VISION_EPS * VISION_EPS)
+        {
+#if 0
+          printf("same point!\n");
+          printf("% f % f % f == % f % f % f\n", (*vertex)[i][0], (*vertex)[i][1], (*vertex)[i][2], pos[0], pos[1], pos[2]);
+#endif
+          return i;
+        }
+    }
+  id = i;
+
+  double (*new_vertex)[3] = (double (*)[3]) realloc(*vertex, sizeof(double) * 3 * (*num_vertices + 1));
+  //printf("new_vertex: %p\n", new_vertex);
+  if (new_vertex == NULL)
+    {
+      return -1;
+    }
+  if (*vertex != new_vertex)
+    {
+      *vertex = new_vertex;
+    }
+
+  //printf("id: %d\n", id);
+  for (i = 0; i < 3; ++i)
+    {
+      (*vertex)[id][i] = pos[i];
+    }
+  ++(*num_vertices);
+
+  return id;
+}
+
+static int
+add_segment(const int v1, const int v2, std::vector<Wireframe::Segment>* segment)
+{
+  int id[2];
+
+  if (v1 <= v2)
+    {
+      id[0] = v1;
+      id[1] = v2;
+    }
+  else
+    {
+      id[0] = v2;
+      id[1] = v1;
+    }
+
+  for (size_t i = 0; i < segment->size(); ++i)
+    {
+      if ((*segment)[i].vertex_id[0] == id[0] && (*segment)[i].vertex_id[1] == id[1])
+        {
+          return i;
+        }
+    }
+  segment->push_back(Wireframe::Segment(id[0], id[1]));
+
+  return (int)(segment->size() - 1);
+}
+
+// 頂点データからワイヤフレームモデルを作成
+// 各面を構成する頂点は常に4個とする
+void
+create_wireframe_model(Features3D* feature)
+{
+  int numOfVertices = feature->numOfVertices;
+  Vertex* Vertices = feature->Vertices;
+  Wireframe* wireframe = &feature->wireframe;
+
+  //printf("num_vertices: %d\n", numOfVertices);
+  if (numOfVertices % 4 != 0)
+    {
+      fprintf(stderr, "Warning: num of vertices is not divisible by 4.\n");
+      fprintf(stderr, "Warning: the wire model has not been created.\n");
+      return;
+    }
+
+  int nvert = 0;
+  double (*vertex)[3] = NULL;
+
+  for (int i = 0; i < numOfVertices / 4; ++i)
+    {
+      int vertex_id[4];
+      std::vector<int> segment_id(4);
+
+      for (int j = 0; j < 4; ++j)
+        {
+          vertex_id[j] = add_vertex(Vertices[4*i + j].tPose[3], &nvert, &vertex);
+        }
+
+      for (int j = 0; j < 4; ++j)
+        {
+          segment_id[j] = add_segment(vertex_id[j], vertex_id[(j+1) % 4], &wireframe->segment);
+        }
+
+      Wireframe::Face face;
+
+      face.segment_id = segment_id;
+      for (int j = 0; j < 3; ++j)
+        {
+          face.normal[j] = Vertices[4*i].tPose[2][j];
+        }
+      wireframe->face.push_back(face);
+    }
+
+#if 0
+  printf("identical vert: %d\n", nvert);
+
+  for (size_t i = 0; i < wireframe->face.size(); ++i)
+    {
+      const std::vector<int>& segment_id = wireframe->face[i].segment_id;
+      const double *normal = wireframe->face[i].normal;
+
+      fprintf(stderr, "# face %zd\n", i);
+      fprintf(stderr, "# normal: % f % f % f\n", normal[0], normal[1], normal[2]);
+
+      for (size_t j = 0; j < segment_id.size(); ++j)
+        {
+          Wireframe::Segment& segment = wireframe->segment[segment_id[j]];
+
+          fprintf(stderr, "# segment: %d %d\n", segment.vertex_id[0], segment.vertex_id[1]);
+          double *v[2] = {vertex[segment.vertex_id[0]],
+                          vertex[segment.vertex_id[1]]};
+          fprintf(stderr, "% f % f % f\n", v[0][0], v[0][1], v[0][2]);
+          fprintf(stderr, "% f % f % f\n", v[1][0], v[1][1], v[1][2]);
+          fprintf(stderr, "\n\n");
+        }
+    }
+#endif
+
+  wireframe->vertex = vertex;
+  wireframe->num_vertices = nvert;
+}
+
 // モデルデータから３次元特徴データへの変換
 int
 convertRTVCMtoFeatures3D(RTVCM rtvcm,          // モデルデータ
@@ -747,6 +893,8 @@ convertRTVCMtoFeatures3D(RTVCM rtvcm,          // モデルデータ
 
   mark_rotational_symmetric_data(feature.Vertices, numOfVertices, feature.Circles, numOfCircles);
   mark_rotational_symmetric_data(feature.Circles, numOfCircles, feature.Vertices, numOfVertices);
+
+  create_wireframe_model(&feature);
 
   return 0;
 }
