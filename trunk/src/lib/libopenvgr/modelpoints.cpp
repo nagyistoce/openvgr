@@ -27,11 +27,12 @@
 #include "mathmisc.hpp"
 
 //#define PROJECT_DEBUG
+//#define USE_STRUCTURE
 
 using namespace ovgr;
 
 inline static bool
-is_visible(const CameraParam *cp, double matrix[4][4], double pos[3], double normal[3])
+is_visible(const CameraParam *cp, const double matrix[4][4], const double pos[3], const double normal[3])
 {
   double vw[3], nw[3], v[3], n[3], dot, norm2;
   int i, j;
@@ -73,7 +74,7 @@ is_visible(const CameraParam *cp, double matrix[4][4], double pos[3], double nor
 
 // 頂点の可視判定
 static inline int
-isVisibleVertex(Features3D* model, double matrix[4][4], Vertex* vertex, int p_camera)
+isVisibleVertex(const Features3D* model, const double matrix[4][4], const Vertex* vertex, const int p_camera)
 {
   CameraParam* cameraParam;
 
@@ -98,10 +99,10 @@ isVisibleVertex(Features3D* model, double matrix[4][4], Vertex* vertex, int p_ca
 
 // 3次元点の2次元画像上への投影
 static void
-projectXYZ2LRwithTrans(Features3D* model, double matrix[4][4], int p_camera,
-                       double xyz[3], cv::Point* colrow)
+projectXYZ2LRwithTrans(const Features3D* model, const double matrix[4][4], const int p_camera,
+                       const double xyz[3], cv::Point* colrow)
 {
-  cv::Mat RTmat = cv::Mat(4, 4, CV_64FC1, matrix);
+  const cv::Mat RTmat = cv::Mat(4, 4, CV_64FC1, const_cast<double (*)[4]>(matrix));
   double psrc[4], pdst[4];
   cv::Mat src = cv::Mat(4, 1, CV_64FC1, psrc);
   cv::Mat dst = cv::Mat(4, 1, CV_64FC1, pdst);
@@ -509,15 +510,16 @@ calcEvaluationValue2D_on_line(Features3D* model, const cv::Point& p1, const cv::
       prow = points.y();
       if (isValidPixelPosition(pcol, prow, model))
         {
+#ifndef USE_STRUCTURE
           cv::Point p(pcol, prow);
-
-#if !defined (USE_UNORDERED_SET) && !defined (USE_SET)
+# if !defined (USE_UNORDERED_SET) && !defined (USE_SET)
           plot_t::iterator itr = std::find(plot->begin(), plot->end(), p);
-#else
+# else
           plot_t::iterator itr = plot->find(p);
-#endif
+# endif
           // 投影されていない場合
           if (itr == plot->end())
+#endif
             {
               float dist_value = dstImage.at<float>(prow, pcol);
               score += 1.0 / (double) (dist_value + 1.0);
@@ -529,11 +531,12 @@ calcEvaluationValue2D_on_line(Features3D* model, const cv::Point& p1, const cv::
                 {
                   cpoint++;
                 }
-
-#if !defined (USE_UNORDERED_SET) && !defined (USE_SET)
+#ifndef USE_STRUCTURE
+# if !defined (USE_UNORDERED_SET) && !defined (USE_SET)
               plot->push_back(p);
-#else
+# else
               plot->insert(p);
+# endif
 #endif
             }
         }
@@ -557,6 +560,24 @@ calcEvaluationValue2D(Features3D* model, int p_camera,
   double score;
   int i, j;
 
+  CameraParam *cp = NULL;
+
+  switch (p_camera)
+    {
+    case 0:
+      cp = &model->calib->CameraL;
+      break;
+    case 1:
+      cp = &model->calib->CameraR;
+      break;
+    case 2:
+      cp = &model->calib->CameraV;
+      break;
+    default:
+      cp = &model->calib->CameraL;
+      break;
+    }
+
 #ifdef PROJECT_DEBUG
   cv::Mat dstImage_norm =
     cv::Mat::zeros(cv::Size(model->calib->colsize, model->calib->rowsize), CV_8UC1);
@@ -571,6 +592,7 @@ calcEvaluationValue2D(Features3D* model, int p_camera,
 
   score = 0.0;
   plot->clear();
+#ifndef USE_STRUCTURE
   for (i = 0; i < model->numOfVertices; i++)
     {
       vertex = model->Vertices[i];
@@ -603,26 +625,59 @@ calcEvaluationValue2D(Features3D* model, int p_camera,
       cv::line(dstImage_color, pos2d[1], pos2d[2], color, lineThickness, CV_AA);
 # endif
     }
+#else
+  const Wireframe& wireframe = model->wireframe;
+  const double (*vert)[3] = wireframe.vertex;
+  const std::vector<Wireframe::Segment>& segment = wireframe.segment;
+  const std::vector<Wireframe::Face>& face = wireframe.face;
+  std::vector<bool> is_visible_segment(segment.size(), false);
+
+  // 面の可視判定
+  for (i = 0; i < (int)face.size(); ++i)
+    {
+      const double *pos = vert[segment[face[i].segment_id[0]].vertex_id[0]];
+      const double *normal = face[i].normal;
+
+      if (! is_visible(cp, result->mat, pos, normal))
+        {
+          continue;
+        }
+
+      for (j = 0; j < (int)face[i].segment_id.size(); ++j)
+        {
+          const int sid = face[i].segment_id[j];
+          is_visible_segment[sid] = true;
+        }
+    }
+# if 0
+  for (i = 0; i < (int)is_visible_segment.size(); ++i)
+    {
+      printf("%2d: %s\n", i, is_visible_segment[i] ? "visible" : "non-visible");
+    }
+# endif
+
+  // 頂点の座標変換
+  std::vector<cv::Point> projected(wireframe.num_vertices);
+  for (i = 0; i < wireframe.num_vertices; ++i)
+    {
+      projectXYZ2LRwithTrans(model, result->mat, p_camera, vert[i], &projected[i]);
+    }
+
+  // スコアの計算
+  score = 0.0;
+  for (i = 0; i < (int)is_visible_segment.size(); ++i)
+    {
+      if (is_visible_segment[i] != true)
+        {
+          continue;
+        }
+
+      const int* vid = segment[i].vertex_id;
+      score += calcEvaluationValue2D_on_line(model, projected[vid[0]], projected[vid[1]], dstImage, plot, result);
+    }
+#endif
 
   {
-    CameraParam *cp = NULL;
-
-    switch (p_camera)
-      {
-      case 0:
-        cp = &model->calib->CameraL;
-        break;
-      case 1:
-        cp = &model->calib->CameraR;
-        break;
-      case 2:
-        cp = &model->calib->CameraV;
-        break;
-      default:
-        cp = &model->calib->CameraL;
-        break;
-      }
-
     cv::Point pos[2][2];
     Circle *circle[2];
     double angle[2][2];

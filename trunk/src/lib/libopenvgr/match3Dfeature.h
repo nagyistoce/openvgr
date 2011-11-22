@@ -56,6 +56,42 @@ typedef struct P2D
   double colrow[2];             //!< 2次元座標
 } P2D;
 
+//! ワイヤフレームモデル
+typedef struct tag_Wireframe
+{
+  int num_vertices;             //!< 頂点数
+  double (*vertex)[3];          //!< 頂点座標の配列
+
+  struct Segment                //!< 線分
+  {
+    int vertex_id[2];
+
+    Segment()
+    {
+      vertex_id[0] = vertex_id[1] = -1;
+    }
+
+    Segment(const int id1, const int id2)
+    {
+      vertex_id[0] = id1;
+      vertex_id[1] = id2;
+    }
+  };
+  std::vector<Segment> segment; //!< 線分情報の配列
+
+  struct Face                   //!< 面
+  {
+    std::vector<int> segment_id;//!< 面を構成する線分
+    double normal[3];           //!< 面の法線ベクトル
+
+    Face() : segment_id()
+    {
+      normal[0] = normal[1] = normal[2] = 0.0;
+    }
+  };
+  std::vector<Face> face;       //!< 面情報の配列
+} Wireframe;
+
 //! ３次元頂点情報
 typedef struct Vertex
 {
@@ -95,6 +131,7 @@ typedef struct Features3D
   CalibParam* calib;            //!< キャリブレーションデータポインタ
   int numOfVertices;            //!< ３次元頂点特徴数
   Vertex* Vertices;             //!< ３次元頂点特徴
+  Wireframe wireframe;          //!< ワイヤフレームデータ
   int numOfCircles;             //!< ３次元円特徴数
   Circle* Circles;              //!< ３次元円特徴
   uchar* edge[3];               //!< エッジ画像ポインタ
