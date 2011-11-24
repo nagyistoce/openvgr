@@ -59,6 +59,7 @@ then
 fi
 
 # コンポーネントの活性化
+# SetModelID は最後に活性化すること
 rtact Measure3D0.rtc
 rtact MultiDisp0.rtc
 rtact MultiCamera0.rtc
