@@ -1,5 +1,7 @@
 /*
- sample.c
+ ichimatsu.c
+
+ A sample program for calibration data creation.
 
  Copyright (c) 2011 AIST  All Rights Reserved.
  Eclipse Public License v1.0 (http://www.eclipse.org/legal/epl-v10.html)
