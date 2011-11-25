@@ -18,13 +18,13 @@ INCLUDES = -I$(LIBCAPTURE_DIR) $(shell pkg-config --cflags opencv)
 LIBDC1394 = -ldc1394
 OPENCV = $(shell pkg-config --libs opencv)
 
-TARGETS = sample genconf reset_bus multicalib
+TARGETS = ichimatsu genconf reset_bus multicalib
 
 
 all: $(TARGETS)
 
-sample: LDLIBS = -L$(LIBCAPTURE_DIR) -lcapture $(OPENCV) $(LIBDC1394) -lm
-sample: sample.o checker_data.o detect_checker.o
+ichimatsu: LDLIBS = -L$(LIBCAPTURE_DIR) -lcapture $(OPENCV) $(LIBDC1394) -lm
+ichimatsu: ichimatsu.o checker_data.o detect_checker.o
 
 genconf: LDLIBS += $(LIBDC1394)
 reset_bus: LDLIBS += $(LIBDC1394)
