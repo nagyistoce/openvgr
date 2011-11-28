@@ -52,9 +52,13 @@ HDMax			10.0
 #
 # 楕円検出パラメータ
 #
-#IW_MinLength   20
-#IW_ThMeanError 0.5
-#IW_ThMaxError  2.0
+IW_Condition   0
+IW_MinLength   20
+IW_MinShortRadPrev 2.0
+IW_MinShortRadPost 2.0
+IW_ThMeanError 0.5
+IW_ThMaxError  2.0
+#IW_OffsetMode  0
 #
 # 検出しない特徴(1:頂点 2:楕円)
 #
