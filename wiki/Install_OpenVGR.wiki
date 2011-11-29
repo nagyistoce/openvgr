@@ -24,7 +24,7 @@ OpenVGR consists of the followings:
    * produces a simple box or cylinder model for the recognition.
   * multicalib
    * genconf generates a template configuration file for cameras. 
-   * sample generates a data file for the multicalib by detecting chessboard pattern using the OpenCV's function (cv::findChessboardCorners()).
+   * ichimatsu generates a data file for the multicalib by detecting chessboard pattern using the OpenCV's function (cv::findChessboardCorners()).
    * multicalib computes the calibration data of multi-cameras from the data file. Camera parameters in the calibration data are compatible to OpenCV's camera model.
 
 
