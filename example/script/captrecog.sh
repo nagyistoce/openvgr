@@ -91,4 +91,5 @@ rtexit Measure3D0.rtc
 rtexit MultiCamera0.rtc
 rtexit RecognitionResultViewer0.rtc
 rtexit Recognition0.rtc
-rtexit SetModelID0.rtc
+rtdel SetModelID0.rtc
+pkill -f SetModelIDComp
