@@ -66,6 +66,7 @@ typedef struct _EllipseTerminal_ {
   double	axis[NAXIS];
   double	coef[NDIM_CONIC_FULL];
   double	min_theta, max_theta;
+  int		min_i, max_i;
   double	tangent[NTERMINAL][NDIM2];
   double	p[NTERMINAL][NDIM2];
   double	normal[NTERMINAL][NDIM2];
@@ -445,11 +446,92 @@ set_maxmin_part(EllipseTerminal	*ei)
   return;
 }
 
+// ei->min_i および ei->max_i を使って
+// ei->min_theta および　ei->max_theta を書き換え
+static void
+shorten_maxmin(int	*point,
+	       int	nPoint,
+	       int	start,
+	       int	goal,
+	       EllipseTerminal	*ei,
+	       const ParamEllipseIW* paramE)
+{
+  int	d[2];
+  int	count, k, i1;
+  double	theta[2], tmp;
+
+  d[0] = - paramE->ShortenEllipseMerging;
+  d[1] = paramE->ShortenEllipseMerging;
+
+  // ei->min_theta の修正
+  count = 0;
+  for (k = 0; k < 2; k++)
+    {
+      i1 = ei->min_i +d[k];
+      if ( i1 >= start && i1 <= goal)
+	{
+	  theta[count] = calc_angle_i(ei, &point[mod_nPoint(i1, nPoint)*2],
+				      0.0);
+	  while (theta[count] > ei->min_theta + M_PI * 2.0)
+	    {
+	      theta[count] -= M_PI * 2.0;
+	    }
+	  while (theta[count] < ei->min_theta)
+	    {
+	      theta[count] += M_PI * 2.0;
+	    }
+	  count++;
+	}
+    }
+
+  if (count)
+    {
+      tmp = 0.0;
+      for(k = 0; k < count; k++){
+	tmp += theta[k];
+      }
+      ei->min_theta = tmp /= (double)count;
+    }
+
+  // ei->max_theta の修正
+  count = 0;
+  for (k = 0; k < 2; k++)
+    {
+      i1 = ei->max_i +d[k];
+      if ( i1 >= start && i1 <= goal)
+	{
+	  theta[count] = calc_angle_i(ei, &point[mod_nPoint(i1, nPoint)*2],
+				      0.0);
+	  while (theta[count] < ei->min_theta + M_PI * 2.0)
+	    {
+	      theta[count] += M_PI * 2.0;
+	    }
+	  while (theta[count] > ei->min_theta)
+	    {
+	      theta[count] -= M_PI * 2.0;
+	    }
+	  count++;
+	}
+    }
+
+  if (count)
+    {
+      tmp = 0.0;
+      for(k = 0; k < count; k++){
+	tmp += theta[k];
+      }
+      ei->max_theta = tmp /= (double)count;
+    }
+
+  return;
+}
+
 // 楕円の端点接線の計算
 static void
 set_eterminal(Features2D_old	*f_e,
 	      int	iFeature,
-	      EllipseTerminal	*ei)
+	      EllipseTerminal	*ei,
+	      const ParamEllipseIW* paramE)
 {
   int	i, j;
   Feature2D_old	*e0;
@@ -531,6 +613,7 @@ set_eterminal(Features2D_old	*f_e,
   ei->min_theta = ei->max_theta
     = prev_theta
     = calc_angle_i(ei, &point[mod_nPoint(start, nPoint)*2], modify_theta);
+  ei->min_i = ei->max_i = start;
 
   for (i = start+1; i <= goal; i++)
     {
@@ -559,10 +642,12 @@ set_eterminal(Features2D_old	*f_e,
       if (theta > ei->max_theta)
 	{
 	  ei->max_theta = theta;
+	  ei->max_i = i;
 	}
       else if (theta < ei->min_theta)
 	{
 	  ei->min_theta = theta;
+	  ei->min_i = i;
 	}
 
       // 全円周のチェック
@@ -685,6 +770,10 @@ set_eterminal(Features2D_old	*f_e,
 
 #endif
 
+  if (paramE->ShortenEllipseMerging > 0)
+    {
+      shorten_maxmin(point, nPoint, start, goal, ei, paramE);
+    }
   // 部分データのセット
   set_maxmin_part(ei);
 
@@ -1178,7 +1267,7 @@ merge_ellipse(Features2D_old	*f2D,
   MergeEllipseArrays	me = { 0 };
   int	iFeature;
   int	jFeature;
-  int	found_pair;
+  //int	found_pair;
 
   // ローカル配列構造体の malloc
   if(initial_arrays(f2D, &me, &f_e) == INITIAL_ARRAYS_NG)
@@ -1205,7 +1294,7 @@ merge_ellipse(Features2D_old	*f2D,
 
   // 各楕円の端点接線の計算（全周の楕円かどうかのフラグも立てる）
   for(iFeature = 0; iFeature < f_e.nFeature; iFeature++){
-    set_eterminal(&f_e, iFeature, &me.eterm[iFeature]);
+    set_eterminal(&f_e, iFeature, &me.eterm[iFeature], paramE);
   }
 
   // 参照table の作成 楕円の弧の範囲に他の楕円の中心があるか
