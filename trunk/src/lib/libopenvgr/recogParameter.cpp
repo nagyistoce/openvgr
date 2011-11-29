@@ -93,7 +93,7 @@ setDefaultRecogParameter(Parameters& param)
   param.paramEIW.ThMaxError = DEF_PARAME_TH_MAX_ERROR;
   param.paramEIW.ThMeanErrorMerging = DEF_PARAME_TH_MEAN_ERROR_MERGING;
   param.paramEIW.ThMaxErrorMerging = DEF_PARAME_TH_MAX_ERROR_MERGING;
-  param.paramEIW.MinDeterminant = DEF_PARAME_MIN_DETERMINANT;
+  param.paramEIW.MinSD = DEF_PARAME_MIN_SD;
   // param.paramEIW.MaxEigenValueRatio = DEF_PARAME_MAX_EIGEN_VALUE_RATIO;
   param.paramEIW.OffsetMode = DEF_PARAME_OFFSET_MODE;
   param.paramEIW.SwLineEllipse = DEF_PARAME_SW_LINE_ELLIPSE;
@@ -136,7 +136,7 @@ enum paramKey
   eIwThMaxErrorMerging,
   eIwThMeanError,
   eIwThMaxError,
-  eIwMinDeterminant,
+  eIwMinSD,
   eIwOffsetMode,
   eIwSwLineEllipse,
   eIwSwOldMergeFunc,
@@ -178,7 +178,7 @@ static const char* paramKeyString[] = {
   "IW_ThMaxErrorMerging",
   "IW_ThMeanError",
   "IW_ThMaxError",
-  "IW_MinDeterminant",
+  "IW_MinSD",
   "IW_OffsetMode",
   "IW_SwLineEllipse",
   "IW_SwOldMergeFunc",
@@ -349,8 +349,8 @@ loadRecogParameter(char* path, Parameters& param)
             case eIwThMaxErrorMerging:
               param.paramEIW.ThMaxErrorMerging = atof(p);
               break;
-            case eIwMinDeterminant:
-              param.paramEIW.MinDeterminant = atof(p);
+            case eIwMinSD:
+              param.paramEIW.MinSD = atof(p);
               break;
 	      //case eIwMaxEigenValueRatio:
               //param.paramEIW.MaxEigenValueRatio = atof(p);

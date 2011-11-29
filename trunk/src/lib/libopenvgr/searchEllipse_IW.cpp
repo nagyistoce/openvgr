@@ -506,26 +506,27 @@ modify_sum(const int* point,
            int  ds0,
            int  dg0)
 {
-  start = start % nPoint;
-  goal = goal % nPoint;
   switch(ds0)
     {
     case -1:
-      addArcSum(sum, &((int *)point)[((start+nPoint-1)%nPoint)*2], offsetProp->d);
+      addArcSum(sum, &((int *)point)[mod_nPoint(start-1,nPoint)*2],
+		offsetProp->d);
       break;
     case 1:
-      subArcSum(sum, &((int *)point)[((start+nPoint)%nPoint)*2], offsetProp->d);
+      subArcSum(sum, &((int *)point)[mod_nPoint(start,nPoint)*2],
+		offsetProp->d);
       break;
     }
 
   switch(dg0)
     {
     case -1:
-      subArcSum(sum, &((int *)point)[((goal+nPoint)%nPoint)*2], offsetProp->d);
-
+      subArcSum(sum, &((int *)point)[mod_nPoint(goal,nPoint)*2],
+		offsetProp->d);
       break;
     case 1:
-      addArcSum(sum, &((int *)point)[((goal+nPoint+1)%nPoint)*2], offsetProp->d);
+      addArcSum(sum, &((int *)point)[mod_nPoint(goal+1,nPoint)*2],
+		offsetProp->d);
       break;
     }
 
@@ -652,22 +653,22 @@ eval_ellipse(int  start,
   int nloop, i0[2], i1[2], np, loop;
   int modstart, modgoal;
 
-  modstart = (start + nPoint) % nPoint;
-  modgoal = (goal + nPoint) % nPoint;
+  modstart = mod_nPoint(start, nPoint);
+  modgoal = mod_nPoint(goal, nPoint);
 
-  if (start - modstart == goal - modgoal)
+  if (modstart < modgoal)
     {
       nloop = 1;
-      i0[0] = (start+nPoint)%nPoint;
-      i1[0] = (goal+nPoint)%nPoint;
+      i0[0] = modstart;
+      i1[0] = modgoal;
     }
   else
     {
       nloop = 2;
-      i0[0] = (start + nPoint) % nPoint;
+      i0[0] = modstart;
       i1[0] = nPoint-1;
       i0[1] = 0;
-      i1[1] = goal % nPoint;
+      i1[1] = modgoal;
     }
   sum = 0.0;
   *maxError = 0.0;
@@ -869,14 +870,14 @@ P_to_avec_and_fix(Ellipse* ellipse,
   double P11inv[NDIM_CONIC_HALF][NDIM_CONIC_HALF];
   // 逆行列の計算
   // 共分散行列から主軸方向の分散を計算し、ほとんどゼロなら直線
-  //lambda0 は短い法の分散で、誤差の２乗和なので、N*(MinDet)*(MinDet)と比較する
-  // 通常、MinDet == 1e-6
+  //lambda0 は短い法の分散で、誤差の２乗和なので、N*(MinSD)*(MinSD)と比較する
+  // 通常、MinSD == 0.5
   double lambda0 = (ellipse->P11[0][0]+ellipse->P11[1][1]
 		    -sqrt((ellipse->P11[0][0]-ellipse->P11[1][1])
 			  *(ellipse->P11[0][0]-ellipse->P11[1][1])
 			  +4.0*ellipse->P11[0][1]*ellipse->P11[1][0]))/2.0;
-  if (lambda0 < ellipse->P11[2][2]
-      * paramE->MinDeterminant*paramE->MinDeterminant)
+  if (lambda0 <
+      ellipse->P11[2][2] * paramE->MinSD * paramE->MinSD)
     {
       ellipse->neval = 0;
       return;
@@ -1019,8 +1020,8 @@ point_to_ellipse(int  start1,
   // fix avec with ellips->offset
   P_to_avec_and_fix(ellipse, paramE);
 
-  //if (ellipse->neval == 0)
-  if (ellipse->neval < NDIM_CONIC_HALF)
+  if (ellipse->neval == 0)
+    //if (ellipse->neval < NDIM_CONIC_HALF)
     {
       for (idim = 0; idim < NDIM_CONIC_FULL; idim++)
         {
@@ -1713,7 +1714,7 @@ searchEllipseIW(Features2D_old* f2D,
                   // もう一度 skip_body()を行う
                   sum = sum1;
                   goal = goal1;
-                  len = (goal - start + 1 + nPoint) % nPoint;
+                  len = mod_nPoint(goal - start + 1, nPoint);
                   if (skip_body(point, nPoint, &offsetProp,
                                 &start, &goal, &len,
                                 &max_curve_len, &max_f2D,
