@@ -225,9 +225,9 @@ RTC::ReturnCode_t Recognition::onExecute(RTC::UniqueId ec_id)
       if (frame->data.image_seq.length() > 0)
         {
           printf("Image Accept: (%"PRId32" x %"PRId32") x %"PRIu32"\n",
-		 frame->data.image_seq[0].image.width,
-		 frame->data.image_seq[0].image.height,
-		 frame->data.image_seq.length());
+            (int)frame->data.image_seq[0].image.width,
+            (int)frame->data.image_seq[0].image.height,
+            (unsigned int) frame->data.image_seq.length());
         }
 
       // 3 次元距離計測データをスルー出力する。
@@ -258,7 +258,7 @@ RTC::ReturnCode_t Recognition::onExecute(RTC::UniqueId ec_id)
       printf( "Recognition::onExecute:RECOGNITION_TEST:IW_ThMeanErrorMerging=%f\n", param.paramEIW.ThMeanErrorMerging);
       printf( "Recognition::onExecute:RECOGNITION_TEST:IW_ThMaxError=%f\n", param.paramEIW.ThMaxError);
       printf( "Recognition::onExecute:RECOGNITION_TEST:IW_ThMaxErrorMerging=%f\n", param.paramEIW.ThMaxErrorMerging);
-      printf( "Recognition::onExecute:RECOGNITION_TEST:IW_MinDeterminant=%e\n", param.paramEIW.MinDeterminant);
+      printf( "Recognition::onExecute:RECOGNITION_TEST:IW_MinSD=%f\n", param.paramEIW.MinSD);
       printf( "Recognition::onExecute:RECOGNITION_TEST:IW_OffsetMode=%d\n", param.paramEIW.OffsetMode);
       printf( "Recognition::onExecute:RECOGNITION_TEST:IW_SwLineEllipse=%d\n", param.paramEIW.SwLineEllipse);
       printf( "Recognition::onExecute:RECOGNITION_TEST:IW_SwOldMergeFunc=%d\n", param.paramEIW.SwOldMergeFunc);
