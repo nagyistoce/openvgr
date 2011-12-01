@@ -18,6 +18,8 @@
 
 #include <unistd.h>
 #include <sys/time.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 
 #include <cv.h>
 #include <highgui.h>
@@ -25,6 +27,8 @@
 #include <capture.h>
 #include "checker_data.h"
 #include "detect_checker.h"
+
+#define FILENAME_SIZE (256)
 
 typedef enum
 {
@@ -40,6 +44,8 @@ typedef struct tag_opt
   method_t method;
   int ieee1394b_mode;
 
+  char data_dir[FILENAME_SIZE];
+
   FILE *fp;
 } opt_t;
 
@@ -53,6 +59,7 @@ static void s_convert_frame_to_iplimage (capture_frame_t *frame, IplImage *ipl);
 static checker_coord_t *s_detect_checker (IplImage *image, opt_t *opt);
 static void s_draw_checker (IplImage *image, checker_coord_t *cc, opt_t *opt);
 static void get_timestamp (char *str, size_t size);
+static int check_dir (opt_t *opt);
 
 int
 main (int argc, char **argv)
@@ -65,6 +72,16 @@ main (int argc, char **argv)
 
   /* parse options */
   parse_opt (argc, argv, &opt);
+
+  /* check if data_dir is accessible */
+  if (opt.data_dir[0] != '\0')
+    {
+      if (check_dir (&opt) != 0)
+        {
+          fprintf(stderr, "warning: can't access to dir '%s'\n", opt.data_dir);
+          opt.data_dir[0] = '\0'; /* clear the directory name */
+        }
+    }
 
   /* setup a camera system */
   status = capture_init (&cap, 1);
@@ -119,24 +136,27 @@ main (int argc, char **argv)
 static void
 show_help (const char *prog_name)
 {
-  printf ("usage: %s [-o <filename>] [-s <size>] [-g <row>x<col>] [-l]\n", prog_name);
+  printf ("usage: %s [-o <filename>] [-s <size>] [-g <row>x<col>] [-d <dirname>] [-l]\n", prog_name);
 
   printf ("\n");
 
-  printf ("<filename> :\t");
+  printf ("-o <filename> :\t");
   printf ("file name of output file\n");
 
   printf ("\n");
 
-  printf ("<size>     :\t");
+  printf ("-s <size>     :\t");
   printf ("pattern size [mm] (default: 20)\n");
 
-  printf ("<row>x<col>:\t");
+  printf ("-g <row>x<col>:\t");
   printf ("nunber of points in each row/col (default: 8x8)\n");
 
   printf ("\n");
 
-  printf ("-l         :\t");
+  printf ("-d <dirname>:\t");
+  printf ("directory name where debug info will be stored (default: none)\n");
+
+  printf ("-l            :\t");
   printf ("use IEEE 1394 legacy mode (default: IEEE 1394b mode)\n");
 
   printf ("\n");
@@ -215,7 +235,7 @@ get_grid (const char *str, int *row, int *col)
 static void
 parse_opt (int argc, char **argv, opt_t *opt)
 {
-  const static char optstr[] = "s:g:lm:o:w:h";
+  const static char optstr[] = "d:s:g:lm:o:w:h";
   char ch;
 
   opt->pattern_col  =  8;
@@ -225,12 +245,18 @@ parse_opt (int argc, char **argv, opt_t *opt)
   opt->method = METHOD_OPENCV;
 
   opt->ieee1394b_mode = 1;
+  opt->data_dir[0] = '\0';
   opt->fp = stdout;
 
   while ((ch = getopt (argc, argv, optstr)) != -1)
     {
       switch (ch)
         {
+        case 'd':
+          strncpy (opt->data_dir, optarg, sizeof (char) * FILENAME_SIZE - 1);
+          opt->data_dir[FILENAME_SIZE - 1] = '\0';
+          break;
+
         case 'g':
           if (get_grid (optarg, &opt->pattern_row, &opt->pattern_col) != 0)
             {
@@ -566,6 +592,25 @@ proc (capture_t *cap, capture_frame_t *frames, opt_t *opt)
                     }
                 }
               fprintf (stderr, "added the detected points. (%d)\n", checker_data.num_observations);
+
+              /* write images if data_dir is specified */
+              if (opt->data_dir[0] != '\0')
+                {
+                  char timestamp[32];
+
+                  get_timestamp (timestamp, sizeof (timestamp));
+
+                  for (i = 0; i < cap->num_active; ++i)
+                    {
+                      char filename[256];
+
+                      snprintf (filename, sizeof (filename), "%s/cap_%s_%02u.png", opt->data_dir, timestamp, i);
+                      cvSaveImage (filename, images[i], 0);
+
+                      snprintf (filename, sizeof (filename), "%s/chessboard_%s_%02u.png", opt->data_dir, timestamp, i);
+                      cvSaveImage (filename, overlay[i], 0);
+                    }
+                }
             }
           break;
 
@@ -790,4 +835,32 @@ get_timestamp (char *str, size_t size)
       strncpy (str, "unknown", size - 1);
       str[sizeof (str) - 1] = '\0';
     }
+}
+
+static int
+check_dir (opt_t *opt)
+{
+  struct stat buf;
+
+  if (opt->data_dir[0] == '\0')
+    {
+      return -1;
+    }
+
+  if (stat (opt->data_dir, &buf) == 0)
+    {
+      return (S_ISDIR(buf.st_mode)) ? 0 : -1;
+    }
+
+  /* the path is not exist, so create it */
+  if (mkdir (opt->data_dir, 0755) == 0)
+    {
+      /* check again if the directory is accessible */
+      if (stat (opt->data_dir, &buf) == 0)
+        {
+          return (S_ISDIR(buf.st_mode)) ? 0 : -1;
+        }
+    }
+
+  return -1;
 }
