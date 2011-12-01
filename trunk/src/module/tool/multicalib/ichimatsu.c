@@ -52,6 +52,7 @@ static int proc (capture_t *cap, capture_frame_t *frames, opt_t *opt);
 static void s_convert_frame_to_iplimage (capture_frame_t *frame, IplImage *ipl);
 static checker_coord_t *s_detect_checker (IplImage *image, opt_t *opt);
 static void s_draw_checker (IplImage *image, checker_coord_t *cc, opt_t *opt);
+static void get_timestamp (char *str, size_t size);
 
 int
 main (int argc, char **argv)
@@ -502,27 +503,9 @@ proc (capture_t *cap, capture_frame_t *frames, opt_t *opt)
         case 'p':
           if (exec_mode == EXEC_MODE_LIVE)
             {
-              struct timeval captured_time;
               char timestamp[32];
 
-              /* create a timestamp */
-              if (gettimeofday (&captured_time, NULL) == 0)
-                {
-                  struct tm lt;
-                  int len;
-
-                  localtime_r (&captured_time.tv_sec, &lt);
-                  strftime (timestamp, sizeof (timestamp), "%Y%m%d-%H%M%S", &lt);
-
-                  /* append usec value */
-                  len = strlen (timestamp);
-                  snprintf (&timestamp[len], sizeof (timestamp) - len, ".%06ld", captured_time.tv_usec);
-                }
-              else
-                {
-                  strncpy (timestamp, "unknown", sizeof (timestamp) - 1);
-                  timestamp[sizeof (timestamp) - 1] = '\0';
-                }
+              get_timestamp (timestamp, sizeof (timestamp));
 
               for (i = 0; i < cap->num_active; ++i)
                 {
@@ -782,5 +765,29 @@ s_draw_checker (IplImage *image, checker_coord_t *cc, opt_t *opt)
 
     default:
       break;
+    }
+}
+
+static void
+get_timestamp (char *str, size_t size)
+{
+  struct timeval current_time;
+
+  if (gettimeofday (&current_time, NULL) == 0)
+    {
+      struct tm lt;
+      int len;
+
+      localtime_r (&current_time.tv_sec, &lt);
+      strftime (str, size, "%Y%m%d-%H%M%S", &lt);
+
+      /* append usec value */
+      len = strlen (str);
+      snprintf (&str[len], size - len, ".%06ld", current_time.tv_usec);
+    }
+  else
+    {
+      strncpy (str, "unknown", size - 1);
+      str[sizeof (str) - 1] = '\0';
     }
 }
