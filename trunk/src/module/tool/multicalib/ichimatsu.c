@@ -55,6 +55,7 @@ static void parse_opt (int argc, char **argv, opt_t *opt);
 static void destroy (const int err_code, opt_t *opt);
 static int proc (capture_t *cap, capture_frame_t *frames, opt_t *opt);
 
+static void s_show_image (const char *name, IplImage *image, double scale);
 static void s_convert_frame_to_iplimage (capture_frame_t *frame, IplImage *ipl);
 static checker_coord_t *s_detect_checker (IplImage *image, opt_t *opt);
 static void s_draw_checker (IplImage *image, checker_coord_t *cc, opt_t *opt);
@@ -166,6 +167,12 @@ show_help (const char *prog_name)
   printf ("l\tlive mode; show captured images.\n");
   printf ("c\tchessboard detection mode; search a chessboard pattern using OpenCV.\n");
   printf ("q\tterminate this program.\n");
+
+  printf ("\n");
+
+  printf ("<scaling display image>\n");
+  printf ("1-4\tscale images by 1/n.\n");
+  printf ("-/+\tdecrease/increase the scale factor by 0.1.\n");
 
   printf ("\n");
 
@@ -322,6 +329,7 @@ proc (capture_t *cap, capture_frame_t *frames, opt_t *opt)
 
   const int slen = 128;
   char (*winname)[slen];
+  double scale = 1.0;
 
   IplImage **images, **overlay;
   checker_coord_t **cc;
@@ -463,7 +471,7 @@ proc (capture_t *cap, capture_frame_t *frames, opt_t *opt)
         case EXEC_MODE_LIVE:
           for (i = 0; i < cap->num_active; ++i)
             {
-              cvShowImage (winname[i], images[i]);
+              s_show_image (winname[i], images[i], scale);
             }
           break;
 
@@ -485,11 +493,11 @@ proc (capture_t *cap, capture_frame_t *frames, opt_t *opt)
 
                   s_draw_checker (overlay[i], cc[i], opt);
 
-                  cvShowImage (winname[i], overlay[i]);
+                  s_show_image (winname[i], overlay[i], scale);
                 }
               else
                 {
-                  cvShowImage (winname[i], images[i]);
+                  s_show_image (winname[i], images[i], scale);
                 }
             }
           break;
@@ -505,6 +513,40 @@ proc (capture_t *cap, capture_frame_t *frames, opt_t *opt)
         case 'q':
         case 0x1b:
           to_exit = -1;
+          break;
+
+        case '1':
+          scale = 1.0;
+          break;
+
+        case '2':
+          scale = 1.0 / 2.0;
+          break;
+
+        case '3':
+          scale = 1.0 / 3.0;
+          break;
+
+        case '4':
+          scale = 1.0 / 4.0;
+          break;
+
+        case '-':
+          scale -= 0.1;
+
+          if (scale < 0.1)
+            {
+              scale = 0.1;
+            }
+          break;
+
+        case '+':
+          scale += 0.1;
+
+          if (scale > 10.0)
+            {
+              scale = 10.0;
+            }
           break;
 
         case 'c':
@@ -661,6 +703,26 @@ proc (capture_t *cap, capture_frame_t *frames, opt_t *opt)
 
   fprintf (stderr, "quit.\n");
   return EXIT_SUCCESS;
+}
+
+static void
+s_show_image (const char *name, IplImage *image, double scale)
+{
+  IplImage *disp_image = NULL;
+  int width = (int)((double)image->width * scale + 0.5);
+  int height = (int)((double)image->height * (double)width / (double)image->width + 0.5);
+
+  disp_image = cvCreateImage (cvSize(width, height), image->depth, image->nChannels);
+  if (disp_image != NULL)
+    {
+      cvResize (image, disp_image, CV_INTER_LINEAR);
+      cvShowImage (name, disp_image);
+      cvReleaseImage (&disp_image);
+    }
+  else
+    {
+      cvShowImage (name, image);
+    }
 }
 
 static void
