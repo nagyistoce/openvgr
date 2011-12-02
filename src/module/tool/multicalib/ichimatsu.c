@@ -78,7 +78,7 @@ main (int argc, char **argv)
     {
       if (check_dir (&opt) != 0)
         {
-          fprintf(stderr, "warning: can't access to dir '%s'\n", opt.data_dir);
+          fprintf (stderr, "warning: can't access to dir '%s'\n", opt.data_dir);
           opt.data_dir[0] = '\0'; /* clear the directory name */
         }
     }
@@ -153,7 +153,7 @@ show_help (const char *prog_name)
 
   printf ("\n");
 
-  printf ("-d <dirname>:\t");
+  printf ("-d <dirname>  :\t");
   printf ("directory name where debug info will be stored (default: none)\n");
 
   printf ("-l            :\t");
@@ -686,7 +686,7 @@ s_convert_frame_to_iplimage (capture_frame_t *frame, IplImage *ipl)
 }
 
 static checker_coord_t *
-s_detect_checker(IplImage *image, opt_t *opt)
+s_detect_checker (IplImage *image, opt_t *opt)
 {
   IplImage *gray_img = NULL;
   checker_coord_t *cc = NULL;
@@ -849,7 +849,7 @@ check_dir (opt_t *opt)
 
   if (stat (opt->data_dir, &buf) == 0)
     {
-      return (S_ISDIR(buf.st_mode)) ? 0 : -1;
+      return (S_ISDIR (buf.st_mode)) ? 0 : -1;
     }
 
   /* the path is not exist, so create it */
@@ -858,7 +858,7 @@ check_dir (opt_t *opt)
       /* check again if the directory is accessible */
       if (stat (opt->data_dir, &buf) == 0)
         {
-          return (S_ISDIR(buf.st_mode)) ? 0 : -1;
+          return (S_ISDIR (buf.st_mode)) ? 0 : -1;
         }
     }
 
