@@ -245,7 +245,11 @@ output_params_yaml (const camera_param_t *params, const int ncamera, const doubl
       return;
     }
 
-  fs = cvOpenFileStorage (opt->ofile, NULL, CV_STORAGE_WRITE);
+  fs = cvOpenFileStorage (opt->ofile, NULL, CV_STORAGE_WRITE
+#if ((CV_MAJOR_VERSION) == 2) && ((CV_MINOR_VERSION) >= 3)
+                          , NULL
+#endif
+);
 
   snprintf (str, sizeof (str), "error: %f", error);
   cvWriteComment (fs, str, 0);
