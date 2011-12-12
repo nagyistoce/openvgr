@@ -76,6 +76,7 @@ typedef struct _MergeEllipseArrays_ {
   int	**tab;
   EllipseTerminal	*eterm; // nFeature
   int	*flist;
+  int	*ref; // f_e から f2D への逆参照
   SumSet	*sum;
   int	nFeature0;
 } MergeEllipseArrays;
@@ -242,8 +243,9 @@ initial_arrays(Features2D_old	*f2D,
 	       Features2D_old	*f_e)
 {
   int	iFeature, jFeature;
+  // const MergeEllipseArrays zero_me = {0};
 
-  // f_e のセット
+  // f_e->nFeature  のセット
   f_e->nFeature = 0;
   for(iFeature = 0; iFeature < f2D->nFeature; iFeature++)
     {
@@ -253,25 +255,14 @@ initial_arrays(Features2D_old	*f2D,
 	}
     }
 
-  f_e->nAlloc = f_e->nFeature;
-  f_e->nTrack = f2D->nTrack;
-  f_e->track = f2D->track;
-  f_e->feature = (Feature2D_old *)calloc(f_e->nFeature,
-					 sizeof(Feature2D_old));
-
-  if(f_e->feature == NULL)
-    {
-      return INITIAL_ARRAYS_NG;
-    }
-
-  for(iFeature = jFeature = 0; iFeature < f2D->nFeature; iFeature++)
-    {
-      if(f2D->feature[iFeature].type == ConicType_Ellipse)
-	{
-	  f_e->feature[jFeature] = f2D->feature[iFeature];
-	  jFeature++;
-	}
-    }
+  // me 内の配列の確保
+  // *me = zero_me;
+  me->tab = NULL;
+  me->eterm = NULL;
+  me->flist = NULL;
+  me->ref = NULL;
+  me->sum = NULL;
+  me->nFeature0 = 0;
 
   me->tab = (int **)calloc(f_e->nFeature, sizeof(int *));
   if(me->tab == NULL){
@@ -300,10 +291,38 @@ initial_arrays(Features2D_old	*f2D,
       return INITIAL_ARRAYS_NG;
     }
 
+  me->ref = (int*)calloc(f_e->nFeature, sizeof(int));
+  if(me->ref == NULL)
+    {
+      return INITIAL_ARRAYS_NG;
+    }
+
   me->sum = (SumSet*)calloc(f_e->nFeature, sizeof(SumSet));
   if(me->sum == NULL)
     {
       return INITIAL_ARRAYS_NG;
+    }
+
+  // f_e の他のメンバのセット
+  f_e->nAlloc = f_e->nFeature;
+  f_e->nTrack = f2D->nTrack;
+  f_e->track = f2D->track;
+  f_e->feature = (Feature2D_old *)calloc(f_e->nFeature,
+					 sizeof(Feature2D_old));
+
+  if(f_e->feature == NULL)
+    {
+      return INITIAL_ARRAYS_NG;
+    }
+
+  for(iFeature = jFeature = 0; iFeature < f2D->nFeature; iFeature++)
+    {
+      if(f2D->feature[iFeature].type == ConicType_Ellipse)
+	{
+	  f_e->feature[jFeature] = f2D->feature[iFeature];
+	  me->ref[jFeature] = iFeature;
+	  jFeature++;
+	}
     }
 
   return INITIAL_ARRAYS_OK;
@@ -328,6 +347,7 @@ free_arrays(MergeEllipseArrays	*me,
   }
   if(me->eterm) free(me->eterm);
   if(me->flist) free(me->flist);
+  if(me->ref) free(me->ref);
   if(me->sum) free(me->sum);
 
   return;
@@ -1073,7 +1093,8 @@ add_new_multi_ellipse(Features2D_old* f2D,
 		      //int goal,
 		      Ellipse	*ellipse,
 		      Features2D_old* f_e,
-		      int	*flist,
+		      MergeEllipseArrays	*me,
+		      //int	*flist,
 		      int	step,
 		      const ParamEllipseIW* paramE
 		      //int nPoint,
@@ -1083,6 +1104,7 @@ add_new_multi_ellipse(Features2D_old* f2D,
 {
   int i, j;
   Feature2D_old	*newf, *tmpf;
+  EllipseArc	*parc;
 
   /* dummy for test*/
   // copy max_f2D to feature
@@ -1140,16 +1162,34 @@ add_new_multi_ellipse(Features2D_old* f2D,
   // sum of len info
   newf->start = 0;
   newf->all = 0;
-  for(i = 0; i < step; i++){
-    tmpf = &f_e->feature[flist[i]];
-    newf->all += tmpf->end - tmpf->start + 1;
-  }
+  for (i = 0; i < step; i++)
+    {
+      tmpf = &f_e->feature[me->flist[i]];
+      newf->all += tmpf->end - tmpf->start + 1;
+    }
   newf->end = newf->all-1;
 
   newf->nPoints = newf->nTrack = -1;
   newf->lineLength = newf->lineLength1 = newf->lineLength2 = 0.0;
   newf->lineAngle = 0.0;
 
+  // arclist のセット
+  newf->arclist.n = step;
+  newf->arclist.arc = (EllipseArc *)calloc(step, sizeof(EllipseArc));
+  if (newf->arclist.arc == NULL)
+    {
+      return ADD_NEW_MULTI_ELLIPSE_NG;
+    }
+  for (i = 0; i < step; i++)
+    {
+      parc = &newf->arclist.arc[i];
+      parc->f2Ds = f2D;
+      parc->ntrack = f2D->feature[me->ref[me->flist[i]]].nTrack;
+      parc->start = f2D->feature[me->ref[me->flist[i]]].start;
+      parc->goal = f2D->feature[me->ref[me->flist[i]]].end;
+    }
+
+  // f2D->nFeature の更新
   ++(f2D->nFeature);
 
   return ADD_NEW_MULTI_ELLIPSE_OK;
@@ -1198,7 +1238,7 @@ search_another_arc(int	step,
 	  if (result_try == TRY_ELLIPSE_REGISTER)
 	    {
 	      if(add_new_multi_ellipse(f2D, &ellipse,
-				       f_e, me->flist, step+1,
+				       f_e, me, step+1,
 				       paramE)
 		 == ADD_NEW_MULTI_ELLIPSE_NG)
 		{
