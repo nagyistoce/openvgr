@@ -14,6 +14,8 @@ if (LIBDC1394_FOUND)
   set_target_properties (ichimatsu PROPERTIES
     COMPILE_FLAGS "-I ${OpenVGR_SOURCE_DIR}/src/lib/libcapture")
 
+  file (COPY chessboard_8x8_20mm.svg ieee1394board.0 test.xcdata DESTINATION .)
+
   # genconf
   add_executable (genconf genconf.c)
   target_link_libraries (genconf ${LIBDC1394_LIBRARIES})
