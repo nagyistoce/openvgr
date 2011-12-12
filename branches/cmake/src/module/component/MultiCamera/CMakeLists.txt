@@ -3,7 +3,7 @@ set (IDL_DIR "${OpenVGR_SOURCE_DIR}/src/idl")
 set (RTC_NAME "MultiCamera")
 
 set (IDL_FILES
-  Img.idl
+  ${IDL_DIR}/Img.idl
 )
 
 set (SKEL_SRCS

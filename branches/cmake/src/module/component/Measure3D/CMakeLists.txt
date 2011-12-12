@@ -3,8 +3,8 @@ set (IDL_DIR "${OpenVGR_SOURCE_DIR}/src/idl")
 set (RTC_NAME "Measure3D")
 
 set (IDL_FILES
-  Img.idl
-  Vision.idl
+  ${IDL_DIR}/Img.idl
+  ${IDL_DIR}/Vision.idl
 )
 
 set (SKEL_SRCS

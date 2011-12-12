@@ -8,6 +8,21 @@ set (OpenVGR_VERSION "${OpenVGR_VERSION_MAJOR}.${OpenVGR_VERSION_MINOR}.${OpenVG
 
 message (STATUS "Package: OpenVGR-${OpenVGR_VERSION}")
 
+# set a default build type
+if (NOT CMAKE_BUILD_TYPE)
+  set (CMAKE_BUILD_TYPE Release
+    CACHE STRING "Choose the type of build, options are: None(CMAKE_CXX_FLAGS or CMAKE_C_FLAGS used) Debug Release RelWithDebInfo MinSizeRel."
+    FORCE)
+  message (STATUS "set a default build type (${CMAKE_BUILD_TYPE})")
+endif (NOT CMAKE_BUILD_TYPE)
+
+# set default options for C/C++
+set (CMAKE_C_FLAGS_RELEASE "-O3 -DNDEBUG -march=native"
+  CACHE STRING "Flags used by the compiler during release builds" FORCE)
+set (CMAKE_CXX_FLAGS_RELEASE ${CMAKE_C_FLAGS_RELEASE}
+  CACHE STRING "Flags used by the compiler during release builds" FORCE)
+
+# options
 option (USE_OpenMP "enable OpenMP feature." OFF)
 
 include (FindPkgConfig)
@@ -97,7 +112,7 @@ if (NOT OpenRTM_FOUND)
                  ${CMAKE_CURRENT_BINARY_DIR}/${_filename}Skel.cpp
                  ${CMAKE_CURRENT_BINARY_DIR}/${_filename}Stub.h
                  ${CMAKE_CURRENT_BINARY_DIR}/${_filename}Stub.cpp
-          COMMAND ${CMAKE_COMMAND} -E create_symlink ${CMAKE_CURRENT_SOURCE_DIR}/${_idl_file} ${CMAKE_CURRENT_BINARY_DIR}/${_filename}.idl
+          COMMAND ${CMAKE_COMMAND} -E create_symlink ${_idl_file} ${CMAKE_CURRENT_BINARY_DIR}/${_filename}.idl
           COMMAND ${OPENRTM_IDLC} -I${OpenVGR_SOURCE_DIR}/src/idl ${OPENRTM_IDLFLAGS} ${_idl_file}
           COMMAND ${OPENRTM_IDL_WRAPPER} ${OPENRTM_IDL_WRAPPER_FLAGS} --idl-file=${_filename}.idl > /dev/null 2>&1
           DEPENDS ${_idl_file})
