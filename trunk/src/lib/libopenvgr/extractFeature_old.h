@@ -16,6 +16,22 @@
 #include "conic.h"
 #include "match3Dfeature.h"
 
+// 楕円arclist
+typedef struct _ellipse_arc_
+{
+  struct Features2D_old	*f2Ds;
+  int	ntrack;
+  int	start;
+  int	goal;
+} EllipseArc;
+
+typedef struct _ellipse_arc_list_
+{
+  int	n;
+  EllipseArc	*arc;
+} EllipseArcList;
+  
+
 //! 各２次元特徴
 typedef struct Feature2D_old
 {
@@ -41,6 +57,8 @@ typedef struct Feature2D_old
   double lineLength1;           //!< 双曲線の線分1の長さ
   double lineLength2;           //!< 双曲線の線分2の長さ
   double lineAngle;             //!< 双曲線の2線分のなす角度
+
+  EllipseArcList	arclist; // マージされた楕円特徴の点列集合
 } Feature2D_old;
 
 //! 輪郭情報
