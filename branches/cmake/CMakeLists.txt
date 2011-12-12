@@ -8,6 +8,8 @@ set (OpenVGR_VERSION "${OpenVGR_VERSION_MAJOR}.${OpenVGR_VERSION_MINOR}.${OpenVG
 
 message (STATUS "Package: OpenVGR-${OpenVGR_VERSION}")
 
+option (USE_OpenMP "enable OpenMP feature." OFF)
+
 include (FindPkgConfig)
 
 macro (show_var_info)
@@ -121,6 +123,14 @@ endif (OpenCV_FOUND)
 pkg_check_modules (LIBDC1394 libdc1394-2)
 
 set (CMAKE_CXX_FLAGS "${CMAKE_CFLAGS}")
+
+# OpenMP
+if (USE_OpenMP)
+  find_package (OpenMP)
+
+  set (CMAKE_CFLAGS "${CMAKE_CFLAGS} ${OpenMP_C_FLAGS}")
+  set (CMAKE_CXXFLAGS "${CMAKE_CXXFLAGS} ${OpenMP_CXX_FLAGS}")
+endif (USE_OpenMP)
 
 #set (CMAKE_VERBOSE_MAKEFILE ON)
 
