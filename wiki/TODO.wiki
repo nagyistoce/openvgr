@@ -15,11 +15,14 @@
 === MultiDisp ===
 
 === Measure3D ===
+ * convert to the new API introduced in OpenCV 2.0+.
 
 === Recognition ===
 
 === RecognitionResultViewer ===
 
 === VGRModeler ===
+ * define a syntax to describe a complex model.
 
 === multicalib ===
+ * introduce a model selection for determining the number of distortion coefficients.
