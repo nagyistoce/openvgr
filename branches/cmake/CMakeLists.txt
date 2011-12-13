@@ -54,8 +54,7 @@ if (NOT OpenRTM_FOUND)
         set (${_varname})
 
       else (_rtm_config_failed)
-        string (REGEX REPLACE "(\r?\n)" " " _rtm_config_result ${_rtm_config_result})
-        string (REGEX REPLACE " +" ";" _rtm_config_result ${_rtm_config_result})
+        separate_arguments (_rtm_config_result UNIX_COMMAND ${_rtm_config_result})
 
         # filter by _regex
         if (NOT ${_regex} STREQUAL "")
