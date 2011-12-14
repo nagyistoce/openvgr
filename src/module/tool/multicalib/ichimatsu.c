@@ -60,7 +60,7 @@ static void s_convert_frame_to_iplimage (capture_frame_t *frame, IplImage *ipl);
 static checker_coord_t *s_detect_checker (IplImage *image, opt_t *opt);
 static void s_draw_checker (IplImage *image, checker_coord_t *cc, opt_t *opt);
 static void get_timestamp (char *str, size_t size);
-static int check_dir (opt_t *opt);
+static int check_dir (const char *dirname);
 
 int
 main (int argc, char **argv)
@@ -77,7 +77,7 @@ main (int argc, char **argv)
   /* check if data_dir is accessible */
   if (opt.data_dir[0] != '\0')
     {
-      if (check_dir (&opt) != 0)
+      if (check_dir (opt.data_dir) != 0)
         {
           fprintf (stderr, "warning: can't access to dir '%s'\n", opt.data_dir);
           opt.data_dir[0] = '\0'; /* clear the directory name */
@@ -260,7 +260,7 @@ parse_opt (int argc, char **argv, opt_t *opt)
       switch (ch)
         {
         case 'd':
-          strncpy (opt->data_dir, optarg, sizeof (char) * FILENAME_SIZE - 1);
+          strncpy (opt->data_dir, optarg, sizeof (char) * (FILENAME_SIZE - 1));
           opt->data_dir[FILENAME_SIZE - 1] = '\0';
           break;
 
@@ -900,25 +900,25 @@ get_timestamp (char *str, size_t size)
 }
 
 static int
-check_dir (opt_t *opt)
+check_dir (const char *dirname)
 {
   struct stat buf;
 
-  if (opt->data_dir[0] == '\0')
+  if (dirname == NULL || dirname[0] == '\0')
     {
       return -1;
     }
 
-  if (stat (opt->data_dir, &buf) == 0)
+  if (stat (dirname, &buf) == 0)
     {
       return (S_ISDIR (buf.st_mode)) ? 0 : -1;
     }
 
   /* the path is not exist, so create it */
-  if (mkdir (opt->data_dir, 0755) == 0)
+  if (mkdir (dirname, 0755) == 0)
     {
       /* check again if the directory is accessible */
-      if (stat (opt->data_dir, &buf) == 0)
+      if (stat (dirname, &buf) == 0)
         {
           return (S_ISDIR (buf.st_mode)) ? 0 : -1;
         }
