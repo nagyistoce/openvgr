@@ -17,7 +17,7 @@ if (NOT CMAKE_BUILD_TYPE)
 endif (NOT CMAKE_BUILD_TYPE)
 
 # set default options for C/C++
-set (CMAKE_C_FLAGS_RELEASE "-O3 -DNDEBUG -march=native"
+set (CMAKE_C_FLAGS_RELEASE "-O3 -Wall -DNDEBUG -march=native"
   CACHE STRING "Flags used by the compiler during release builds" FORCE)
 set (CMAKE_CXX_FLAGS_RELEASE ${CMAKE_C_FLAGS_RELEASE}
   CACHE STRING "Flags used by the compiler during release builds" FORCE)
