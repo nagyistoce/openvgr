@@ -44,6 +44,7 @@ typedef struct tag_opt
   method_t method;
   int ieee1394b_mode;
 
+  char setting_file[FILENAME_SIZE];
   char data_dir[FILENAME_SIZE];
 
   FILE *fp;
@@ -60,6 +61,7 @@ static void s_convert_frame_to_iplimage (capture_frame_t *frame, IplImage *ipl);
 static checker_coord_t *s_detect_checker (IplImage *image, opt_t *opt);
 static void s_draw_checker (IplImage *image, checker_coord_t *cc, opt_t *opt);
 static void get_timestamp (char *str, size_t size);
+static int check_file (const char *filename);
 static int check_dir (const char *dirname);
 
 int
@@ -70,6 +72,7 @@ main (int argc, char **argv)
   int status;
 
   opt_t opt;
+  const char *setting_file = "ieee1394board.0";
 
   /* parse options */
   parse_opt (argc, argv, &opt);
@@ -95,7 +98,18 @@ main (int argc, char **argv)
   cap.prefer_bmode = opt.ieee1394b_mode; /* use 1394b mode if the cameras support it */
   cap.drop_frames = 1; /* enable dropping frames */
 
-  status = capture_setup (&cap, "ieee1394board.0");
+  if (opt.setting_file[0] != '\0')
+    {
+      if (check_file (opt.setting_file) == 0)
+        {
+          setting_file = opt.setting_file;
+        }
+      else
+        {
+          fprintf (stderr, "warning: can't access to the setting file '%s', fall back to '%s'.\n", opt.setting_file, setting_file);
+        }
+    }
+  status = capture_setup (&cap, setting_file);
   if (status != CAPTURE_SUCCESS)
     {
       fprintf (stderr, "error in capture_setup()\n");
@@ -137,12 +151,12 @@ main (int argc, char **argv)
 static void
 show_help (const char *prog_name)
 {
-  printf ("usage: %s [-o <filename>] [-s <size>] [-g <row>x<col>] [-d <dirname>] [-l]\n", prog_name);
+  printf ("usage: %s [-o <filename>] [-s <size>] [-g <row>x<col>] [-f <filename>] [-d <dirname>] [-l]\n", prog_name);
 
   printf ("\n");
 
   printf ("-o <filename> :\t");
-  printf ("file name of output file\n");
+  printf ("file name of an output file\n");
 
   printf ("\n");
 
@@ -153,6 +167,9 @@ show_help (const char *prog_name)
   printf ("nunber of points in each row/col (default: 8x8)\n");
 
   printf ("\n");
+
+  printf ("-f <filename> :\t");
+  printf ("file name of a camera setting (default: ieee1394board.0)\n");
 
   printf ("-d <dirname>  :\t");
   printf ("directory name where debug info will be stored (default: none)\n");
@@ -242,7 +259,7 @@ get_grid (const char *str, int *row, int *col)
 static void
 parse_opt (int argc, char **argv, opt_t *opt)
 {
-  const static char optstr[] = "d:s:g:lm:o:w:h";
+  const static char optstr[] = "f:d:s:g:lm:o:w:h";
   char ch;
 
   opt->pattern_col  =  8;
@@ -252,6 +269,7 @@ parse_opt (int argc, char **argv, opt_t *opt)
   opt->method = METHOD_OPENCV;
 
   opt->ieee1394b_mode = 1;
+  opt->setting_file[0] = '\0';
   opt->data_dir[0] = '\0';
   opt->fp = stdout;
 
@@ -259,6 +277,11 @@ parse_opt (int argc, char **argv, opt_t *opt)
     {
       switch (ch)
         {
+        case 'f':
+          strncpy (opt->setting_file, optarg, sizeof (char) * (FILENAME_SIZE - 1));
+          opt->setting_file[FILENAME_SIZE - 1] = '\0';
+          break;
+
         case 'd':
           strncpy (opt->data_dir, optarg, sizeof (char) * (FILENAME_SIZE - 1));
           opt->data_dir[FILENAME_SIZE - 1] = '\0';
@@ -897,6 +920,24 @@ get_timestamp (char *str, size_t size)
       strncpy (str, "unknown", size - 1);
       str[sizeof (str) - 1] = '\0';
     }
+}
+
+static int
+check_file (const char *filename)
+{
+  struct stat buf;
+
+  if (filename == NULL || filename[0] == '\0')
+    {
+      return -1;
+    }
+
+  if (stat (filename, &buf) == 0)
+    {
+      return (S_ISREG (buf.st_mode)) ? 0 : -1;
+    }
+
+  return -1;
 }
 
 static int
