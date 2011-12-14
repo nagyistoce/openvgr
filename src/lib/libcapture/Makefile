@@ -9,7 +9,7 @@
 
 
 CC = gcc
-CFLAGS = -O3 -march=native -Wall -pipe -fPIC
+CFLAGS = -O3 -march=native -Wall -pipe
 
 TARGETS = libcapture.a
 

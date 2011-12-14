@@ -4,6 +4,33 @@
  Copyright (c) 2011 AIST  All Rights Reserved.
  Eclipse Public License v1.0 (http://www.eclipse.org/legal/epl-v10.html)
 */
+/*
+  int disparity_type	int
+
+  CvStereoBMState:
+    // pre-filtering (normalization of input images)
+    int preFilterType; // =CV_STEREO_BM_NORMALIZED_RESPONSE now
+    int preFilterSize; // averaging window size: ~5x5..21x21
+    int preFilterCap; // the output of pre-filtering is clipped by [-preFilterCap,preFilterCap]
+
+    // correspondence using Sum of Absolute Difference (SAD)
+    int SADWindowSize; // ~5x5..21x21
+    int minDisparity;  // minimum disparity (can be negative)
+    int numberOfDisparities; // maximum disparity - minimum disparity (> 0)
+
+    // post-filtering
+    int textureThreshold;  // the disparity is only computed for pixels
+                           // with textured enough neighborhood
+    int uniquenessRatio;   // accept the computed disparity d* only if
+                           // SAD(d) >= SAD(d*)*(1 + uniquenessRatio/100.)
+                           // for any d != d*+/-1 within the search range.
+    int speckleWindowSize; // disparity variation window
+    int speckleRange; // acceptable range of variation in window
+
+    int trySmallerWindows; // if 1, the results may be more accurate,
+                           // at the expense of slower processing 
+
+ */
 
 #include <stdio.h>
 

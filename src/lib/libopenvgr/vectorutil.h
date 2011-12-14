@@ -33,9 +33,6 @@ double getDistanceV2(V2 in1, V2 in2);          // ２点間の距離
 // ベクトルのなす角（ラジアン）
 double getAngle2D(double vec1[2], double vec2[2]);
 
-// 2x2の実対称行列の固有値と固有ベクトル計算
-int eigenM22(double e[2], double ev[2][2], double m[2][2], const double rankDiag);
-
 // ３次元ベクトル計算
 void copyV3(V3 in, V3 out);                     // コピー
 void addV3(V3 in1, V3 in2, V3 out);             // 加算

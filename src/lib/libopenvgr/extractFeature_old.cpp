@@ -18,14 +18,6 @@
 
 #include "ellipseIW.h"
 
-// Feature_List 楕円特徴を点数でソートするための構造体
-typedef struct _feature_list_
-{
-  Feature2D_old	*pf2D;
-  int	np;
-} Feature_List;
-
-
 // ２次元特徴データのメモリ確保と初期化
 static Features2D_old*
 constructFeatures()
@@ -49,24 +41,15 @@ constructFeatures()
 void
 destructFeatures(Features2D_old* features)
 {
-  int i;
-
   if (features != NULL)
     {
       if (features->feature != NULL)
         {
-	  for (i = 0; i < features->nFeature; i++)
-	    {
-	      if(features->feature[i].arclist.arc)
-		{
-		  free(features->feature[i].arclist.arc);
-		  features->feature[i].arclist.arc = NULL;
-		}
-	    }
           free(features->feature);
         }
       if (features->track != NULL)
         {
+          int i;
           for (i = 0; i < features->nTrack; i++)
             {
               if (features->track[i].Point != NULL && features->track[i].nPoint > 0)
@@ -86,7 +69,7 @@ clearFeatures2Dpointer(Features2D_old** features)
 {
   if (features)
     {
-      destructFeatures(*features);
+      destructFeatures( *features );
       *features = NULL;
     }
 }
@@ -150,63 +133,8 @@ addFeature(Features2D_old* features, Feature2D_old* feature)
     }
 
   memcpy(&features->feature[features->nFeature], feature, sizeof(Feature2D_old));
-
-  if (feature->arclist.n > 0)
-    {
-      int	iarc;
-
-      features->feature[features->nFeature].arclist.arc
-	= (EllipseArc *)calloc(feature->arclist.n, sizeof(EllipseArc));
-      if (features->feature[features->nFeature].arclist.arc == NULL)
-	{
-	  return -1;
-	}
-      for (iarc = 0; iarc < feature->arclist.n; iarc++)
-	{
-	  features->feature[features->nFeature].arclist.arc[iarc]
-	    = feature->arclist.arc[iarc];
-	}
-    }
-
   ++(features->nFeature);
   return 1;
-}
-
-
-// arclist の構築
-// メモリ確保に失敗したときに -1 を返す　正常は０
-static int
-setup_ellipse_arclist(Features2D_old	*f2Ds)
-{
-  int	iFeature;
-  Feature2D_old *f2D;
-
-  f2D = f2Ds->feature;
-  for(iFeature = 0; iFeature < f2Ds->nFeature; iFeature++, f2D++)
-    {
-      f2D->arclist.n = 0;
-      f2D->arclist.arc = NULL;
-    }
-      
-  f2D = f2Ds->feature;
-  for(iFeature = 0; iFeature < f2Ds->nFeature; iFeature++, f2D++)
-    {
-      if(f2D->type == ConicType_Ellipse)
-	{
-	  f2D->arclist.n = 1;
-	  f2D->arclist.arc = (EllipseArc *)calloc(1, sizeof(EllipseArc));
-	  if(f2D->arclist.arc == NULL)
-	    {
-	      return -1;
-	    }
-	  f2D->arclist.arc[0].f2Ds = f2Ds;
-	  f2D->arclist.arc[0].ntrack = f2D->nTrack;
-	  f2D->arclist.arc[0].start = f2D->start;
-	  f2D->arclist.arc[0].goal = f2D->end;
-	}
-    }
-
-  return 0;
 }
 
 // 双曲線の中心とデータ点の最短距離
@@ -528,7 +456,7 @@ overlapFeatures(int* overlap, Features2D_old* features,
         }
     }
   // それ以外＝楕円の場合は精度優先
-  if ((feature2->type == ConicType_Ellipse) &&
+  if ((feature2->type == ConicType_Ellipse) && 
       (feature->type == ConicType_Ellipse))
     {
       if (len / (double) feature->nPoints > paramF2D.overlapRatioCircle)
@@ -629,7 +557,7 @@ memorizeFeature(Feature2D_old* feature, double error,
 
       feature->lineAngle = getAngle2D(vec1, vec2);
       feature->lineLength1 = sqrt(vec1[0] * vec1[0] + vec1[1] * vec1[1]);
-      feature->lineLength2 = sqrt(vec2[0] * vec2[0] + vec2[1] * vec2[1]);
+      feature->lineLength2 = sqrt(vec2[0] * vec2[0] + vec2[1] * vec2[1]);      
     }
 
   return;
@@ -646,7 +574,7 @@ compareAndAddFeature(Features2D_old* features, Feature2D_old* feature,
     {
       if (overlap == -1)
         {
-          if (addFeature(features, feature) < 0)
+          if ( addFeature(features, feature) < 0 )
             {
               return -1;
             }
@@ -690,14 +618,14 @@ Line2Vertex(Features2D_old* lineFeatures, Features2D_old* features, Parameters p
 {
   const int nLineFeature = lineFeatures->nFeature;      // 直線特徴の数
   Feature2D_old feature;                                // 最後にあてはまった特徴を記録しておく
-  Feature2D_old* feature1;
+  Feature2D_old* feature1; 
   Feature2D_old* feature2;                              // 比較する直線特徴
   double startp1[2], endp1[2], startp2[2], endp2[2];
   double dist[4];                                       // 端点ペア間距離
   int nMinPair;                                         // 最小端点間距離のペア番号
   double dx, dy, dx2, dy2;                              // 距離計算の変数
   double lineAngle;                                     // 2直線のなす角度
-  double vec1[2], vec2[2];                              // 角度を計算するベクトル
+  double vec1[2], vec2[2];                              // 角度を計算するベクトル  
 
   ParametersFeature2D paramF2D = parameters.feature2D;
   double thr_minD = paramF2D.max_distance_end_points;   // 端点間距離の閾値
@@ -716,11 +644,6 @@ Line2Vertex(Features2D_old* lineFeatures, Features2D_old* features, Parameters p
         {                       // 念のため直線の特徴であることを確認する
           continue;
         }
-      // 無効な線分
-      if (feature1->error < 0.0)
-        {
-          continue;
-        }
       // 直線の長さによる閾値処理
       if (feature1->lineLength < thr_lineLength)
         {
@@ -736,10 +659,6 @@ Line2Vertex(Features2D_old* lineFeatures, Features2D_old* features, Parameters p
           feature2 = &lineFeatures->feature[j];
           if (feature2->type != ConicType_Line)
             {                   // 念のため直線の特徴であることを確認する
-              continue;
-            }
-          if (feature2->error < 0.0)
-            {
               continue;
             }
           if (feature2->lineLength < thr_lineLength)
@@ -877,7 +796,7 @@ Line2Vertex(Features2D_old* lineFeatures, Features2D_old* features, Parameters p
           feature.nTrack = -1;
 
           // 特徴を保存
-          if (addFeature(features, &feature) < 0)
+          if ( addFeature(features, &feature) < 0 )
             {
               return -1;
             }
@@ -948,8 +867,8 @@ searchLineFeatures(unsigned char* work, Features2D_old* features,
             {
               memorizeFeature(&feature, error, type, start, end,
                               coef, point, nPoint, nTrack);
-              if (compareAndAddFeature(features, &feature, sFeature,
-                                       nPoint, parameters) < 0)
+              if ( compareAndAddFeature(features, &feature, sFeature,
+                                        nPoint, parameters) < 0 )
                 {
                   return -1; // 特徴メモリ確保失敗
                 }
@@ -1328,7 +1247,7 @@ mergeFeatures(Features2D_old* dstFeatures, Features2D_old* srcFeatures)
   for (f = 0; f < srcFeatures->nFeature; f++)
     {
       feature = &srcFeatures->feature[f];
-      if (addFeature(dstFeatures, feature) < 0)
+      if ( addFeature(dstFeatures, feature) < 0 )
         {
           return -1; // メモリ確保失敗
         }
@@ -1338,7 +1257,7 @@ mergeFeatures(Features2D_old* dstFeatures, Features2D_old* srcFeatures)
 
 // 楕円検出結果から、中心の近い複数を使って、精度の高い楕円検出を行う
 static int
-Ellipse2Ellipse(Features2D_old* features, Features2D_old* ellipseFeatures,
+Ellipse2Ellipse(Features2D_old* features, Features2D_old* ellipseFeatures, 
                 Parameters parameters)
 {
   double sum[5][5];             // 当てはめのための係数総和行列
@@ -1816,7 +1735,7 @@ Ellipse2Ellipse2(Features2D_old* features,
                                    newFeature.center, newFeature.ev,
                                    &newFeature.axis[0], &newFeature.axis[1]);
                   // 中心が画像外の時は、エラー
-                  if (newFeature.center[0] < 0.0 ||
+                  if (newFeature.center[0] < 0.0 || 
                       newFeature.center[0] > (double) (colsize - 1) ||
                       newFeature.center[1] < 0.0 ||
                       newFeature.center[1] > (double) (rowsize - 1))
@@ -1827,7 +1746,7 @@ Ellipse2Ellipse2(Features2D_old* features,
                   if (newFeature.axis[0] > newFeature.axis[1])
                     {
                       if (newFeature.axis[0] > thr_max_length_ellipse_axisL ||
-                          newFeature.axis[0] < thr_min_length_ellipse_axisL ||
+                          newFeature.axis[0] < thr_min_length_ellipse_axisL || 
                           newFeature.axis[1] < thr_min_length_ellipse_axisS)
                         {
                           continue;
@@ -1899,7 +1818,7 @@ Ellipse2Ellipse2(Features2D_old* features,
       else
         {
           // ペアがなかったものは、そのまま追加する
-          //addFeature(newFeatures, &ellipseFeatures->feature[f1]);
+          //addFeature( newFeatures, &ellipseFeatures->feature[f1]);
         }
     }
 
@@ -2158,438 +2077,11 @@ copyTrackPoints(Features2D_old* dstFeatures, Features2D_old* srcFeatures,
   return 0;
 }
 
-// 端点が近い線分に印をつける
-void
-mark_similar_lines(Features2D_old* lineFeatures, const double tolerance)
-{
-  const int num = lineFeatures->nFeature;
-  int i, j;
-
-  for (i = 0; i < num - 1; ++i)
-    {
-      Feature2D_old* f_i = &lineFeatures->feature[i];
-      const double err_i = f_i->error;
-
-      if (f_i->error < 0.0  || f_i->type != ConicType_Line)
-        {
-          continue;
-        }
-
-      for (j = i + 1; j < num; ++j)
-        {
-          Feature2D_old* f_j = &lineFeatures->feature[j];
-          double* is[2] = {&f_i->startSPoint[0], &f_i->startSPoint[1]};
-          double* ie[2] = {&f_i->endSPoint[0],   &f_i->endSPoint[1]};
-          double* js[2] = {&f_j->startSPoint[0], &f_j->startSPoint[1]};
-          double* je[2] = {&f_j->endSPoint[0],   &f_j->endSPoint[1]};
-          double distance[2][2];
-          bool is_similar = false;
-
-          if (f_j->error < 0.0  || f_j->type != ConicType_Line)
-            {
-              continue;
-            }
-
-          // 各端点の組み合わせの距離
-          distance[0][0] = hypot(*is[0] - *js[0], *is[1] - *js[1]);
-          distance[0][1] = hypot(*ie[0] - *je[0], *ie[1] - *je[1]);
-          distance[1][0] = hypot(*is[0] - *je[0], *is[1] - *je[1]);
-          distance[1][1] = hypot(*ie[0] - *js[0], *ie[1] - *js[1]);
-
-          if (distance[0][0] <= distance[1][0])
-            {
-              // 始点ー始点
-              is_similar = (distance[0][0] < tolerance && distance[0][1] < tolerance);
-            }
-          else
-            {
-              // 始点ー終点
-              is_similar = (distance[1][0] < tolerance && distance[1][1] < tolerance);
-            }
-
-          // 近い線分同士なら誤差が小さい・長い線分の方を残す
-          if (is_similar)
-            {
-              const double diff = f_j->error - err_i;
-
-              //printf("%d %d are similar\n", i, j);
-              if (diff > VISION_EPS)
-                {
-                  // f_iの誤差が小さい
-                  f_j->error = -1.0;
-                }
-              else if (fabs(diff) <= VISION_EPS)
-                {
-                  // 誤差がほぼ同じ線分のとき
-                  if (f_i->lineLength >= f_j->lineLength)
-                    {
-                      f_j->error = -1.0;
-                    }
-                  else
-                    {
-                      f_i->error = -1.0;
-                    }
-                }
-              else
-                {
-                  // f_jの誤差が小さい
-                  f_i->error = -1.0;
-                }
-            }
-        }
-    }
-}
-
-// 二つの楕円特徴が相互に誤差範囲にあるかどうかを確認
-#define CONIC_MATCH_OK	(0)
-#define CONIC_MATCH_NG	(1)
-
-static int
-check_conic_match(Feature2D_old	*f_p, // 点列用
-		  double	*coef, // 曲線用
- 		  ParamEllipseIW *paramEIW)
-{
-  double	maxError, meanError;
-  int	np;
-  double	sum;
-  EllipseArc	*parc;
-  int	iarc;
-  Features2D_old	*pf2ds;
-  int	nPoint;
-  int	*point;
-  int	start, goal;
-  int	i, ip;
-  double	e;
-
-  maxError = 0.0;
-  np = 0;
-  sum = 0.0;
-  parc = f_p->arclist.arc;
-  for (iarc = 0; iarc < f_p->arclist.n; iarc++, parc++)
-    {
-      pf2ds = parc->f2Ds;
-      nPoint = pf2ds->track[parc->ntrack].nPoint;
-      point = pf2ds->track[parc->ntrack].Point;
-      start = parc->start;
-      goal = parc->goal;
-      for (i = start; i <= goal; i++)
-	{
-	  ip = mod_nPoint(i, nPoint);
-          e = fabs(distanceAConic((double *)coef, &point[i*2]));
-	  sum += e;
-	  np++;
-          if (e > maxError)
-            {
-              maxError = e;
-            }
-	}
-    }
-  meanError = sum / (double)np;
-
-  switch (paramEIW->Condition)
-    {
-    case ELLIPSE_CONDITION_MEAN:
-      if (meanError > paramEIW->ThMeanError)
-	{
-	  return CONIC_MATCH_NG;
-	}
-      break;
-    case ELLIPSE_CONDITION_MAX:
-      if (maxError > paramEIW->ThMaxError)
-	{
-	  return CONIC_MATCH_NG;
-	}
-      break;
-    }
-
-  return CONIC_MATCH_OK;
-}
-
-
-static int
-check_conic_crossmatch(Feature2D_old	*fi,
-		       Feature2D_old	*fj,
-		       ParamEllipseIW	*paramEIW)
-{
-  // fi の楕円の点に fj の楕円曲線があてはまるかどうかのチェック
-  if (check_conic_match(fi, fj->coef, paramEIW) == CONIC_MATCH_NG)
-    {
-      return CONIC_MATCH_NG;
-    }
-  
-  // fj の楕円の点に fi の楕円曲線があてはまるかどうかのチェック
-  if (check_conic_match(fj, fi->coef, paramEIW) == CONIC_MATCH_NG)
-    {
-      return CONIC_MATCH_NG;
-    }
-
-  return CONIC_MATCH_OK;
-}
- 
-// 重複する楕円特徴を統合する
-
-static int
-comp_flist (const void *pa,
-	    const void *pb)
-{
-  Feature_List	*a, *b;
-
-  a = (Feature_List *)pa;
-  b = (Feature_List *)pb;
-
-  return (b->np - a->np);
-}
-
-static void
-debug_flist(Feature_List	*flist,
-	    int	nflist)
-{
-  Feature_List	*pfl;
-  int	i, j;
-  Feature2D_old	*ppf2D;
-  EllipseArc	*parc;
-  int	ntrack;
-  Track	*ptrack;
-  int	countE;
-  
-  pfl = flist;
-  countE=0;
-  for (i = 0; i < nflist; i++, pfl++)
-    {
-      ppf2D = pfl->pf2D;
-      printf("%d ", i);
-      if (ppf2D->type == ConicType_Ellipse)
-	{
-	  printf("E ");
-	  countE++;
-	}
-      else
-	{
-	  printf("U ");
-	}
-      printf ("%lg %lg %lg %lg %lg %lg %lg %lg ",
-	      ppf2D->center[0],
-	      ppf2D->center[1],
-	      ppf2D->ev[0][0],
-	      ppf2D->ev[0][1],
-	      ppf2D->ev[1][0],
-	      ppf2D->ev[1][1],
-	      ppf2D->axis[0],
-	      ppf2D->axis[1]);
-      printf ("%d ", ppf2D->arclist.n);
-      parc = ppf2D->arclist.arc;
-      for (j = 0; j < ppf2D->arclist.n; j++, parc++)
-	{
-	  ntrack = parc->ntrack;
-	  printf("%d ", ntrack);
-	  ptrack = &parc->f2Ds->track[ntrack];
-	  printf("%d %d %d %d %d %d ",
-		 mod_nPoint(parc->start, ptrack->nPoint),
-		 ptrack->Point[mod_nPoint(parc->start, ptrack->nPoint)*2],
-		 ptrack->Point[mod_nPoint(parc->start, ptrack->nPoint)*2+1],
-		 mod_nPoint(parc->goal, ptrack->nPoint),
-		 ptrack->Point[mod_nPoint(parc->goal, ptrack->nPoint)*2],
-		 ptrack->Point[mod_nPoint(parc->goal, ptrack->nPoint)*2+1]);
-	}
-      printf("\n");
-    }
-  printf("#E=%d U=%d\n", countE, nflist-countE);
-
-  return;
-}
-
-static int
-compress_ellipse(Features2D_old	*f2Ds,
-		 ParamEllipseIW	*paramEIW)
-{
-  int	n_ellipse;
-  Feature_List	*flist;
-  int	iFeature, jFeature, iArc;
-  EllipseArc	*parc;
-
-  // flist のセット
-  flist = (Feature_List *)calloc(f2Ds->nFeature, sizeof(Feature_List));
-  if(flist == NULL)
-    {
-      return -1;
-    }
-
-  for(iFeature = 0; iFeature < f2Ds->nFeature; iFeature++)
-    {
-      flist[iFeature].pf2D = &f2Ds->feature[iFeature];
-    }
-
-  // flist[*].np のセット
-  for(iFeature = 0; iFeature < f2Ds->nFeature; iFeature++){
-    flist[iFeature].np = 0;
-    if(flist[iFeature].pf2D->type == ConicType_Ellipse)
-      {
-	// ConicType_Ellipse でないものは np が0になる
-	parc = flist[iFeature].pf2D->arclist.arc;
-	for(iArc = 0; iArc < flist[iFeature].pf2D->arclist.n; iArc++, parc++)
-	  {
-	    flist[iFeature].np += (parc->goal - parc->start);
-	  }
-      }
-  }
-
-  // sort 上位に点数が多いものがくるように ConicType_Ellipse でないものは自動的に下位になる
-  qsort(flist, f2Ds->nFeature, sizeof(Feature_List), comp_flist);
-
-  // ConicType_Ellipse のカウント
-  n_ellipse = 0;
-  while(n_ellipse < f2Ds->nFeature &&
-	flist[n_ellipse].pf2D->type == ConicType_Ellipse)
-    {
-      n_ellipse++;
-    }
-
-  // 二重ループ上位のfeatureと下位のfeatureの点が互換であれば、下位のもののフラグを変更する
-  for(iFeature = 0; iFeature < n_ellipse; iFeature++)
-    {
-      if(flist[iFeature].pf2D->type == ConicType_Ellipse)
-	{
-	  // すでに書き換わっている可能性がある
-	  for(jFeature = iFeature+1; jFeature < n_ellipse; jFeature++)
-	    {
-	      if(flist[jFeature].pf2D->type == ConicType_Ellipse)
-		{
-		  // すでに書き換わっている可能性がある
-		  if(check_conic_crossmatch(flist[iFeature].pf2D,
-					    flist[jFeature].pf2D,
-					    paramEIW)
-		     == CONIC_MATCH_OK)
-		    {
-		      flist[jFeature].pf2D->type = ConicType_Unknown;
-		    }
-		}
-	    }
-	}
-    }
-
-  free(flist);
-
-  return 0;
-}
-
-// 同一のtrackに存在する楕円feature同士で完全に包含関係にあるものを探し、
-// 含まれてしまうfeatureをUnknownにする
-static void
-check_overlap_feature (Features2D_old	*features,
-		       int		feature_from)
-{
-  int	feature_to;
-  int	i_all;
-  Feature2D_old	*pfi, *pfj;
-  int	iFeature, jFeature;
-  int	len;
-  int	check_i;
-  int	nPoint;
-  int	lenj, leni;
-  Feature2D_old	*spf, *lpf;
-  int	slen, llen;
-  int	offset;
-  int	sstart, send;
-
-  if (features->nAlloc == 0)
-    {
-      return;
-    }
-
-  feature_to = features->nFeature;
-  nPoint = features->feature[feature_from].all;
-
-  // start を　0<=start<nPointになるように、goalを start+len-1にする
-  pfi = &features->feature[feature_from];
-  i_all = -1;
-  for (iFeature = feature_from; iFeature < feature_to && i_all == -1;
-       iFeature++, pfi++)
-    {
-      if (pfi->type == ConicType_Ellipse)
-	{
-	  len = pfi->end - pfi->start + 1;
-	  pfi->start = mod_nPoint(pfi->start, nPoint);
-	  pfi->end = pfi->start + len - 1;
-	  if (len == pfi->all)
-	    {
-	      i_all = iFeature;
-	    }
-	}
-    }
-
-  // 全点を使った楕円特徴がある場合、他の楕円をすべて Unknown に
-  if (i_all >= 0)
-    {
-      pfi = &features->feature[feature_from];
-      for (iFeature = feature_from; iFeature < feature_to;
-	   iFeature++, pfi++)
-	{
-	  if (pfi->type == ConicType_Ellipse && iFeature != i_all)
-	    {
-	      pfi->type = ConicType_Unknown;
-	    }
-	}
-      return;
-    }
-
-  // 各ペアについて包含関係にあるかどうかを調べ、含まれている方を Unknown に
-  pfi = &features->feature[feature_from];
-  for (iFeature = feature_from; iFeature < feature_to-1; iFeature++, pfi++)
-    {
-      check_i = 1;
-      if (pfi->type == ConicType_Ellipse)
-	{
-	  leni = pfi->end - pfi->start + 1;
-	  pfj = pfi+1;
-	  for (jFeature = iFeature+1; jFeature < feature_to && check_i;
-	       jFeature++, pfj++)
-	    {
-	      if (pfj->type == ConicType_Ellipse)
-		{
-		  // 長い方 lpf,llen, 短い方 spf,slen
-		  lenj = pfj->end - pfj->start + 1;
-		  if (leni > lenj)
-		    {
-		      spf = pfj;
-		      slen = lenj;
-		      lpf = pfi;
-		      llen = leni;
-		    }
-		  else
-		    {
-		      spf = pfi;
-		      slen = leni;
-		      lpf = pfj;
-		      llen = lenj;
-		    }
-		  // offset: lstart->0 にするための数字
-		  offset = nPoint - mod_nPoint(lpf->start, nPoint);
-		  sstart = mod_nPoint(spf->start+offset, nPoint);
-		  send = sstart + slen - 1;
-		  if (send < llen)
-		    // sstart < send < llen は自明
-		    {
-		      spf->type = ConicType_Unknown;
-		      if (spf == pfi)
-			{
-			  // iFeature とのペアはもう調べる必要がない
-			  check_i = 0;
-			}
-		    }
-		}
-	    }
-	}
-    }
-
-  return;
-}
-
 // 特徴点を取り出す
 Features2D_old*
-extractFeatures_old (unsigned char* edge,   // エッジ画像
-		     Parameters parameters, // 全パラメータ
-		     const int id,          // データを識別するためのインデックス
-		     Features3D model)      // モデルの３次元特徴データ
+extractFeatures_old(unsigned char* edge,   // エッジ画像
+                    Parameters parameters, // 全パラメータ
+                    Features3D model)      // モデルの３次元特徴データ
 {
   int colsize = parameters.colsize;
   int rowsize = parameters.rowsize;
@@ -2612,9 +2104,6 @@ extractFeatures_old (unsigned char* edge,   // エッジ画像
   Feature2D_old* thisFeature;
   Feature2D_old* tmpFeature;
 
-  int	orig_nFeature = -1;
-  int	feature_from;
-
   // 作業用の画像を作成する
   unsigned char* work = (unsigned char*) malloc((sizeof(unsigned char) * imgsize));
   if (lineFeatures == NULL || ellipseFeatures == NULL || work == NULL)
@@ -2633,10 +2122,10 @@ extractFeatures_old (unsigned char* edge,   // エッジ画像
     }
 
 #if 0
-  if (parameters.dbgimag)
+  if ( parameters.dbgimag )
     {
       // 輪郭点の保存
-      if (drawTrackPoints(features, parameters, id))
+      if ( drawTrackPoints( features, parameters ) )
         {
           // 画像メモリがとれなかった
           goto ending;
@@ -2660,18 +2149,11 @@ extractFeatures_old (unsigned char* edge,   // エッジ画像
           goto ending; // メモリ確保失敗
         }
     }
-
-  // それぞれの端点が近い線分に印をつける(error < 0.0)
-  if (parameters.feature2D.max_distance_similar_line >= 0.0)
-    {
-      mark_similar_lines(lineFeatures, parameters.feature2D.max_distance_similar_line);
-    }
-
   // 直線に当てはめられたエッジ情報を上書き保存する
   tmpFeature = lineFeatures->feature;
   for (f = 0; f < lineFeatures->nFeature; f++)
     {
-      if (tmpFeature[f].type != ConicType_Line || tmpFeature[f].error < 0.0)
+      if (tmpFeature[f].type != ConicType_Line)
         {
           continue;
         }
@@ -2706,10 +2188,10 @@ extractFeatures_old (unsigned char* edge,   // エッジ画像
         }
     }
 
-  if (parameters.dbgimag)
+  if ( parameters.dbgimag )
     {
       // 直線検出結果カラー表示・保存
-      if (drawDetectedLines(edge, lineFeatures, parameters, id))
+      if ( drawDetectedLines( edge, lineFeatures, parameters ) )
         {
           // 画像メモリがとれなかった
           goto ending;
@@ -2725,301 +2207,245 @@ extractFeatures_old (unsigned char* edge,   // エッジ画像
           goto ending; // メモリ確保失敗
         }
 
-      if (parameters.dbgimag)
+      if ( parameters.dbgimag )
         {
           // 頂点特徴抽出結果カラー表示・保存
-          if (drawDetectedVertices(features, parameters, id))
+          if ( drawDetectedVertices( features, parameters ) )
             {
               // 画像メモリがとれなかった
               goto ending;
             }
         }
     }
-
+  
   if (model.numOfCircles > 0 && !(no_search & NO_SEARCH_ELLIPSE))
     {
-      if (paramEIW->SwLineEllipse & ENABLE_ELLIPSE_WITH_LINE)
+      // 第2ループ：楕円、双曲線を検出し、featuresに保存
+      for (iTrack = 0; iTrack < features->nTrack; iTrack++)
+        {
+          //if (searchFeatures(work, features, iTrack, parameters) < 0)
+	  if(searchEllipseIW(features, iTrack, paramEIW) == SEARCH_FEATURES2_NG)
+            {
+              clearFeatures2Dpointer(&features);
+              goto ending; // メモリ確保失敗
+            }
+        }
+
+      // 楕円に当てはめられたエッジ情報を保存する
+      tmpFeature = features->feature;
+      for (f = 0; f < features->nFeature; f++)
+        {
+          if (tmpFeature[f].type != ConicType_Ellipse)
+            {
+              continue;
+            }
+          if (tmpFeature[f].nTrack >= 0)
+            {
+              pt = features->track[tmpFeature[f].nTrack].Point;
+              istart = tmpFeature[f].start;
+              iend = tmpFeature[f].end;
+              if (istart > iend)
+                {
+                  iend += tmpFeature[f].all;
+                }
+              for (i = istart; i < iend; i++)
+                {
+                  ii = ((i+tmpFeature[f].all) % tmpFeature[f].all) * 2;
+                  cx = pt[ii];
+                  cy = pt[ii + 1];
+                  if ((cx >= 0 && cx < colsize) && cy >= 0 && cy < rowsize)
+                    {
+                      n = cy * colsize + cx;
+                      if (edge[n] == 2)
+                        {       // 短い直線当てはめされたエッジのみ＝滑らかなエッジ
+                          edge[n] = 4;  // 楕円に当てはめられたエッジ
+                        }
+                    }
+                }
+            }
+        }
+
+      // 新マージ関数
+      //fprintf(stderr, "nFeature=%d nTrack=%d\n",
+      //      features->nFeature, features->nTrack);
+      //system("date");
+      if(merge_ellipse(features, paramEIW) == MERGE_ELLIPSE_NG)
 	{
-	  // 第2ループ：楕円、双曲線を検出し、featuresに保存
-	  for (iTrack = 0; iTrack < features->nTrack; iTrack++)
-	    {
-	      feature_from = features->nFeature;
-	      if(searchEllipseIW(features, iTrack, paramEIW)
-		 == SEARCH_FEATURES2_NG)
-		{
-		  clearFeatures2Dpointer(&features);
-		  goto ending; // メモリ確保失敗
-		}
-	      check_overlap_feature(features, feature_from);
-	    }
-
-	  // 楕円に当てはめられたエッジ情報を保存する
-	  tmpFeature = features->feature;
-	  for (f = 0; f < features->nFeature; f++)
-	    {
-	      if (tmpFeature[f].type != ConicType_Ellipse)
-		{
-		  continue;
-		}
-	      if (tmpFeature[f].nTrack >= 0)
-		{
-		  pt = features->track[tmpFeature[f].nTrack].Point;
-		  istart = tmpFeature[f].start;
-		  iend = tmpFeature[f].end;
-		  if (istart > iend)
-		    {
-		      iend += tmpFeature[f].all;
-		    }
-		  for (i = istart; i < iend; i++)
-		    {
-		      ii = ((i+tmpFeature[f].all) % tmpFeature[f].all) * 2;
-		      cx = pt[ii];
-		      cy = pt[ii + 1];
-		      if ((cx >= 0 && cx < colsize) && cy >= 0 && cy < rowsize)
-			{
-			  n = cy * colsize + cx;
-			  if (edge[n] == 2)
-			    {       // 短い直線当てはめされたエッジのみ＝滑らかなエッジ
-			      edge[n] = 4;  // 楕円に当てはめられたエッジ
-			    }
-			}
-		    }
-		}
-	    }
-
-	  // tracklist_0 の準備
-	  if(setup_ellipse_arclist(features) == -1)
-	    {
-	      clearFeatures2Dpointer(&features);
-	      goto ending; // メモリ確保失敗
-	    }
-
-	  // 新マージ関数
-	  //fprintf(stderr, "nFeature=%d nTrack=%d\n",
-	  //      features->nFeature, features->nTrack);
-	  //system("date");
-	  if(merge_ellipse(features, paramEIW)
-	     == MERGE_ELLIPSE_NG)
-	    {
-	      clearFeatures2Dpointer(&features);
-	      goto ending; // メモリ確保失敗
-	    }
-	  //fprintf(stderr, "nFeature=%d \n",
-	  //      features->nFeature);
-	  //system("date");
-
-	  // 半径が短い楕円を排除 （typeにConicType_Unknown をセットする）
-	  tmpFeature = features->feature;
-	  for (f = 0; f < features->nFeature; f++)
-	    {
-	      if (tmpFeature[f].type == ConicType_Ellipse)
-		{
-		  if (tmpFeature[f].axis[0] < paramEIW->MinShortRadPost ||
-		      tmpFeature[f].axis[1] < paramEIW->MinShortRadPost)
-		    {
-		      tmpFeature[f].type = ConicType_Unknown;
-		    }
-		}
-	    }
-
-	  if (paramEIW->SwOldMergeFunc == ENABLE_OLD_MERGE_FUNC)
-	    {
-	      // 楕円検出結果から、複数の楕円のデータを使って、楕円当てはめを行い、マージする
-	      if (Ellipse2Ellipse(features, features, parameters) < 0)
-		{
-		  clearFeatures2Dpointer(&features);
-		  goto ending; // メモリ確保失敗
-		}
-	      
-	      // 楕円検出結果から、２つの楕円のデータを使って、楕円当てはめを行い、マージする
-	      if (Ellipse2Ellipse2(features, features, parameters) < 0)
-		{
-		  clearFeatures2Dpointer(&features);
-		  goto ending; // メモリ確保失敗
-		}
-	    }
+          clearFeatures2Dpointer(&features);
+          goto ending; // メモリ確保失敗
 	}
+      //fprintf(stderr, "nFeature=%d \n",
+      //      features->nFeature);
+      //system("date");
 
-      if (paramEIW->SwLineEllipse & ENABLE_ELLIPSE_WITHOUT_LINE)
-	{
-	  // 長い直線の除去後に楕円のみ検出する
-	  // 作業画像から長い直線を除去する
-	  deleteLongLines(work, lineFeatures, parameters);
-
-	  // 長い直線除去後の作業画像を再トレースし、楕円を検出する
-	  if (extractTrackPoints(ellipseFeatures, work, parameters) == -1)
-	    {
-	      clearFeatures2Dpointer(&features);
-	      goto ending; // メモリ確保失敗
-	    }
-
-	  // 第3ループ：楕円を検出し、ellipseFeaturesに保存
-	  for (iTrack = 0; iTrack < ellipseFeatures->nTrack; iTrack++)
-	    {
-	      feature_from = features->nFeature;
-	      if(searchEllipseIW(ellipseFeatures, iTrack, paramEIW)
-		 == SEARCH_FEATURES2_NG)
-		{
-		  clearFeatures2Dpointer(&features);
-		  goto ending; // メモリ確保失敗
-		}
-	      check_overlap_feature(features, feature_from);
-	    }
-
-	  // tracklist_1 の準備
-	  if(setup_ellipse_arclist(ellipseFeatures) == -1)
-	    {
-	      clearFeatures2Dpointer(&features);
-	      goto ending; // メモリ確保失敗
-	    }
-
-	  // 新マージ関数
-	  //fprintf(stderr, "nFeature=%d nTrack=%d\n",
-	  //      ellipseFeatures->nFeature, ellipseFeatures->nTrack);
-	  //system("date");
-	  if(merge_ellipse(ellipseFeatures, paramEIW)
-	     == MERGE_ELLIPSE_NG)
-	    {
-	      clearFeatures2Dpointer(&ellipseFeatures);
-	      goto ending; // メモリ確保失敗
-	    }
-	  //fprintf(stderr, "nFeature=%d \n",
-	  //      ellipseFeatures->nFeature);
-	  //system("date");
-
-	  // 半径が短い楕円を排除 （typeにConicType_Unknown をセットする）
-	  tmpFeature = ellipseFeatures->feature;
-	  for (f = 0; f < ellipseFeatures->nFeature; f++)
-	    {
-	      if (tmpFeature[f].type == ConicType_Ellipse)
-		{
-		  if (tmpFeature[f].axis[0] < paramEIW->MinShortRadPost ||
-		      tmpFeature[f].axis[1] < paramEIW->MinShortRadPost)
-		    {
-		      tmpFeature[f].type = ConicType_Unknown;
-		    }
-		}
-	    }
-
-	  // 楕円に当てはめられたエッジ情報を上書き保存する
-	  tmpFeature = ellipseFeatures->feature;
-	  for (f = 0; f < ellipseFeatures->nFeature; f++)
-	    {
-	      if (tmpFeature[f].type != ConicType_Ellipse)
-		{
-		  continue;
-		}
-	      if (tmpFeature[f].nTrack >= 0)
-		{
-		  pt = ellipseFeatures->track[tmpFeature[f].nTrack].Point;
-		  istart = tmpFeature[f].start;
-		  iend = tmpFeature[f].end;
-		  if (istart > iend)
-		    {
-		      iend += tmpFeature[f].all;
-		    }
-		  for (i = istart; i < iend; i++)
-		    {
-		      ii = ((i+tmpFeature[f].all) % tmpFeature[f].all) * 2;
-		      cx = pt[ii];
-		      cy = pt[ii + 1];
-		      if ((cx >= 0 && cx < colsize) && cy >= 0 && cy < rowsize)
-			{
-			  n = cy * colsize + cx;
-			  if (edge[n] == 2)
-			    {       // 短い直線当てはめされたエッジのみ＝滑らかなエッジ
-			      edge[n] = 4;  // 楕円に当てはめられたエッジ
-			    }
-			}
-		    }
-		}
-	    }
-	  /*
-	  // 楕円結果の重複除去
-	  for (f = 0; f < ellipseFeatures->nFeature; f++)
-	    {
-	      thisFeature = &ellipseFeatures->feature[f];
-	      if (thisFeature->type != ConicType_Ellipse)
-		{
-		  continue;
-		}
-	      double thr_coefdiff = 1.0E-3;
-	      int iSame = 0, i, ii;
-	      for (i = f + 1; i < ellipseFeatures->nFeature; i++)
-		{
-		  tmpFeature = &ellipseFeatures->feature[i];
-		  if (tmpFeature->type != ConicType_Ellipse)
-		    {
-		      continue;
-		    }
-		  for (ii = 0; ii < 6; ii++)
-		    {
-		      if (fabs(tmpFeature->coef[ii] - thisFeature->coef[ii])
-			  > thr_coefdiff)
-			{
-			  break;
-			}
-		    }
-		  if (ii >= 6)
-		    {
-		      iSame = 1;
-		      break;
-		    }
-		}
-	      if (iSame)
-		{
-		  tmpFeature->type = ConicType_Unknown;
-		}
-	    }
-	  */
-
-	  // 楕円特徴をマージする
-	  orig_nFeature = features->nFeature;
-	  if (mergeFeatures(features, ellipseFeatures) < 0)
-	    {
-	      clearFeatures2Dpointer(&features);
-	      goto ending; // メモリ確保失敗
-	    }
-
-	  if (paramEIW->SwOldMergeFunc == ENABLE_OLD_MERGE_FUNC)
-	    {
-	      // 楕円検出結果から、複数の楕円のデータを使って、楕円当てはめを行い、マージする
-	      if (Ellipse2Ellipse(features, ellipseFeatures, parameters) < 0)
-		{
-		  clearFeatures2Dpointer(&features);
-		  goto ending; // メモリ確保失敗
-		}
-
-	      // 楕円検出結果から、２つの楕円のデータを使って、楕円当てはめを行い、マージする
-	      if (Ellipse2Ellipse2(features, ellipseFeatures, parameters) < 0)
-		{
-		  clearFeatures2Dpointer(&features);
-		  goto ending; // メモリ確保失敗
-		}
-	    }
-	}
-
-      // 楕円検出結果から使用点数の少ない楕円を排除
+      // 半径が短い楕円を排除 （typeにConicType_Unknown をセットする）
+      tmpFeature = features->feature;
       for (f = 0; f < features->nFeature; f++)
 	{
-          thisFeature = &features->feature[f];
-	  if (thisFeature->type == ConicType_Ellipse)
-	    {
-	      if(thisFeature->end - thisFeature->start + 1
-		 < paramEIW->PostMinLength)
+          if (tmpFeature[f].type == ConicType_Ellipse)
+            {
+	      if (tmpFeature[f].axis[0] < paramEIW->MinShortRadPost ||
+		  tmpFeature[f].axis[1] < paramEIW->MinShortRadPost)
 		{
-		  thisFeature->type = ConicType_Unknown;
+		  tmpFeature[f].type = ConicType_Unknown;
 		}
 	    }
 	}
 
-      // 楕円結果の重複除去
-      if(compress_ellipse(features, paramEIW) == -1)
+      // 楕円検出結果から、複数の楕円のデータを使って、楕円当てはめを行い、マージする
+      if (Ellipse2Ellipse(features, features, parameters) < 0)
+        {
+          clearFeatures2Dpointer(&features);
+          goto ending; // メモリ確保失敗
+        }
+
+      // 楕円検出結果から、２つの楕円のデータを使って、楕円当てはめを行い、マージする
+      if (Ellipse2Ellipse2(features, features, parameters) < 0)
+        {
+          clearFeatures2Dpointer(&features);
+          goto ending; // メモリ確保失敗
+        }
+
+      // 長い直線の除去後に楕円のみ検出する
+      // 作業画像から長い直線を除去する
+      deleteLongLines(work, lineFeatures, parameters);
+
+      // 長い直線除去後の作業画像を再トレースし、楕円を検出する
+      if (extractTrackPoints(ellipseFeatures, work, parameters) == -1)
+        {
+          clearFeatures2Dpointer(&features);
+          goto ending; // メモリ確保失敗
+        }
+
+      // 第3ループ：楕円を検出し、ellipseFeaturesに保存
+      for (iTrack = 0; iTrack < ellipseFeatures->nTrack; iTrack++)
+        {
+          //if (searchFeatures(work, ellipseFeatures, iTrack, parameters) < 0 )
+	  if(searchEllipseIW(ellipseFeatures, iTrack, paramEIW) == SEARCH_FEATURES2_NG)
+            {
+              clearFeatures2Dpointer(&features);
+              goto ending; // メモリ確保失敗
+            }
+        }
+
+      // 新マージ関数
+      //fprintf(stderr, "nFeature=%d nTrack=%d\n",
+      //      ellipseFeatures->nFeature, ellipseFeatures->nTrack);
+      //system("date");
+      if(merge_ellipse(ellipseFeatures, paramEIW) == MERGE_ELLIPSE_NG)
 	{
-	  clearFeatures2Dpointer(&features);
-	  goto ending; // メモリ確保失敗
+          clearFeatures2Dpointer(&ellipseFeatures);
+          goto ending; // メモリ確保失敗
 	}
-      /*
+      //fprintf(stderr, "nFeature=%d \n",
+      //      ellipseFeatures->nFeature);
+      //system("date");
+
+      // 半径が短い楕円を排除 （typeにConicType_Unknown をセットする）
+      tmpFeature = ellipseFeatures->feature;
+      for (f = 0; f < ellipseFeatures->nFeature; f++)
+	{
+          if (tmpFeature[f].type == ConicType_Ellipse)
+            {
+	      if (tmpFeature[f].axis[0] < paramEIW->MinShortRadPost ||
+		  tmpFeature[f].axis[1] < paramEIW->MinShortRadPost)
+		{
+		  tmpFeature[f].type = ConicType_Unknown;
+		}
+	    }
+	}
+
+      // 楕円に当てはめられたエッジ情報を上書き保存する
+      tmpFeature = ellipseFeatures->feature;
+      for (f = 0; f < ellipseFeatures->nFeature; f++)
+        {
+          if (tmpFeature[f].type != ConicType_Ellipse)
+            {
+              continue;
+            }
+          if (tmpFeature[f].nTrack >= 0)
+            {
+              pt = ellipseFeatures->track[tmpFeature[f].nTrack].Point;
+              istart = tmpFeature[f].start;
+              iend = tmpFeature[f].end;
+              if (istart > iend)
+                {
+                  iend += tmpFeature[f].all;
+                }
+              for (i = istart; i < iend; i++)
+                {
+                  ii = ((i+tmpFeature[f].all) % tmpFeature[f].all) * 2;
+                  cx = pt[ii];
+                  cy = pt[ii + 1];
+                  if ((cx >= 0 && cx < colsize) && cy >= 0 && cy < rowsize)
+                    {
+                      n = cy * colsize + cx;
+                      if (edge[n] == 2)
+                        {       // 短い直線当てはめされたエッジのみ＝滑らかなエッジ
+                          edge[n] = 4;  // 楕円に当てはめられたエッジ
+                        }
+                    }
+                }
+            }
+        }
+      // 楕円結果の重複除去
+      for (f = 0; f < ellipseFeatures->nFeature; f++)
+        {
+          thisFeature = &ellipseFeatures->feature[f];
+          if (thisFeature->type != ConicType_Ellipse)
+            {
+              continue;
+            }
+          double thr_coefdiff = 1.0E-3;
+          int iSame = 0, i, ii;
+          for (i = f + 1; i < ellipseFeatures->nFeature; i++)
+            {
+              tmpFeature = &ellipseFeatures->feature[i];
+              if (tmpFeature->type != ConicType_Ellipse)
+                {
+                  continue;
+                }
+              for (ii = 0; ii < 6; ii++)
+                {
+                  if (fabs(tmpFeature->coef[ii] - thisFeature->coef[ii]) > thr_coefdiff)
+                    {
+                      break;
+                    }
+                }
+              if (ii >= 6)
+                {
+                  iSame = 1;
+                  break;
+                }
+            }
+          if (iSame)
+            {
+              tmpFeature->type = ConicType_Unknown;
+            }
+        }
+
+      // 楕円特徴をマージする
+      if (mergeFeatures(features, ellipseFeatures) < 0)
+        {
+          clearFeatures2Dpointer(&features);
+          goto ending; // メモリ確保失敗
+        }
+
+      // 楕円検出結果から、複数の楕円のデータを使って、楕円当てはめを行い、マージする
+      if (Ellipse2Ellipse(features, ellipseFeatures, parameters) < 0)
+        {
+          clearFeatures2Dpointer(&features);
+          goto ending; // メモリ確保失敗
+        }
+
+      // 楕円検出結果から、２つの楕円のデータを使って、楕円当てはめを行い、マージする
+      if (Ellipse2Ellipse2(features, ellipseFeatures, parameters) < 0)
+        {
+          clearFeatures2Dpointer(&features);
+          goto ending; // メモリ確保失敗
+        }
+
+      // 楕円結果の重複除去
       for (f = 0; f < features->nFeature; f++)
         {
           thisFeature = &features->feature[f];
@@ -3038,8 +2464,7 @@ extractFeatures_old (unsigned char* edge,   // エッジ画像
                 }
               for (ii = 0; ii < 6; ii++)
                 {
-                  if (fabs(tmpFeature->coef[ii] - thisFeature->coef[ii])
-		      > thr_coefdiff)
+                  if (fabs(tmpFeature->coef[ii] - thisFeature->coef[ii]) > thr_coefdiff)
                     {
                       break;
                     }
@@ -3055,17 +2480,16 @@ extractFeatures_old (unsigned char* edge,   // エッジ画像
               tmpFeature->type = ConicType_Unknown;
             }
         }
-      */
 
-      if (parameters.dbgimag)
+      if ( parameters.dbgimag )
         {
           // 楕円検出結果カラー表示・保存
-          if (drawDetectedEllipses(edge, features, parameters, id))
+          if ( drawDetectedEllipses( edge, features, parameters ) )
             {
               // 画像メモリがとれなかった
               goto ending;
             }
-        }
+        }  
 
     }
 
@@ -3086,13 +2510,12 @@ Features2D_old*
 ImageToFeature2D_old(unsigned char* src,    // 原画像
                      unsigned char* edge,   // エッジ画像
                      Parameters parameters, // 全パラメータ
-                     const int id,          // データを識別するためのインデックス
                      Features3D model)      // モデルの３次元特徴データ（２次元処理の切り替え用）
 {
-  if (parameters.dbgimag)
+  if ( parameters.dbgimag )
     {
       // 入力確認画像の出力
-      if (drawInputImage(src, parameters, id))
+      if ( drawInputImage( src, parameters ) )
         {
           // 画像メモリがとれなかった
           return NULL;
@@ -3100,16 +2523,16 @@ ImageToFeature2D_old(unsigned char* src,    // 原画像
     }
 
   // エッジ点を抽出する
-  if (extractEdge(edge, src, EEsearchedLarge, parameters))
+  if ( extractEdge(edge, src, EEsearchedLarge, parameters) )
     {
       // 画像メモリがとれなかった
       return NULL;
     }
 
-  if (parameters.dbgimag)
+  if ( parameters.dbgimag )
     {
       // エッジ確認画像の出力
-      if (drawEdgeImage(edge, parameters, id))
+      if ( drawEdgeImage( edge, parameters ) )
         {
           // 画像メモリがとれなかった
           return NULL;
@@ -3117,7 +2540,7 @@ ImageToFeature2D_old(unsigned char* src,    // 原画像
     }
 
   // 特徴点を抽出する
-  Features2D_old* features = extractFeatures_old(edge, parameters, id, model);
+  Features2D_old* features = extractFeatures_old(edge, parameters, model);
 
   return features;
 }

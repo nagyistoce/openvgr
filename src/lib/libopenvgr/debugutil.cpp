@@ -60,16 +60,12 @@ createDebugImage(const Parameters& parameters, bool color=false, const uchar* ed
   return image;
 }
 
-static void
-outDebugImage(IplImage* image, const char* name, const int id, int display)
+static void 
+outDebugImage(IplImage* image, const char* name, int id, int display)
 {
   char title[PATH_MAX+1] = {0};
   const int extlen = 5; // 拡張子分の余裕
   snprintf(title, sizeof(title)-extlen, "%s%d", name, id);
-
-#ifdef _OPENMP
-#pragma omp critical
-#endif
   if (display)
     {
       cvNamedWindow(title, 1);
@@ -77,7 +73,6 @@ outDebugImage(IplImage* image, const char* name, const int id, int display)
       cvWaitKey(-1);
       cvDestroyWindow(title);
     }
-
   if (image->nChannels == 1)
     {
       strcat(title, ".pgm");
@@ -91,8 +86,9 @@ outDebugImage(IplImage* image, const char* name, const int id, int display)
 }
 
 int
-drawInputImage(const uchar* src, const Parameters& parameters, const int id)
+drawInputImage(const uchar* src, const Parameters& parameters)
 {
+  int id = parameters.feature2D.id;
   int disp = parameters.dbgdisp;
   IplImage* cvGrayImage = createDebugImage(parameters);
   if (cvGrayImage == NULL)
@@ -106,8 +102,9 @@ drawInputImage(const uchar* src, const Parameters& parameters, const int id)
 }
 
 int
-drawEdgeImage(const uchar* edge, const Parameters& parameters, const int id)
+drawEdgeImage(const uchar* edge, const Parameters& parameters)
 {
+  int id = parameters.feature2D.id;
   int disp = parameters.dbgdisp;
   IplImage* cvGrayImage = createDebugImage(parameters);
   if (cvGrayImage == NULL)
@@ -122,9 +119,8 @@ drawEdgeImage(const uchar* edge, const Parameters& parameters, const int id)
 }
 
 int
-drawDetectedLines(const uchar* edge, const Features2D_old* lineFeatures, const Parameters& parameters,
-                  const int id)
-{
+drawDetectedLines(const uchar* edge, const Features2D_old* lineFeatures, const Parameters& parameters)
+{  
   // 直線検出結果カラー表示・保存
   // 背景表示画像配列変数名：edge
   // 直線検出結果変数名：lineFeatures
@@ -149,7 +145,7 @@ drawDetectedLines(const uchar* edge, const Features2D_old* lineFeatures, const P
 
   for (f = 0; f < lineFeatures->nFeature; f++)
     {
-      if (tmpFeature[f].type != ConicType_Line || tmpFeature[f].error < 0.0)
+      if (tmpFeature[f].type != ConicType_Line)
         {
           continue;
         }
@@ -185,14 +181,14 @@ drawDetectedLines(const uchar* edge, const Features2D_old* lineFeatures, const P
       cvLine(cvColorImage, dpt, dpt, red);
     }
 
+  int id = parameters.feature2D.id;
   int disp = parameters.dbgdisp;
   outDebugImage(cvColorImage, "line", id, disp);
   return 0;
 }
 
 int
-drawDetectedVertices(const Features2D_old* features, const Parameters& parameters,
-                     const int id)
+drawDetectedVertices(const Features2D_old* features, const Parameters& parameters)
 {
   // 頂点特徴抽出結果カラー表示・保存
   // 背景表示画像なし
@@ -229,16 +225,18 @@ drawDetectedVertices(const Features2D_old* features, const Parameters& parameter
       cvLine(cvColorImage, pt1, pt1, white);
     }
 
+  int id = parameters.feature2D.id;
   int disp = parameters.dbgdisp;
   outDebugImage(cvColorImage, "Line2Vertex", id, disp);
   return 0;
 }
 
 int
-drawTrackPoints(const Features2D_old* features, const Parameters& parameters, const int id)
-{
+drawTrackPoints(const Features2D_old* features, const Parameters& parameters)
+{  
   int i, f, n, cx, cy;
   int* pt = NULL;
+  int id = parameters.feature2D.id;
   int disp = parameters.dbgdisp;
   int colsize = parameters.colsize;
   int rowsize = parameters.rowsize;
@@ -328,8 +326,7 @@ getEllipseProperty(const double coef[6],   // 楕円係数（入力）
 }
 
 int
-drawDetectedEllipses(const uchar* edge, const Features2D_old* features, const Parameters& parameters,
-                     const int id)
+drawDetectedEllipses(const uchar* edge, const Features2D_old* features, const Parameters& parameters)
 {
   // 楕円検出結果カラー表示・保存
   // 背景表示画像配列変数名：edge
@@ -384,6 +381,7 @@ drawDetectedEllipses(const uchar* edge, const Features2D_old* features, const Pa
       cvEllipse(cvColorImage, pt, axes, angle, 0, 360, blue);
     }
 
+  int id = parameters.feature2D.id;
   int disp = parameters.dbgdisp;
   outDebugImage(cvColorImage, "ellipse", id, disp);
   return 0;
@@ -418,7 +416,7 @@ drawCircleCandidate(const uchar* edge,
 
   FILE *fp;
   char fname[100];
-  sprintf(fname, "center-circle%d.txt", pairing);
+  sprintf(fname, "center%d.txt", pairing);
   fp = fopen(fname, "w");
 
   // 円の描画
@@ -432,7 +430,7 @@ drawCircleCandidate(const uchar* edge,
       iy = roundoff(iPos.row);
       pt = cvPoint(ix, iy);
       cvLine(cvColorImage, pt, pt, green);
-
+      
       fprintf(fp, "%f %f %f\n", circle.center[0], circle.center[1], circle.center[2]);
 
       double axis[2][3];
@@ -446,7 +444,7 @@ drawCircleCandidate(const uchar* edge,
             {
               dst[j] = circle.radius * (axis[0][j] * cos(theta) + axis[1][j] * sin(theta)) + circle.center[j];
             }
-          fprintf(fp, "%f %f %f\n", dst[0], dst[1], dst[2]);
+
           projectXYZ2LR(&iPos, dst, (CameraParam*)cameraParam);
 
           ix = roundoff(iPos.col);
@@ -473,7 +471,7 @@ printVertex(const std::vector< ::Vertex>& vertex)
   double psrc[4], pdst[4];
   cv::Mat src = cv::Mat(4, 1, CV_64FC1, psrc);
   cv::Mat dst = cv::Mat(4, 1, CV_64FC1, pdst);
-
+  
   psrc[3] = 1.0;
   snprintf(filename, sizeof(filename), "vertex3D.txt");
   fp = fopen(filename, "w");
@@ -481,13 +479,13 @@ printVertex(const std::vector< ::Vertex>& vertex)
     {
       return VISION_FILE_OPEN_ERROR;
     }
-  else
+  else 
     {
-      fprintf(fp, "%zu 3\n", vertex.size() * 4);
+      fprintf(fp, "%d 3\n", vertex.size() * 4);
       for (i = 0; i < vertex.size(); i++)
         {
           cv::Mat T = cv::Mat(4, 4, CV_64FC1, const_cast<double(*)[4]>(vertex[i].tPose));
-          fprintf(fp, "%f %f %f\n",
+          fprintf(fp, "%f %f %f\n", 
                   vertex[i].tPose[3][0], vertex[i].tPose[3][1], vertex[i].tPose[3][2]);
           psrc[0] = vertex[i].endpoint1[0];
           psrc[1] = vertex[i].endpoint1[1];
@@ -495,7 +493,7 @@ printVertex(const std::vector< ::Vertex>& vertex)
           psrc[3] = 1.0;
           dst = T.t() * src;
           fprintf(fp, "%f %f %f\n", pdst[0], pdst[1], pdst[2]);
-          fprintf(fp, "%f %f %f\n",
+          fprintf(fp, "%f %f %f\n", 
                   vertex[i].tPose[3][0], vertex[i].tPose[3][1], vertex[i].tPose[3][2]);
           psrc[0] = vertex[i].endpoint2[0];
           psrc[1] = vertex[i].endpoint2[1];

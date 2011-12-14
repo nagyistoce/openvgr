@@ -26,7 +26,7 @@
 // 1: 下   col0 row+ 方向
 // 2: 右下 col+ row+ 方向
 // 3: 右   col+ row0 方向
-// 4: 右上 col+ row- 方向
+// 4: 左上 col+ row- 方向
 // 5: 上   col0 row- 方向
 // 6: 左上 col- row- 方向
 // 7: 左   col- row0 方向
@@ -284,7 +284,7 @@ edgeDirection(const double horizontal, const double vertical)
 // eStrength2 は強度の２乗を返す
 static int
 detectEdge(unsigned int* eStrength2, unsigned char* eDirection,
-           unsigned char* gray, Parameters parameters)
+	   unsigned char* gray, Parameters parameters)
 {
   int colsize = parameters.colsize;
   int rowsize = parameters.rowsize;
@@ -337,7 +337,7 @@ detectEdge(unsigned int* eStrength2, unsigned char* eDirection,
         {
           n2 = n1 + col;
           eStrength2[n2] = (unsigned int) (pow((double) diffVertical[n2] / scale, 2) +
-                                           pow((double) diffHorizontal[n2] / scale, 2)) * fp_scale;
+					   pow((double) diffHorizontal[n2] / scale, 2)) * fp_scale;
           eDirection[n2] = edgeDirection(diffHorizontal[n2], diffVertical[n2]);
         }
     }
@@ -413,17 +413,90 @@ thinEdge(unsigned char* thin, unsigned char* gray, Parameters parameters)
           else
             {
               thin[n2] = EEcandidate;   // エッジ点の候補
-              // エッジと垂直な方向にある隣の点と比べて極大か調べる
-              n3 = (row + dv[direction][1]) * colsize + (col + dv[direction][0]);
-              if (cmpDirection(eDirection[n3], direction) && eStrength2[n3] > center)
+              switch (eDirection[n2] % 4)
                 {
-                  thin[n2] = EEerasedThin;
-                }
-
-              n3 = (row - dv[direction][1]) * colsize + (col - dv[direction][0]);
-              if (cmpDirection(eDirection[n3], direction) && eStrength2[n3] > center)
-                {
-                  thin[n2] = EEerasedThin;
+                case 2:
+                  {    // 右上に伸びるエッジ (斜め col+, row+ 方向に変化が大きい
+                    n3 = (row - 1) * colsize + (col - 1);
+                    if (cmpDirection(eDirection[n3], direction))
+                      {         // 同じ方向のエッジなら比較する
+                        if (eStrength2[n3] > center)
+                          {
+                            thin[n2] = EEerasedThin;    // 近傍極大ではない
+                          }
+                      }
+                    n3 = (row + 1) * colsize + (col + 1);
+                    if (cmpDirection(eDirection[n3], direction))
+                      {         // 同じ方向のエッジなら比較する
+                        if (eStrength2[n3] >= center)
+                          {
+                            thin[n2] = EEerasedThin;    // 近傍極大ではない
+                          }
+                      }
+                    break;
+                  }
+                case 1:
+                  {             // 横に伸びるエッジ (縦 row 方向に変化が大きい)
+                    n3 = (row - 1) * colsize + (col);
+                    if (cmpDirection(eDirection[n3], direction))
+                      {         // 同じ方向のエッジなら比較する
+                        if (eStrength2[n3] > center)
+                          {
+                            thin[n2] = EEerasedThin;    // 近傍極大ではない
+                          }
+                      }
+                    n3 = (row + 1) * colsize + (col);
+                    if (cmpDirection(eDirection[n3], direction))
+                      {         // 同じ方向のエッジなら比較する
+                        if (eStrength2[n3] >= center)
+                          {
+                            thin[n2] = EEerasedThin;    // 近傍極大ではない
+                          }
+                      }
+                    break;
+                  }
+                case 0:
+                  {    // 右下に伸びるエッジ  (斜め col+, row- 方向に変化が大きい
+                    n3 = (row - 1) * colsize + (col + 1);
+                    if (cmpDirection(eDirection[n3], direction))
+                      {         // 同じ方向のエッジなら比較する
+                        if (eStrength2[n3] > center)
+                          {
+                            thin[n2] = EEerasedThin;    // 近傍極大ではない
+                          }
+                      }
+                    n3 = (row + 1) * colsize + (col - 1);
+                    if (cmpDirection(eDirection[n3], direction))
+                      {         // 同じ方向のエッジなら比較する
+                        if (eStrength2[n3] >= center)
+                          {
+                            thin[n2] = EEerasedThin;    // 近傍極大ではない
+                          }
+                      }
+                    break;
+                  }
+                case 3:
+                  {             // 縦にのびるエッジ (横 col 方向に変化が大きい）
+                    n3 = (row) * colsize + (col - 1);
+                    if (cmpDirection(eDirection[n3], direction))
+                      {         // 同じ方向のエッジなら比較する
+                        if (eStrength2[n3] > center)
+                          {
+                            thin[n2] = EEerasedThin;    // 近傍極大ではない
+                          }
+                      }
+                    n3 = (row) * colsize + (col + 1);
+                    if (cmpDirection(eDirection[n3], direction))
+                      {         // 同じ方向のエッジなら比較する
+                        if (eStrength2[n3] >= center)
+                          {
+                            thin[n2] = EEerasedThin;    // 近傍極大ではない
+                          }
+                      }
+                    break;
+                  }
+                default:
+                  /* nothing to do */;
                 }
             }
         }
@@ -798,7 +871,7 @@ extractEdge(unsigned char* edge,       // エッジ画像
             const int threshold,       // エッジ閾値
             Parameters parameters)     // 全パラメータ
 {
-  int i, width = 0, w;
+  int i;
   int colsize = parameters.colsize;
   int rowsize = parameters.rowsize;
   int imgsize = parameters.imgsize;
@@ -823,42 +896,26 @@ extractEdge(unsigned char* edge,       // エッジ画像
     }
 
   // 画像の端をゼロリセット
-  switch (parameters.feature2D.edgeDetectFunction)
+  // 上辺
+  for (i = 1; i < colsize - 1; i++)
     {
-    case 0: // Sobel 3x3
-      width = 2;
-      break;
-
-    case 1: // Sobel 5x5
-      width = 3;
-      break;
-
-    default:
-      width = 1;
-      break;
+      edge[i] = 0;
     }
-
-  for (w = 0; w < width; w++)
+  // 下辺
+  for (i = 1; i < colsize - 1; i++)
     {
-      for (i = 1; i < colsize - 1; i++)
-        {
-          // 上辺
-          edge[w * colsize + i] = 0;
-          // 下辺
-          edge[(rowsize - 1 - (width - 1 - w)) * colsize + i] = 0;
-        }
+      edge[(rowsize - 1) * colsize + i] = 0;
     }
-  for (i = width; i < rowsize - (width - 1); i++)
+  // 左辺
+  for (i = 0; i < rowsize; i++)
     {
-      for (w = 0; w < width; w++)
-        {
-          // 左辺
-          edge[i * colsize + w] = 0;
-          // 右辺
-          edge[i * colsize + colsize - 1 - (width - 1 - w)] = 0;
-        }
+      edge[i * colsize] = 0;
     }
-
+  // 右辺
+  for (i = 0; i < rowsize; i++)
+    {
+      edge[i * colsize + colsize - 1] = 0;
+    }
   return 0;
 }
 
@@ -887,7 +944,7 @@ extractEdge_new(unsigned char* edge,       // エッジ画像
   cv::Canny(gray_image, edge_image, 60, 30);
 #if 0
   cv::imshow("image", edge_image);
-  cv::waitKey(-1);
+  cv::waitKey(-1);  
 #endif
 
   for (i = 0; i < rowsize; ++i)

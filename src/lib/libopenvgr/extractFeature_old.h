@@ -16,27 +16,11 @@
 #include "conic.h"
 #include "match3Dfeature.h"
 
-// 楕円arclist
-typedef struct _ellipse_arc_
-{
-  struct Features2D_old	*f2Ds;
-  int	ntrack;
-  int	start;
-  int	goal;
-} EllipseArc;
-
-typedef struct _ellipse_arc_list_
-{
-  int	n;
-  EllipseArc	*arc;
-} EllipseArcList;
-  
-
 //! 各２次元特徴
 typedef struct Feature2D_old
 {
   ConicType type;               //!< 二次曲線の分類
-  double coef[6];               //!< 二次曲線の係数。a x^2 + bxy + c y^2 + d x + e y + f = 0,
+  double coef[6];               //!< 二次曲線の係数。a x^2 + bxy + c y^2 + d x + e y + f = 0, 
                                 //!< a = coef[0], ... , f = coef[5] に対応
   double center[2];             //!< 楕円中心または、双曲線の漸近線交点
   double startPoint[2];         //!< 曲線上の始点
@@ -57,8 +41,6 @@ typedef struct Feature2D_old
   double lineLength1;           //!< 双曲線の線分1の長さ
   double lineLength2;           //!< 双曲線の線分2の長さ
   double lineAngle;             //!< 双曲線の2線分のなす角度
-
-  EllipseArcList	arclist; // マージされた楕円特徴の点列集合
 } Feature2D_old;
 
 //! 輪郭情報
@@ -96,8 +78,6 @@ expandFeatures(Features2D_old* features);
 
 //! ステレオ画像の一枚から二次元特徴の抽出
 Features2D_old* ImageToFeature2D_old(unsigned char* src, unsigned char* edge,
-                                     Parameters parameters, 
-                                     const int id, // データを識別するためのインデックス
-                                     Features3D model);
+                                     Parameters parameters, Features3D model);
 
 #endif // _EXTRACTFEATURE_OLD_H

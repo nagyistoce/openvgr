@@ -15,19 +15,11 @@ RTMINC = -I`rtm-config --prefix`/include/rtm/idl
 INCLUDES = $(OPENCVINC) $(RTMINC)
 
 CC = gcc
+CFLAGS = -O3 -march=native -Wall -pipe
+#CFLAGS = -O3 -march=native -Wall -pipe -fopenmp
+#CFLAGS = -g -O0 -march=native -Wall -pipe
 
-ifeq ($(CC),icc)
-  CFLAGS = -O3 -Wall -pipe -fPIC -fopenmp
-  CXX = icpc
-  AR = xiar
-else
-  CFLAGS = -O3 -march=native -Wall -pipe -fPIC
-  #CFLAGS = -O3 -march=native -Wall -pipe -fPIC -fopenmp
-  #CFLAGS = -g -O0 -march=native -Wall -pipe -fPIC
-
-  CXX = g++
-endif
-
+CXX = g++
 CXXFLAGS = $(CFLAGS)
 
 IDLDIR   = ../../idl
@@ -47,7 +39,7 @@ COMOBJS = calib.o calibUtil.o recogParameter.o\
           geometry.o extractFeature.o correspondence.o \
           drawing.o mathmisc.o \
           searchEllipse_IW.o RecognitionKernel.o \
-          merge_ellipse.o
+	  merge_ellipse.o
 
 DEFS =
 
@@ -62,7 +54,6 @@ libopenvgr.a: $(COMOBJS)
 calibUtil.o : Img.hh
 extractFeature.o: extractFeature.hpp
 match3Dfeature.o pairedcircle.o score2d.o: common.h
-modelpoints.o score2d.o: modelpoints.h
 
 Img.hh :
 	$(IDLC) $(IDLFLAGS) $(IDLDIR)/Img.idl

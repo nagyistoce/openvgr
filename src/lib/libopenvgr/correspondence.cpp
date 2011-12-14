@@ -70,7 +70,7 @@ protected:
 
     calc_line_joining_points(coef, e, p);
     rel = distance_from_line(coef, vf.start) * distance_from_line(coef, vf.end);
-
+    
     if (fabs(rel) < epsilon)
       {
         return 0;
@@ -242,7 +242,7 @@ public:
     // カメラ1 のエピポールep[0]を計算 calc_epipole()
     calc_epipole(ep[0], _cp1, _cp2);
     // カメラ2 のエピポールep[1]を計算 calc_epipole()
-    calc_epipole(ep[1], _cp2, _cp1);
+    calc_epipole(ep[1], _cp2, _cp1);   
   }
 
   bool operator()(const EllipseFeature& ef1, const EllipseFeature& ef2) const
@@ -320,6 +320,9 @@ create_feature_map(const T& feature1, const CameraParam& cp1, const T& feature2,
         {
           if (eval_func(feature1[i], feature2[j]) == true)
             {
+#ifdef _OPENMP
+#pragma omp critical
+#endif
               fmap[i].push_back(j);
             }
         }
@@ -354,6 +357,7 @@ ovgr::make_corresponding_pairs(const Features2D& feature1, const CameraParam& cp
     }
 #endif
 
+#if 1
   // 楕円特徴
   cp.ellipse = create_feature_map(feature1.ellipse, cp1, feature2.ellipse, cp2, EllipseEvaluator(cp1, cp2, thres.ellipse_tolerance));
 
@@ -370,6 +374,7 @@ ovgr::make_corresponding_pairs(const Features2D& feature1, const CameraParam& cp
           printf("\n");
         }
     }
+#endif
 #endif
 
   return cp;
@@ -426,7 +431,7 @@ store_corresponding_features(feature_list_t *fl, const std::vector<const Corresp
       (*fi)[current_pos] = feature_no;
 
       if (num_camera - current_pos > 1)
-        {
+        {          
           for (feature_index_list_t::const_iterator fili = fil.begin(); fili != fil.end(); ++fili)
             {
               found |= store_corresponding_features(fl, corres_pair, num_camera, feature, *fili, base_feature, current_pos + 1, fi);

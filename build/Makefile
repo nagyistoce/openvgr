@@ -16,7 +16,7 @@ EXDIR=$(TOPDIR)/example/component
 COMP = MultiCameraComp MultiDispComp Measure3DComp \
        RecognitionComp RecognitionResultViewerComp
 
-TOOL = multicalib ichimatsu genconf \
+TOOL = multicalib sample genconf \
        VGRModeler
 
 EX   = MultiCameraTriggerComp SendImageComp SetModelIDComp
@@ -41,7 +41,7 @@ RecognitionResultViewerComp: $(COMPDIR)/RecognitionResultViewer/RecognitionResul
 multicalib: $(TOOLDIR)/multicalib/multicalib
 	$(LN) $<
 
-ichimatsu: $(TOOLDIR)/multicalib/ichimatsu
+sample: $(TOOLDIR)/multicalib/sample
 	$(LN) $<
 
 genconf: $(TOOLDIR)/multicalib/genconf

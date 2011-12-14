@@ -54,6 +54,101 @@ sortRoot(double root[3], const int nRoot)
     }
 }
 
+
+// 2x2の実対称行列の固有値と固有ベクトルを求める
+// 固有値は大きさの降順、固有ベクトルは横ベクトル
+static int
+eigenM22(double e[2], double ev[2][2], double m[2][2], const double rankDiag)
+{
+  const double b = -(m[0][0] + m[1][1]);
+  const double c = m[0][0] * m[1][1] - m[0][1] * m[1][0];
+  const double D = pow(m[0][0] - m[1][1], 2) + 4.0 * m[0][1] * m[1][0];
+
+  //fprintf(stderr, "mat:\n% f % f\n% f % f\n", m[0][0], m[0][1], m[1][0], m[1][1]);
+
+  /* 解なし(複素数) */
+  if (D < 0.0)
+    {
+      e[0] = e[1] = 0.0;
+
+      ev[0][0] = 1.0;
+      ev[0][1] = 0.0;
+
+      ev[1][0] = 0.0;
+      ev[1][1] = 1.0;
+
+      return 0;
+    }
+
+  /* 重根のとき */
+  if (sqrt(D) < rankDiag)
+    {
+      e[0] = e[1] = (m[0][0] + m[1][1]) / 2.0;
+
+      /* 単位行列の定数倍になるため、固有ベクトルは任意 */
+      ev[0][0] = 1.0;
+      ev[0][1] = 0.0;
+
+      ev[1][0] = 0.0;
+      ev[1][1] = 1.0;
+
+      return 1;
+    }
+
+  /* 固有値を計算 */
+#if 1
+  if (b <= 0.0)
+    {
+      e[0] = (-b + sqrt(D)) / 2.0;
+      e[1] = c / e[0];
+    }
+  else
+    {
+      e[1] = (-b - sqrt(D)) / 2.0;
+      e[0] = c / e[1];
+    }
+#else
+  e[0] = (-b + sqrt(D)) / 2.0;
+  e[1] = (-b - sqrt(D)) / 2.0;
+#endif
+
+  //fprintf(stderr, "eval: % f % f\n", e[0], e[1]);
+
+  /* 固有ベクトルを計算 */
+#if 1
+  if (m[0][0] >= m[1][1])
+    {
+      ev[1][0] = 2.0 * (m[0][1] + m[1][0]) / 2.0;
+      ev[1][1] = -(m[0][0] - m[1][1]) - sqrt(D);
+      normalizeV2(ev[1], ev[1]);
+
+      ev[0][0] =  ev[1][1];
+      ev[0][1] = -ev[1][0];
+    }
+  else
+    {
+      ev[0][0] = 2.0 * (m[0][1] + m[1][0]) / 2.0;
+      ev[0][1] = -(m[0][0] - m[1][1]) + sqrt(D);
+      normalizeV2(ev[0], ev[0]);
+
+      ev[1][0] = -ev[0][1];
+      ev[1][1] =  ev[0][0];
+    }
+#else
+  ev[0][0] = 2.0 * (m[0][1] + m[1][0]) / 2.0;
+  ev[0][1] = -(m[0][0] - m[1][1]) + sqrt(D);
+  normalizeV2(ev[0], ev[0]);
+
+  ev[1][0] = 2.0 * (m[0][1] + m[1][0]) / 2.0;
+  ev[1][1] = -(m[0][0] - m[1][1]) - sqrt(D);
+  normalizeV2(ev[1], ev[1]);
+#endif
+
+  //fprintf(stderr, "evec:\n% f % f\n% f % f\n", ev[0][0], ev[1][0], ev[0][1], ev[1][1]);
+
+  return 2;
+}
+
 // 3次方程式を解いて、3x3の実対称行列の固有値と固有ベクトルを求める
 static int
 eigen33(double e[3], double ev[3][3], double m[3][3], const double rankDiag)
@@ -492,7 +587,7 @@ fitConic(double sum[5][5],     // 二次曲線当てはめの微分係数行列
                  + coef[i][2] * offset[1] * offset[1] - coef[i][3] * offset[0]
                  - coef[i][4] * offset[1] + coef[i][5];
 
-      coef[i][3] = newcoef3;
+      coef[i][3] = newcoef3; 
       coef[i][4] = newcoef4;
       coef[i][5] = newcoef5;
     }

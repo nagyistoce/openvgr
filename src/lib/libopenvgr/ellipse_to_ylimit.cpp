@@ -32,7 +32,7 @@ ellipse_to_ylimit(const double	a[6],
 {
   double	bunbo;
   double	D;
-
+  
   bunbo = 4.0 * a[0] * a[2] - a[1] * a[1];
 
   if(bunbo <= 0.0)

@@ -29,7 +29,6 @@ rtconf SendImage0.rtc set OutputPointNum ${10}
 #rtconf Recognition0.rtc set DebugText 1
 #rtconf Recognition0.rtc set DebugDisplay 1
 # コンポーネントの活性化
-# SetModelID は最後に活性化すること
 rtact RecognitionResultViewer0.rtc
 rtact Recognition0.rtc
 rtact SendImage0.rtc

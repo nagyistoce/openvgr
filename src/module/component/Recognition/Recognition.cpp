@@ -11,11 +11,6 @@
  * @date  \$Date::                            $
  */
 
-#ifndef __STDC_FORMAT_MACROS
-#define __STDC_FORMAT_MACROS
-#endif
-#include <inttypes.h>
-
 #include "Recognition.h"
 #include "execute3DRecognition.h"
 #include "visionErrorCode.h"
@@ -224,10 +219,10 @@ RTC::ReturnCode_t Recognition::onExecute(RTC::UniqueId ec_id)
       Img::TimedMultiCameraImage* frame = &(m_stereo3DData.data.mimg);
       if (frame->data.image_seq.length() > 0)
         {
-          printf("Image Accept: (%"PRId32" x %"PRId32") x %"PRIu32"\n",
-            (int)frame->data.image_seq[0].image.width,
-            (int)frame->data.image_seq[0].image.height,
-            (unsigned int) frame->data.image_seq.length());
+          printf("Image Accept: (%ld x %ld) x %ld\n",
+		 frame->data.image_seq[0].image.width,
+		 frame->data.image_seq[0].image.height,
+		 frame->data.image_seq.length());
         }
 
       // 3 次元距離計測データをスルー出力する。
@@ -251,23 +246,16 @@ RTC::ReturnCode_t Recognition::onExecute(RTC::UniqueId ec_id)
       printf( "Recognition::onExecute:RECOGNITION_TEST:HDMax(max_distance_end_points)=%f\n", param.feature2D.max_distance_end_points);
       printf( "Recognition::onExecute:RECOGNITION_TEST:IW_Condition=%d\n", param.paramEIW.Condition);
       printf( "Recognition::onExecute:RECOGNITION_TEST:IW_MinLength=%d\n", param.paramEIW.MinLength);
-      printf( "Recognition::onExecute:RECOGNITION_TEST:IW_PostMinLength=%d\n", param.paramEIW.PostMinLength);
       printf( "Recognition::onExecute:RECOGNITION_TEST:IW_MinShortRadPrev=%f\n",param.paramEIW.MinShortRadPrev );
       printf( "Recognition::onExecute:RECOGNITION_TEST:IW_MinShortRadPost=%f\n", param.paramEIW.MinShortRadPost );
       printf( "Recognition::onExecute:RECOGNITION_TEST:IW_ThMeanError=%f\n", param.paramEIW.ThMeanError);
-      printf( "Recognition::onExecute:RECOGNITION_TEST:IW_ThMeanErrorMerging=%f\n", param.paramEIW.ThMeanErrorMerging);
       printf( "Recognition::onExecute:RECOGNITION_TEST:IW_ThMaxError=%f\n", param.paramEIW.ThMaxError);
-      printf( "Recognition::onExecute:RECOGNITION_TEST:IW_ThMaxErrorMerging=%f\n", param.paramEIW.ThMaxErrorMerging);
-      printf( "Recognition::onExecute:RECOGNITION_TEST:IW_MinSD=%f\n", param.paramEIW.MinSD);
-      printf( "Recognition::onExecute:RECOGNITION_TEST:IW_OffsetMode=%d\n", param.paramEIW.OffsetMode);
-      printf( "Recognition::onExecute:RECOGNITION_TEST:IW_SwLineEllipse=%d\n", param.paramEIW.SwLineEllipse);
-      printf( "Recognition::onExecute:RECOGNITION_TEST:IW_SwOldMergeFunc=%d\n", param.paramEIW.SwOldMergeFunc);
+//      printf( "Recognition::onExecute:RECOGNITION_TEST:IW_OffsetMode=%d\n", param.paramEIW.OffsetMode);
       printf( "Recognition::onExecute:RECOGNITION_TEST:Amax=%f\n", param.stereo.amax);
       printf( "Recognition::onExecute:RECOGNITION_TEST:Amin=%f\n", param.stereo.amin);
       printf( "Recognition::onExecute:RECOGNITION_TEST:StereoError=%f\n", param.stereo.ethr);
       printf( "Recognition::onExecute:RECOGNITION_TEST:MinLengthLine2D=%f\n", param.feature2D.min_length_line);
       printf( "Recognition::onExecute:RECOGNITION_TEST:NoSearchFeatures=%d\n", param.feature2D.no_search_features);
-      printf( "Recognition::onExecute:RECOGNITION_TEST:MaxDistanceSimilarLine=%f\n", param.feature2D.max_distance_similar_line);
       fflush(stdout);
 #endif //RECOGNITION_TEST
 

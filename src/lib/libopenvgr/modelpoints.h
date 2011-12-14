@@ -13,43 +13,7 @@
 #ifndef _MODELPOINTS_H
 #define _MODELPOINTS_H
 
-//#define USE_SET
-//#define USE_UNORDERED_SET
-
-#ifdef USE_SET
-#include <set>
-#elif defined (USE_UNORDERED_SET)
-#include <tr1/unordered_set>
-#endif
-#include <cv.h>
-
 #include "match3Dfeature.h"
-
-#ifdef USE_SET
-struct PointLessThan
-{
-  bool operator()(const cv::Point& p1, const cv::Point& p2) const
-  {
-    return ((p1.x << 16) + p1.y) < ((p2.x << 16) + p2.y);
-  }
-};
-
-typedef std::set<cv::Point, PointLessThan> plot_t;
-#elif defined (USE_UNORDERED_SET)
-struct HashPoint
-{
-  std::tr1::hash<int> int_hash;
-
-  size_t operator()(const cv::Point& p) const
-  {
-    return int_hash((p.x << 16) + p.y);
-  }
-};
-
-typedef std::tr1::unordered_set<cv::Point, HashPoint> plot_t;
-#else
-typedef std::vector<cv::Point> plot_t;
-#endif
 
 //! モデル評価点の描画（認識結果確認表示用）
 void drawModelPoints(Features3D* model,        // モデルの３次元特徴情報
@@ -73,7 +37,6 @@ void getPropertyVector(double mat[4][4],       // 合同変換行列
 double calcEvaluationValue2DMultiCameras(Features3D* model,      // モデルの３次元特徴情報
                                          StereoPairing& pairing, // ステレオペア情報
                                          MatchResult* result,    // 認識結果
-                                         plot_t* plot,           // 評価済みの点の記録用
                                          const std::vector<cv::Mat>& dstImages); // 距離変換画像
 
 // 座標値が正しい範囲内か確認

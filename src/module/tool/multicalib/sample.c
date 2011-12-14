@@ -1,7 +1,5 @@
 /*
- ichimatsu.c
-
- A sample program for calibration data creation.
+ sample.c
 
  Copyright (c) 2011 AIST  All Rights Reserved.
  Eclipse Public License v1.0 (http://www.eclipse.org/legal/epl-v10.html)
@@ -18,8 +16,6 @@
 
 #include <unistd.h>
 #include <sys/time.h>
-#include <sys/types.h>
-#include <sys/stat.h>
 
 #include <cv.h>
 #include <highgui.h>
@@ -27,8 +23,6 @@
 #include <capture.h>
 #include "checker_data.h"
 #include "detect_checker.h"
-
-#define FILENAME_SIZE (256)
 
 typedef enum
 {
@@ -44,8 +38,6 @@ typedef struct tag_opt
   method_t method;
   int ieee1394b_mode;
 
-  char data_dir[FILENAME_SIZE];
-
   FILE *fp;
 } opt_t;
 
@@ -55,12 +47,9 @@ static void parse_opt (int argc, char **argv, opt_t *opt);
 static void destroy (const int err_code, opt_t *opt);
 static int proc (capture_t *cap, capture_frame_t *frames, opt_t *opt);
 
-static void s_show_image (const char *name, IplImage *image, double scale);
 static void s_convert_frame_to_iplimage (capture_frame_t *frame, IplImage *ipl);
 static checker_coord_t *s_detect_checker (IplImage *image, opt_t *opt);
 static void s_draw_checker (IplImage *image, checker_coord_t *cc, opt_t *opt);
-static void get_timestamp (char *str, size_t size);
-static int check_dir (opt_t *opt);
 
 int
 main (int argc, char **argv)
@@ -73,16 +62,6 @@ main (int argc, char **argv)
 
   /* parse options */
   parse_opt (argc, argv, &opt);
-
-  /* check if data_dir is accessible */
-  if (opt.data_dir[0] != '\0')
-    {
-      if (check_dir (&opt) != 0)
-        {
-          fprintf (stderr, "warning: can't access to dir '%s'\n", opt.data_dir);
-          opt.data_dir[0] = '\0'; /* clear the directory name */
-        }
-    }
 
   /* setup a camera system */
   status = capture_init (&cap, 1);
@@ -137,27 +116,24 @@ main (int argc, char **argv)
 static void
 show_help (const char *prog_name)
 {
-  printf ("usage: %s [-o <filename>] [-s <size>] [-g <row>x<col>] [-d <dirname>] [-l]\n", prog_name);
+  printf ("usage: %s [-o <filename>] [-s <size>] [-g <row>x<col>] [-l]\n", prog_name);
 
   printf ("\n");
 
-  printf ("-o <filename> :\t");
+  printf ("<filename> :\t");
   printf ("file name of output file\n");
 
   printf ("\n");
 
-  printf ("-s <size>     :\t");
+  printf ("<size>     :\t");
   printf ("pattern size [mm] (default: 20)\n");
 
-  printf ("-g <row>x<col>:\t");
+  printf ("<row>x<col>:\t");
   printf ("nunber of points in each row/col (default: 8x8)\n");
 
   printf ("\n");
 
-  printf ("-d <dirname>  :\t");
-  printf ("directory name where debug info will be stored (default: none)\n");
-
-  printf ("-l            :\t");
+  printf ("-l         :\t");
   printf ("use IEEE 1394 legacy mode (default: IEEE 1394b mode)\n");
 
   printf ("\n");
@@ -167,12 +143,6 @@ show_help (const char *prog_name)
   printf ("l\tlive mode; show captured images.\n");
   printf ("c\tchessboard detection mode; search a chessboard pattern using OpenCV.\n");
   printf ("q\tterminate this program.\n");
-
-  printf ("\n");
-
-  printf ("<scaling display image>\n");
-  printf ("1-4\tscale images by 1/n.\n");
-  printf ("-/+\tdecrease/increase the scale factor by 0.1.\n");
 
   printf ("\n");
 
@@ -242,7 +212,7 @@ get_grid (const char *str, int *row, int *col)
 static void
 parse_opt (int argc, char **argv, opt_t *opt)
 {
-  const static char optstr[] = "d:s:g:lm:o:w:h";
+  const static char optstr[] = "s:g:lm:o:w:h";
   char ch;
 
   opt->pattern_col  =  8;
@@ -252,18 +222,12 @@ parse_opt (int argc, char **argv, opt_t *opt)
   opt->method = METHOD_OPENCV;
 
   opt->ieee1394b_mode = 1;
-  opt->data_dir[0] = '\0';
   opt->fp = stdout;
 
   while ((ch = getopt (argc, argv, optstr)) != -1)
     {
       switch (ch)
         {
-        case 'd':
-          strncpy (opt->data_dir, optarg, sizeof (char) * FILENAME_SIZE - 1);
-          opt->data_dir[FILENAME_SIZE - 1] = '\0';
-          break;
-
         case 'g':
           if (get_grid (optarg, &opt->pattern_row, &opt->pattern_col) != 0)
             {
@@ -329,7 +293,6 @@ proc (capture_t *cap, capture_frame_t *frames, opt_t *opt)
 
   const int slen = 128;
   char (*winname)[slen];
-  double scale = 1.0;
 
   IplImage **images, **overlay;
   checker_coord_t **cc;
@@ -471,7 +434,7 @@ proc (capture_t *cap, capture_frame_t *frames, opt_t *opt)
         case EXEC_MODE_LIVE:
           for (i = 0; i < cap->num_active; ++i)
             {
-              s_show_image (winname[i], images[i], scale);
+              cvShowImage (winname[i], images[i]);
             }
           break;
 
@@ -493,11 +456,11 @@ proc (capture_t *cap, capture_frame_t *frames, opt_t *opt)
 
                   s_draw_checker (overlay[i], cc[i], opt);
 
-                  s_show_image (winname[i], overlay[i], scale);
+                  cvShowImage (winname[i], overlay[i]);
                 }
               else
                 {
-                  s_show_image (winname[i], images[i], scale);
+                  cvShowImage (winname[i], images[i]);
                 }
             }
           break;
@@ -513,40 +476,6 @@ proc (capture_t *cap, capture_frame_t *frames, opt_t *opt)
         case 'q':
         case 0x1b:
           to_exit = -1;
-          break;
-
-        case '1':
-          scale = 1.0;
-          break;
-
-        case '2':
-          scale = 1.0 / 2.0;
-          break;
-
-        case '3':
-          scale = 1.0 / 3.0;
-          break;
-
-        case '4':
-          scale = 1.0 / 4.0;
-          break;
-
-        case '-':
-          scale -= 0.1;
-
-          if (scale < 0.1)
-            {
-              scale = 0.1;
-            }
-          break;
-
-        case '+':
-          scale += 0.1;
-
-          if (scale > 10.0)
-            {
-              scale = 10.0;
-            }
           break;
 
         case 'c':
@@ -571,9 +500,27 @@ proc (capture_t *cap, capture_frame_t *frames, opt_t *opt)
         case 'p':
           if (exec_mode == EXEC_MODE_LIVE)
             {
+              struct timeval captured_time;
               char timestamp[32];
 
-              get_timestamp (timestamp, sizeof (timestamp));
+              /* create a timestamp */
+              if (gettimeofday (&captured_time, NULL) == 0)
+                {
+                  struct tm lt;
+                  int len;
+
+                  localtime_r (&captured_time.tv_sec, &lt);
+                  strftime (timestamp, sizeof (timestamp), "%Y%m%d-%H%M%S", &lt);
+
+                  /* append usec value */
+                  len = strlen (timestamp);
+                  snprintf (&timestamp[len], sizeof (timestamp) - len, ".%06ld", captured_time.tv_usec);
+                }
+              else
+                {
+                  strncpy (timestamp, "unknown", sizeof (timestamp) - 1);
+                  timestamp[sizeof (timestamp) - 1] = '\0';
+                }
 
               for (i = 0; i < cap->num_active; ++i)
                 {
@@ -634,25 +581,6 @@ proc (capture_t *cap, capture_frame_t *frames, opt_t *opt)
                     }
                 }
               fprintf (stderr, "added the detected points. (%d)\n", checker_data.num_observations);
-
-              /* write images if data_dir is specified */
-              if (opt->data_dir[0] != '\0')
-                {
-                  char timestamp[32];
-
-                  get_timestamp (timestamp, sizeof (timestamp));
-
-                  for (i = 0; i < cap->num_active; ++i)
-                    {
-                      char filename[256];
-
-                      snprintf (filename, sizeof (filename), "%s/cap_%s_%02u.png", opt->data_dir, timestamp, i);
-                      cvSaveImage (filename, images[i], 0);
-
-                      snprintf (filename, sizeof (filename), "%s/chessboard_%s_%02u.png", opt->data_dir, timestamp, i);
-                      cvSaveImage (filename, overlay[i], 0);
-                    }
-                }
             }
           break;
 
@@ -706,26 +634,6 @@ proc (capture_t *cap, capture_frame_t *frames, opt_t *opt)
 }
 
 static void
-s_show_image (const char *name, IplImage *image, double scale)
-{
-  IplImage *disp_image = NULL;
-  int width = (int)((double)image->width * scale + 0.5);
-  int height = (int)((double)image->height * (double)width / (double)image->width + 0.5);
-
-  disp_image = cvCreateImage (cvSize(width, height), image->depth, image->nChannels);
-  if (disp_image != NULL)
-    {
-      cvResize (image, disp_image, CV_INTER_LINEAR);
-      cvShowImage (name, disp_image);
-      cvReleaseImage (&disp_image);
-    }
-  else
-    {
-      cvShowImage (name, image);
-    }
-}
-
-static void
 s_convert_frame_to_iplimage (capture_frame_t *frame, IplImage *ipl)
 {
   IplImage temp;
@@ -748,7 +656,7 @@ s_convert_frame_to_iplimage (capture_frame_t *frame, IplImage *ipl)
 }
 
 static checker_coord_t *
-s_detect_checker (IplImage *image, opt_t *opt)
+s_detect_checker(IplImage *image, opt_t *opt)
 {
   IplImage *gray_img = NULL;
   checker_coord_t *cc = NULL;
@@ -873,56 +781,4 @@ s_draw_checker (IplImage *image, checker_coord_t *cc, opt_t *opt)
     default:
       break;
     }
-}
-
-static void
-get_timestamp (char *str, size_t size)
-{
-  struct timeval current_time;
-
-  if (gettimeofday (&current_time, NULL) == 0)
-    {
-      struct tm lt;
-      int len;
-
-      localtime_r (&current_time.tv_sec, &lt);
-      strftime (str, size, "%Y%m%d-%H%M%S", &lt);
-
-      /* append usec value */
-      len = strlen (str);
-      snprintf (&str[len], size - len, ".%06ld", current_time.tv_usec);
-    }
-  else
-    {
-      strncpy (str, "unknown", size - 1);
-      str[sizeof (str) - 1] = '\0';
-    }
-}
-
-static int
-check_dir (opt_t *opt)
-{
-  struct stat buf;
-
-  if (opt->data_dir[0] == '\0')
-    {
-      return -1;
-    }
-
-  if (stat (opt->data_dir, &buf) == 0)
-    {
-      return (S_ISDIR (buf.st_mode)) ? 0 : -1;
-    }
-
-  /* the path is not exist, so create it */
-  if (mkdir (opt->data_dir, 0755) == 0)
-    {
-      /* check again if the directory is accessible */
-      if (stat (opt->data_dir, &buf) == 0)
-        {
-          return (S_ISDIR (buf.st_mode)) ? 0 : -1;
-        }
-    }
-
-  return -1;
 }

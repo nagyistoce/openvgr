@@ -177,7 +177,7 @@ RecognitionResultViewerServiceSVC_impl::displayWindow()
               fprintf(stderr, "cvCreateImage() failed.\n");
               return;
             }
-          cvResize(m_displayImage, m_zoomImage, cv::INTER_LANCZOS4);
+          cvResize(m_displayImage, m_zoomImage, CV_INTER_NN);
           cvShowImage(m_displayWindowName, m_zoomImage);
         }
       else

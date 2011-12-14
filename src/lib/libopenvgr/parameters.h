@@ -19,6 +19,8 @@
 //! ２次元特徴抽出用パラメータ
 typedef struct ParametersFeature2D
 {
+  //! ID 番号
+  int id;
   //! エッジ検出アルゴリズム (0: Sobel3x3 1: Sobel 5x5)
   int edgeDetectFunction;
   //! 検出するエッジの最低微分強度
@@ -27,13 +29,11 @@ typedef struct ParametersFeature2D
   int minFragment;
   //! 直線をあてはめる時の最大誤差（画素）
   double maxErrorofLineFit;
-  //! 同一の線分と見なす最大端点距離（画素）
-  double max_distance_similar_line;
   //! 二次曲線をあてはめる時の最大誤差（画素）
   double maxErrorofConicFit;
-  //! 直線、双曲線の特徴点を抽出する区間の重複可能な最大比率（0.0から1.0)
+  //! 直線、双曲線の特徴点を抽出する区間の重複可能な最大比率（0.0〜1.0)
   double overlapRatioLine;
-  //! 楕円の特徴点を抽出する区間の重複可能な最大比率（0.0から1.0)
+  //! 楕円の特徴点を抽出する区間の重複可能な最大比率（0.0〜1.0)
   double overlapRatioCircle;
   //! 削除する直線の最大の長さ（画素）
   double max_length_delete_line;
@@ -45,7 +45,7 @@ typedef struct ParametersFeature2D
   double min_length_hyperbola_vector;
   //! 楕円の軸長の閾値（画素）
   double min_length_ellipse_axis;
-  //! 楕円の充填率の閾値（0.0から1.0）
+  //! 楕円の充填率の閾値（0.0〜1.0）
   double min_filling_ellipse;
   //! 楕円の偏平率（長軸/短軸)
   double max_flatness_ellipse;

@@ -59,7 +59,6 @@ then
 fi
 
 # コンポーネントの活性化
-# SetModelID は最後に活性化すること
 rtact Measure3D0.rtc
 rtact MultiDisp0.rtc
 rtact MultiCamera0.rtc
@@ -91,5 +90,4 @@ rtexit Measure3D0.rtc
 rtexit MultiCamera0.rtc
 rtexit RecognitionResultViewer0.rtc
 rtexit Recognition0.rtc
-rtdel SetModelID0.rtc
-pkill -f SetModelIDComp
+rtexit SetModelID0.rtc

@@ -34,14 +34,14 @@ static void
 draw_LineFeatures(cv::Mat& img, const LF& lf)
 {
   cv::namedWindow("detected lines", CV_WINDOW_AUTOSIZE);
-
+    
   for (typename LF::const_iterator lfi = lf.begin(); lfi != lf.end(); ++lfi)
     {
       cv::line(img, cv::Point(lfi->start.x, lfi->start.y), cv::Point(lfi->end.x, lfi->end.y), CV_RGB(0, 0, 255));
       cv::circle(img, cv::Point(lfi->start.x, lfi->start.y), 1, CV_RGB(0, 255, 0), -1);
       cv::circle(img, cv::Point(lfi->end.x, lfi->end.y), 1, CV_RGB(255, 0, 0), -1);
     }
-
+    
   cv::imshow("detected lines", img);
   cv::waitKey(-1);
 }
@@ -153,7 +153,7 @@ ovgr::calc_ellipse_rr(const double coeff[6])
 
   return cv::RotatedRect(cv::Point2f(t[0], t[1]),
                          cv::Size2f(2.0 / sqrt(ev[0] / fabs(ev[2])), 2.0 / sqrt(ev[1] / fabs(ev[2]))),
-                         -theta);
+                         -theta); 
 }
 
 /* [0, max_index)の範囲でn個の値をランダムに選ぶ */
@@ -178,7 +178,7 @@ choose_index(size_t *index, const size_t n, const size_t max_index)
   do
     {
       index[curr] = ((double)rand() * (double)max_index) / ((double)RAND_MAX + 1.0);
-
+      
       size_t i;
       for (i = 0; i < curr; ++i)
         {
@@ -315,7 +315,7 @@ extract_supported_points(Feature2D* feature, const Points& points, support_index
             {
               ++num;
             }
-
+            
           /* サポート点の数が閾値以上なら点列に加える */
           if (num >= min_points)
             {
@@ -338,7 +338,7 @@ extract_supported_points(Feature2D* feature, const Points& points, support_index
                   support[(i + j) % length] = false;
                 }
             }
-
+            
           i = (i + num) % length;
         }
     }
@@ -449,7 +449,7 @@ extract_lines(PointSet& contours, const double thres = 1.0, const size_t min_poi
     {
       bool found = false;
 
-      if (contours[ci].size() < min_points)
+      if (contours[ci].size() < min_points) 
         {
           continue;
         }
@@ -490,7 +490,7 @@ extract_lines(PointSet& contours, const double thres = 1.0, const size_t min_poi
             }
         }
     }
-
+    
   return line_features;
 }
 
@@ -527,10 +527,10 @@ construct_vertex_features(const std::list<LineFeature2D>& lf)
 
           distance[0][0] = distance_points((cv::Point2d)i->start, cp);
           distance[0][1] = distance_points((cv::Point2d)i->end, cp);
-
+            
           distance[1][0] = distance_points((cv::Point2d)j->start, cp);
           distance[1][1] = distance_points((cv::Point2d)j->end, cp);
-
+            
           for (int k = 0; k < 2; ++k)
             {
               min_index[k] = distance[k][0] < distance[k][1] ? 0 : 1;
@@ -543,7 +543,7 @@ construct_vertex_features(const std::list<LineFeature2D>& lf)
             }
 
           VertexFeature feature;
-
+            
           feature.segment.resize(i->segment.size() + j->segment.size());
           for (size_t k = 0; k < i->segment.size(); ++k)
             {
@@ -865,7 +865,7 @@ extract_ellipses(PointSet& contours, const double thres = 1.5, const size_t min_
     {
       bool found = false;
 
-      if (contours[ci].size() < min_points)
+      if (contours[ci].size() < min_points) 
         {
           continue;
         }
@@ -906,7 +906,7 @@ extract_ellipses(PointSet& contours, const double thres = 1.5, const size_t min_
             }
         }
     }
-
+    
   return ellipse_features;
 }
 
@@ -1075,7 +1075,7 @@ ovgr::create_old_features_from_new_one(const Features2D& features)
                   --i;
                   free(old_features->track[i].Point);
                   old_features->track[i].Point = NULL;
-                }
+                }              
               goto error_point;
             }
           t->nPoint = n;
@@ -1152,7 +1152,7 @@ ovgr::create_old_features_from_new_one(const Features2D& features)
 
       f->center[0] = vf.mid.x;
       f->center[1] = vf.mid.y;
-
+        
       f->startPoint[0] = vf.start.x;
       f->startPoint[1] = vf.start.y;
 
@@ -1251,7 +1251,7 @@ ovgr::Features2D
 ovgr::create_new_features_from_old_one(const ::Features2D_old* old_features, unsigned char *img, const Parameters* parameters)
 {
   Features2D features;
-
+  
   if (old_features == NULL)
     {
       return features;
@@ -1286,7 +1286,7 @@ ovgr::create_new_features_from_old_one(const ::Features2D_old* old_features, uns
 
             compute_line_coef(vf.line_coef[0], vf.start, vf.mid);
             compute_line_coef(vf.line_coef[1], vf.end, vf.mid);
-
+          
             vf.length[0] = f->lineLength1;
             vf.length[1] = f->lineLength2;
 
@@ -1317,7 +1317,7 @@ ovgr::create_new_features_from_old_one(const ::Features2D_old* old_features, uns
                   }
 #else
                 int istart = f->start;
-                int iend = f->end;
+                int iend = f->end;                
                 if (istart > iend)
                   {
                     iend += f->all;
@@ -1361,7 +1361,7 @@ ovgr::create_new_features_from_old_one(const ::Features2D_old* old_features, uns
                   {
                     for (int j = f->start; j <= f->end; ++j)
                       {
-                        Point2D pos(t->Point[2*j], t->Point[2*j + 1]);
+                        Point2D pos(t->Point[2*j], t->Point[2*j + 1]);                        
                         ef.segment[0].push_back(pos);
                       }
                   }
@@ -1380,7 +1380,7 @@ ovgr::create_new_features_from_old_one(const ::Features2D_old* old_features, uns
                   }
 #else
                 int istart = f->start;
-                int iend = f->end;
+                int iend = f->end;                
                 if (istart > iend)
                   {
                     iend += f->all;
@@ -1407,9 +1407,6 @@ ovgr::create_new_features_from_old_one(const ::Features2D_old* old_features, uns
   //fprintf(stderr, "vertex : % d\n", features.vertex.size());
   //fprintf(stderr, "ellipse: % d\n", features.ellipse.size());
 #if 0
-#  ifdef _OPENMP
-#    pragma omp critical
-#  endif
   if (img != NULL && parameters != NULL)
     {
       cv::Mat gimg(parameters->rowsize, parameters->colsize, CV_8UC1, img), cimg;

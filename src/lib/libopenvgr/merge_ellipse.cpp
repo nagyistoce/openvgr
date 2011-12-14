@@ -55,9 +55,8 @@
 #define ALL_REF_OK	(1)
 #define ALL_REF_NG	(0)
 
-#define TRY_ELLIPSE_TERMINATE	(0) // err is large, stop
-#define TRY_ELLIPSE_CONTINUE	(1) // err is middle, continue 
-#define TRY_ELLIPSE_REGISTER	(2) // err is small, register and continue
+#define TRY_ELLIPSE_OK	(1)
+#define TRY_ELLIPSE_NG	(0)
 
 typedef struct _EllipseTerminal_ {
   int	flag;  // ELLIPSE_TERMINAL_{WHOLE|PART},NOELLIPSE
@@ -66,17 +65,15 @@ typedef struct _EllipseTerminal_ {
   double	axis[NAXIS];
   double	coef[NDIM_CONIC_FULL];
   double	min_theta, max_theta;
-  int		min_i, max_i;
   double	tangent[NTERMINAL][NDIM2];
   double	p[NTERMINAL][NDIM2];
   double	normal[NTERMINAL][NDIM2];
 } EllipseTerminal;
-
+ 
 typedef struct _MergeEllipseArrays_ {
   int	**tab;
   EllipseTerminal	*eterm; // nFeature
   int	*flist;
-  int	*ref; // f_e から f2D への逆参照
   SumSet	*sum;
   int	nFeature0;
 } MergeEllipseArrays;
@@ -196,7 +193,7 @@ debug_center_list(char	*imgname,
 	      "plot \"%s\" w dot, \"%s\",\"%s\" w line notitle, ",
 	      fname0, fname1, fname5);
     }
-  }
+  }    
   fprintf(fpa,
 	  "%g*cos(t)*(%g)+%g*sin(t)*(%g)+(%g),%g*cos(t)*(%g)+%g*sin(t)*(%g)+(%g) w line notitle\n",
 	  me->eterm[i_feature].axis[0],
@@ -210,7 +207,7 @@ debug_center_list(char	*imgname,
 	  me->eterm[i_feature].ev[1][1],
 	  me->eterm[i_feature].center[1]);
   fclose(fpa);
-
+  
   return;
 }
 
@@ -243,9 +240,8 @@ initial_arrays(Features2D_old	*f2D,
 	       Features2D_old	*f_e)
 {
   int	iFeature, jFeature;
-  // const MergeEllipseArrays zero_me = {0};
 
-  // f_e->nFeature  のセット
+  // f_e のセット
   f_e->nFeature = 0;
   for(iFeature = 0; iFeature < f2D->nFeature; iFeature++)
     {
@@ -255,14 +251,25 @@ initial_arrays(Features2D_old	*f2D,
 	}
     }
 
-  // me 内の配列の確保
-  // *me = zero_me;
-  me->tab = NULL;
-  me->eterm = NULL;
-  me->flist = NULL;
-  me->ref = NULL;
-  me->sum = NULL;
-  me->nFeature0 = 0;
+  f_e->nAlloc = f_e->nFeature;
+  f_e->nTrack = f2D->nTrack;
+  f_e->track = f2D->track;
+  f_e->feature = (Feature2D_old *)calloc(f_e->nFeature,
+					 sizeof(Feature2D_old));
+
+  if(f_e->feature == NULL)
+    {
+      return INITIAL_ARRAYS_NG;
+    }
+
+  for(iFeature = jFeature = 0; iFeature < f2D->nFeature; iFeature++)
+    {
+      if(f2D->feature[iFeature].type == ConicType_Ellipse)
+	{
+	  f_e->feature[jFeature] = f2D->feature[iFeature];
+	  jFeature++;
+	}
+    }
 
   me->tab = (int **)calloc(f_e->nFeature, sizeof(int *));
   if(me->tab == NULL){
@@ -291,38 +298,10 @@ initial_arrays(Features2D_old	*f2D,
       return INITIAL_ARRAYS_NG;
     }
 
-  me->ref = (int*)calloc(f_e->nFeature, sizeof(int));
-  if(me->ref == NULL)
-    {
-      return INITIAL_ARRAYS_NG;
-    }
-
   me->sum = (SumSet*)calloc(f_e->nFeature, sizeof(SumSet));
   if(me->sum == NULL)
     {
       return INITIAL_ARRAYS_NG;
-    }
-
-  // f_e の他のメンバのセット
-  f_e->nAlloc = f_e->nFeature;
-  f_e->nTrack = f2D->nTrack;
-  f_e->track = f2D->track;
-  f_e->feature = (Feature2D_old *)calloc(f_e->nFeature,
-					 sizeof(Feature2D_old));
-
-  if(f_e->feature == NULL)
-    {
-      return INITIAL_ARRAYS_NG;
-    }
-
-  for(iFeature = jFeature = 0; iFeature < f2D->nFeature; iFeature++)
-    {
-      if(f2D->feature[iFeature].type == ConicType_Ellipse)
-	{
-	  f_e->feature[jFeature] = f2D->feature[iFeature];
-	  me->ref[jFeature] = iFeature;
-	  jFeature++;
-	}
     }
 
   return INITIAL_ARRAYS_OK;
@@ -347,7 +326,6 @@ free_arrays(MergeEllipseArrays	*me,
   }
   if(me->eterm) free(me->eterm);
   if(me->flist) free(me->flist);
-  if(me->ref) free(me->ref);
   if(me->sum) free(me->sum);
 
   return;
@@ -392,7 +370,7 @@ calc_angle_i(EllipseTerminal	*ei,
   pointd[1] = (double)point[1];
 
   theta = calc_angle_d(ei, pointd) + modify_theta;
-
+  
   return theta;
 }
 
@@ -416,7 +394,7 @@ calc_tangent_vector(EllipseTerminal	*ei,
 
   return;
 }
-
+		    
 // 角度パラメータから楕円上の点を計算する
 static void
 calc_terminal_point(EllipseTerminal	*ei,
@@ -432,12 +410,12 @@ calc_terminal_point(EllipseTerminal	*ei,
 
   return;
 }
-
+		    
 
 // 楕円上の点は
 // (axis[0]*cos(t)*ev[0][0]+axis[1]*sin(t)*ev[1][0]+center[0],
 //  axis[0]*cos(t)*ev[0][1]+axis[1]*sin(t)*ev[1][1]+center[1])
-//  tangent : dP/dt .. t増加方向の接線
+//  tangent : dP/dt .. t増加方向の接線 
 // 外側の法線は dP/dt を時計回りに(col,row画像中では半時計回りに)９０度まわしたもの
 
 // 楕円端点の幾何情報をセット
@@ -462,87 +440,7 @@ set_maxmin_part(EllipseTerminal	*ei)
     ei->normal[i][0] = ei->tangent[i][1];
     ei->normal[i][1] = -ei->tangent[i][0];
   }
-
-  return;
-}
-
-// ei->min_i および ei->max_i を使って
-// ei->min_theta および　ei->max_theta を書き換え
-static void
-shorten_maxmin(int	*point,
-	       int	nPoint,
-	       int	start,
-	       int	goal,
-	       EllipseTerminal	*ei,
-	       const ParamEllipseIW* paramE)
-{
-  int	d[2];
-  int	count, k, i1;
-  double	theta[2], tmp;
-
-  d[0] = - paramE->ShortenEllipseMerging;
-  d[1] = paramE->ShortenEllipseMerging;
-
-  // ei->min_theta の修正
-  count = 0;
-  for (k = 0; k < 2; k++)
-    {
-      i1 = ei->min_i +d[k];
-      if ( i1 >= start && i1 <= goal)
-	{
-	  theta[count] = calc_angle_i(ei, &point[mod_nPoint(i1, nPoint)*2],
-				      0.0);
-	  while (theta[count] > ei->min_theta + M_PI * 2.0)
-	    {
-	      theta[count] -= M_PI * 2.0;
-	    }
-	  while (theta[count] < ei->min_theta)
-	    {
-	      theta[count] += M_PI * 2.0;
-	    }
-	  count++;
-	}
-    }
-
-  if (count)
-    {
-      tmp = 0.0;
-      for(k = 0; k < count; k++){
-	tmp += theta[k];
-      }
-      ei->min_theta = tmp /= (double)count;
-    }
-
-  // ei->max_theta の修正
-  count = 0;
-  for (k = 0; k < 2; k++)
-    {
-      i1 = ei->max_i +d[k];
-      if ( i1 >= start && i1 <= goal)
-	{
-	  theta[count] = calc_angle_i(ei, &point[mod_nPoint(i1, nPoint)*2],
-				      0.0);
-	  while (theta[count] < ei->min_theta + M_PI * 2.0)
-	    {
-	      theta[count] += M_PI * 2.0;
-	    }
-	  while (theta[count] > ei->min_theta)
-	    {
-	      theta[count] -= M_PI * 2.0;
-	    }
-	  count++;
-	}
-    }
-
-  if (count)
-    {
-      tmp = 0.0;
-      for(k = 0; k < count; k++){
-	tmp += theta[k];
-      }
-      ei->max_theta = tmp /= (double)count;
-    }
-
+  
   return;
 }
 
@@ -550,8 +448,7 @@ shorten_maxmin(int	*point,
 static void
 set_eterminal(Features2D_old	*f_e,
 	      int	iFeature,
-	      EllipseTerminal	*ei,
-	      const ParamEllipseIW* paramE)
+	      EllipseTerminal	*ei)
 {
   int	i, j;
   Feature2D_old	*e0;
@@ -609,12 +506,12 @@ set_eterminal(Features2D_old	*f_e,
   // なので、
   // cos(t) = (ev[1][1](x-center[0])-ev[1][0](y-center[1]))/axis[0]
   // sin(t) = (ev[0][1](x-center[0])+ev[0][0](y-center[1]))/axis[1]
-  //
+  // 
   // そして
   // すでに計算された 最大、最小角度と比較して更新する
   // 点列のサイズが nPoint と同一のときのみ、最後の点と最初の点の間の判定を加える
 
-  // 角度が±Piをまたがるかどうかをチェックしておき、角度の比較をする場合に修正する
+  // 角度が±Piをまたがるかどうかをチェックしておき、角度の比較をする場合に修正する 
 
   point = f_e->track[e0->nTrack].Point;
   nPoint = f_e->track[e0->nTrack].nPoint;
@@ -631,9 +528,8 @@ set_eterminal(Features2D_old	*f_e,
 #if 1
   modify_theta = 0.0;
   ei->min_theta = ei->max_theta
-    = prev_theta
+    = prev_theta 
     = calc_angle_i(ei, &point[mod_nPoint(start, nPoint)*2], modify_theta);
-  ei->min_i = ei->max_i = start;
 
   for (i = start+1; i <= goal; i++)
     {
@@ -662,12 +558,10 @@ set_eterminal(Features2D_old	*f_e,
       if (theta > ei->max_theta)
 	{
 	  ei->max_theta = theta;
-	  ei->max_i = i;
 	}
       else if (theta < ei->min_theta)
 	{
 	  ei->min_theta = theta;
-	  ei->min_i = i;
 	}
 
       // 全円周のチェック
@@ -679,7 +573,7 @@ set_eterminal(Features2D_old	*f_e,
 	}
 
       prev_theta = theta;
-    }
+    }      
 #else
   // 以下の部分は、全点で角度を計算しない方法。
   // 高速化は期待できるが多少複雑になるのでまだ未完成
@@ -688,7 +582,7 @@ set_eterminal(Features2D_old	*f_e,
   modify_theta = 0.0;
 
   ei->min_theta = ei->max_theta
-    = prev_locmin = prev_locmax
+    = prev_locmin = prev_locmax 
     = calc_angle_i(ei, &point[mod_nPoint(start, nPoint)*2], modify_theta);
 
   for (i = start; i <= goal-1; i++)
@@ -790,10 +684,6 @@ set_eterminal(Features2D_old	*f_e,
 
 #endif
 
-  if (paramE->ShortenEllipseMerging > 0)
-    {
-      shorten_maxmin(point, nPoint, start, goal, ei, paramE);
-    }
   // 部分データのセット
   set_maxmin_part(ei);
 
@@ -855,9 +745,9 @@ check_center_zone(EllipseTerminal	*ei,
       return check_center_zone_whole(ei, fj);
     }
 
-
+  
   //開放側
-  for(n = 0; n < NTERMINAL; n++){
+  for(n = 0; n < NTERMINAL; n++){ 
     for(i = 0; i < NDIM2; i++){
       tmpvec[i] = fj->center[i] - ei->p[n][i];
     }
@@ -869,7 +759,7 @@ check_center_zone(EllipseTerminal	*ei,
 
     if(a0 * a1 < 0.0) return REF_NG;
   }
-
+					
   return REF_OK;
 }
 
@@ -955,7 +845,7 @@ eval_ellipse_multi(int	step,
 	  }
 	}
     }
-
+    
   *meanError = sum/(double)np;
 
   return;
@@ -985,9 +875,9 @@ try_ellipse_merge(int	step,
       sum_plus_sum(&tmpsum, &me->sum[me->flist[ifeature]]);
     }
 
-  sum_to_P_dynamic(&tmpsum, ellipse, NULL); // using no offset
+  sum_to_P_dynamic(&tmpsum, ellipse);
 
-  P_to_avec_and_fix(ellipse, paramE);
+  P_to_avec_and_fix(ellipse);
 
   if (ellipse->neval == 0)
     {
@@ -995,7 +885,7 @@ try_ellipse_merge(int	step,
         {
           ellipse->coef[idim] = 0.0; // not found
         }
-      return TRY_ELLIPSE_TERMINATE;
+      return TRY_ELLIPSE_NG;
     }
 
   // 計算された係数の評価
@@ -1056,46 +946,26 @@ try_ellipse_merge(int	step,
         }
       ellipse->rad[0] = ellipse->rad[1] = 0.0;
 
-      return TRY_ELLIPSE_TERMINATE;
+      return TRY_ELLIPSE_NG;
     }
 
   if (check_ellipse_cond(ellipse, paramE) == CHECK_ELLIPSE_NG)
     {
-      switch (paramE->Condition)
-	{
-	case ELLIPSE_CONDITION_MEAN:
-	  if(ellipse->meanError > paramE->ThMeanErrorMerging)
-	    {
-	      return TRY_ELLIPSE_TERMINATE;
-	    }
-	  break;
-	case ELLIPSE_CONDITION_MAX:
-	  if (ellipse->maxError > paramE->ThMaxErrorMerging) 
-	    {
-	      return TRY_ELLIPSE_TERMINATE;
-	    }
-	  break;
-	}
-
-      return TRY_ELLIPSE_CONTINUE;
+      return TRY_ELLIPSE_NG;
     }
 
-  return TRY_ELLIPSE_REGISTER;
+  return TRY_ELLIPSE_OK;
 }
 
 #define ADD_NEW_MULTI_ELLIPSE_OK  (1)
 #define ADD_NEW_MULTI_ELLIPSE_NG  (0)
 
-// 複数の円弧を一つの feature として登録する
+// 複数の円弧を一つの feature として登録する 
 static int
 add_new_multi_ellipse(Features2D_old* f2D,
 		      //int start,
 		      //int goal,
 		      Ellipse	*ellipse,
-		      Features2D_old* f_e,
-		      MergeEllipseArrays	*me,
-		      //int	*flist,
-		      int	step,
 		      const ParamEllipseIW* paramE
 		      //int nPoint,
 		      //int iTrack,
@@ -1103,8 +973,7 @@ add_new_multi_ellipse(Features2D_old* f2D,
 		      )
 {
   int i, j;
-  Feature2D_old	*newf, *tmpf;
-  EllipseArc	*parc;
+  Feature2D_old	*newf;
 
   /* dummy for test*/
   // copy max_f2D to feature
@@ -1148,7 +1017,7 @@ add_new_multi_ellipse(Features2D_old* f2D,
     {
       newf->error = ellipse->maxError;
     }
-
+  
   /* dummy */
   for (i = 0; i < NDIM2; i++)
     {
@@ -1159,37 +1028,11 @@ add_new_multi_ellipse(Features2D_old* f2D,
       newf->endSPoint[i] = 0.0;
       newf->direction[i] = 0.0;
     }
-  // sum of len info
-  newf->start = 0;
-  newf->all = 0;
-  for (i = 0; i < step; i++)
-    {
-      tmpf = &f_e->feature[me->flist[i]];
-      newf->all += tmpf->end - tmpf->start + 1;
-    }
-  newf->end = newf->all-1;
-
+  newf->start = newf->end = newf->all = -1;
   newf->nPoints = newf->nTrack = -1;
   newf->lineLength = newf->lineLength1 = newf->lineLength2 = 0.0;
   newf->lineAngle = 0.0;
-
-  // arclist のセット
-  newf->arclist.n = step;
-  newf->arclist.arc = (EllipseArc *)calloc(step, sizeof(EllipseArc));
-  if (newf->arclist.arc == NULL)
-    {
-      return ADD_NEW_MULTI_ELLIPSE_NG;
-    }
-  for (i = 0; i < step; i++)
-    {
-      parc = &newf->arclist.arc[i];
-      parc->f2Ds = f2D;
-      parc->ntrack = f2D->feature[me->ref[me->flist[i]]].nTrack;
-      parc->start = f2D->feature[me->ref[me->flist[i]]].start;
-      parc->goal = f2D->feature[me->ref[me->flist[i]]].end;
-    }
-
-  // f2D->nFeature の更新
+  
   ++(f2D->nFeature);
 
   return ADD_NEW_MULTI_ELLIPSE_OK;
@@ -1234,12 +1077,10 @@ search_another_arc(int	step,
 	  result_try = try_ellipse_merge(step+1, me, f_e, &ellipse, paramE);
 	    /*if(try_ellipse_merge(step+1, me, f2D, &ellipse, paramE)
 	      == TRY_ELLIPSE_OK)*/
-
-	  if (result_try == TRY_ELLIPSE_REGISTER)
+	  
+	  if(result_try == TRY_ELLIPSE_OK)
 	    {
-	      if(add_new_multi_ellipse(f2D, &ellipse,
-				       f_e, me, step+1,
-				       paramE)
+	      if(add_new_multi_ellipse(f2D, &ellipse, paramE)
 		 == ADD_NEW_MULTI_ELLIPSE_NG)
 		{
 		  return ANOTHER_EXIST_ERROR;
@@ -1247,15 +1088,12 @@ search_another_arc(int	step,
 	    }
 
 	  //another_exist = ANOTHER_EXIST_OK;
-	  if (result_try != TRY_ELLIPSE_TERMINATE)
-	    {
-	      next_ret = search_another_arc(step+1, i+1, me, f_e, f2D, paramE);
-	      if (next_ret == ANOTHER_EXIST_ERROR)
-		{
-		  return ANOTHER_EXIST_ERROR;
-		}
-	    }
+	  next_ret = search_another_arc(step+1, i+1, me, f_e, f2D, paramE);
 
+	  if(next_ret == ANOTHER_EXIST_ERROR){
+	    return ANOTHER_EXIST_ERROR;
+	  }
+	  
 	  me->flist[step] = -1;
 	}
     }
@@ -1284,12 +1122,12 @@ set_sum(int	iFeature,
     }
   }else{
     for(i = tmpf->start; i < tmpt->nPoint; i++){
-      addArcSum(&me->sum[iFeature],
+      addArcSum(&me->sum[iFeature], 
 		(const int *)&tmpt->Point[mod_nPoint(i, tmpt->nPoint)*2],
 		offset_zero);
     }
     for(i = 0; i <= tmpf->end; i++){
-      addArcSum(&me->sum[iFeature],
+      addArcSum(&me->sum[iFeature], 
 		(const int *)&tmpt->Point[mod_nPoint(i, tmpt->nPoint)*2],
 		offset_zero);
     }
@@ -1307,7 +1145,7 @@ merge_ellipse(Features2D_old	*f2D,
   MergeEllipseArrays	me = { 0 };
   int	iFeature;
   int	jFeature;
-  //int	found_pair;
+  int	found_pair;
 
   // ローカル配列構造体の malloc
   if(initial_arrays(f2D, &me, &f_e) == INITIAL_ARRAYS_NG)
@@ -1334,7 +1172,7 @@ merge_ellipse(Features2D_old	*f2D,
 
   // 各楕円の端点接線の計算（全周の楕円かどうかのフラグも立てる）
   for(iFeature = 0; iFeature < f_e.nFeature; iFeature++){
-    set_eterminal(&f_e, iFeature, &me.eterm[iFeature], paramE);
+    set_eterminal(&f_e, iFeature, &me.eterm[iFeature]);
   }
 
   // 参照table の作成 楕円の弧の範囲に他の楕円の中心があるか

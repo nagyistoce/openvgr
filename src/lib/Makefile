@@ -5,7 +5,7 @@
 
 CC = gcc
 CXX = g++
-CFLAGS = -O3 -march=native -Wall -pipe -fPIC
+CFLAGS = -O3 -march=native -Wall -pipe
 LDFLAGS =
 
 DEFINES = CC='$(CC)' CXX='$(CXX)' CFLAGS='$(CFLAGS)' LDFLAGS='$(LDFLAGS)'

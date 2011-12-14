@@ -19,7 +19,7 @@
 
 // 二次元楕円の形状から三次元空間中の真円の半径と法線の推定値を計算する
 // Reference:
-// Kenichi Katanani and Wu Liu, "3D Interpretation of Conics and Orthogonality",
+// Kenichi Katanani and Wu Liu, "3D Interpretation of Conics and Orthogonality", 
 // CVGIP: Image Understanding, Vol.58, No.3, pp.286-301, 1993
 static double
 CircleNormal(CameraParam* cameraParam, Feature2D_old* feature, double center[3],
@@ -230,7 +230,7 @@ reconstruct_ellipse2D_to_circle3D(std::vector<const ovgr::Features2D*>& feature,
   // 旧特徴への変換、頂点数の計算
   for (size_t i = 0; i < feature.size(); ++i)
     {
-      old_Features2D[i] = ovgr::create_old_features_from_new_one(*feature[i]);
+      old_Features2D[i] = ovgr::create_old_features_from_new_one(*feature[i]);      
       nv[i] = feature[i]->vertex.size();
     }
 
@@ -240,7 +240,7 @@ reconstruct_ellipse2D_to_circle3D(std::vector<const ovgr::Features2D*>& feature,
       std::vector<const ovgr::EllipseFeature*> new_f(it->size());
       std::vector<int> c_index(it->size()); // カメラのインデックス
       size_t n = 0;
-
+      
       for (size_t c = 0; c < it->size(); ++c)
         {
           // データが存在していたら
@@ -268,8 +268,8 @@ reconstruct_ellipse2D_to_circle3D(std::vector<const ovgr::Features2D*>& feature,
       posR.col = new_f[1]->center[0];
       posR.row = new_f[1]->center[1];
 #endif
-      double error = calculateLR2XYZ(wcenter, posL, posR,
-                                     const_cast<CameraParam*>(camParam[c_index[0]]),
+      double error = calculateLR2XYZ(wcenter, posL, posR, 
+                                     const_cast<CameraParam*>(camParam[c_index[0]]), 
                                      const_cast<CameraParam*>(camParam[c_index[1]]));
       // ここでの判定は将来的には必要ないはず
       // テスト段階では前候補がここにくるので判定が必要
@@ -345,25 +345,25 @@ reconstruct_ellipse2D_to_circle3D(std::vector<const ovgr::Features2D*>& feature,
 
       // 単位ベクトル化
       normalizeV3(wnormal, wnormal);
-
+      
       // 3つの法線（Ｌ，Ｒ，平均）からもっとも良さそうな法線を選択する
       // 3次元円を2次元エッジ画像に投影して、円上のエッジ点をカウントし、もっとも多いのを選択
       iMaxN = 0;
       normalizeV3(nL[maxL], nL[maxL]);
       normalizeV3(nR[maxR], nR[maxR]);
       iMaxCountOnEdge =
-        evalCircleOnEdge(const_cast<unsigned char*>(edge[c_index[0]]),
-                         const_cast<CameraParam*>(camParam[c_index[0]]),
+        evalCircleOnEdge(const_cast<unsigned char*>(edge[c_index[0]]), 
+                         const_cast<CameraParam*>(camParam[c_index[0]]), 
                          radius, wnormal, wcenter, parameters)
-        + evalCircleOnEdge(const_cast<unsigned char*>(edge[c_index[1]]),
-                           const_cast<CameraParam*>(camParam[c_index[1]]),
+        + evalCircleOnEdge(const_cast<unsigned char*>(edge[c_index[1]]), 
+                           const_cast<CameraParam*>(camParam[c_index[1]]), 
                            radius, wnormal, wcenter, parameters);
       iCountOnEdge =
-        evalCircleOnEdge(const_cast<unsigned char*>(edge[c_index[0]]),
-                         const_cast<CameraParam*>(camParam[c_index[0]]),
+        evalCircleOnEdge(const_cast<unsigned char*>(edge[c_index[0]]), 
+                         const_cast<CameraParam*>(camParam[c_index[0]]), 
                          rL, nL[maxL], wcenter, parameters)
-        + evalCircleOnEdge(const_cast<unsigned char*>(edge[c_index[1]]),
-                           const_cast<CameraParam*>(camParam[c_index[1]]),
+        + evalCircleOnEdge(const_cast<unsigned char*>(edge[c_index[1]]), 
+                           const_cast<CameraParam*>(camParam[c_index[1]]), 
                            rL, nL[maxL], wcenter, parameters);
       if (iCountOnEdge > iMaxCountOnEdge)
         {
@@ -371,11 +371,11 @@ reconstruct_ellipse2D_to_circle3D(std::vector<const ovgr::Features2D*>& feature,
           iMaxCountOnEdge = iCountOnEdge;
         }
       iCountOnEdge =
-        evalCircleOnEdge(const_cast<unsigned char*>(edge[c_index[0]]),
-                         const_cast<CameraParam*>(camParam[c_index[0]]),
+        evalCircleOnEdge(const_cast<unsigned char*>(edge[c_index[0]]), 
+                         const_cast<CameraParam*>(camParam[c_index[0]]), 
                          rR, nR[maxR], wcenter, parameters)
-        + evalCircleOnEdge(const_cast<unsigned char*>(edge[c_index[1]]),
-                           const_cast<CameraParam*>(camParam[c_index[1]]),
+        + evalCircleOnEdge(const_cast<unsigned char*>(edge[c_index[1]]), 
+                           const_cast<CameraParam*>(camParam[c_index[1]]), 
                            rR, nR[maxR], wcenter, parameters);
       if (iCountOnEdge > iMaxCountOnEdge)
         {
