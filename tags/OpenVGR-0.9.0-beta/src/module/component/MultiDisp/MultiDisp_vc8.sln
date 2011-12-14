@@ -1,0 +1,29 @@
+Microsoft Visual Studio Solution File, Format Version 9.00
+# Visual Studio 2005
+Project("{48866969-CCA2-43C8-9AA7-066A89DB3582}") = "MultiDispComp", "MultiDispComp_vc8.vcproj", "{E04B62C5-D713-48A2-945B-B4F23B4891C1}"
+	ProjectSection(ProjectDependencies) = postProject
+	EndProjectSection
+EndProject
+Project("{48866969-CCA2-43C8-9AA7-066A89DB3582}") = "MultiDisp", "MultiDisp_vc8.vcproj", "{B42856EE-105D-43C5-8E95-7F42509DE4D7}"
+	ProjectSection(ProjectDependencies) = postProject
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Release|Win32 = Release|Win32
+		Debug|Win32 = Debug|Win32
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{E04B62C5-D713-48A2-945B-B4F23B4891C1}.Release|Win32.ActiveCfg = Release|Win32
+		{E04B62C5-D713-48A2-945B-B4F23B4891C1}.Release|Win32.Build.0   = Release|Win32
+		{E04B62C5-D713-48A2-945B-B4F23B4891C1}.Debug|Win32.ActiveCfg = Debug|Win32
+		{E04B62C5-D713-48A2-945B-B4F23B4891C1}.Debug|Win32.Build.0   = Debug|Win32
+		{B42856EE-105D-43C5-8E95-7F42509DE4D7}.Release|Win32.ActiveCfg = Release|Win32
+		{B42856EE-105D-43C5-8E95-7F42509DE4D7}.Release|Win32.Build.0   = Release|Win32
+		{B42856EE-105D-43C5-8E95-7F42509DE4D7}.Debug|Win32.ActiveCfg = Debug|Win32
+		{B42856EE-105D-43C5-8E95-7F42509DE4D7}.Debug|Win32.Build.0   = Debug|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

@@ -1,0 +1,29 @@
+Microsoft Visual Studio Solution File, Format Version 9.00
+# Visual Studio 2005
+Project("{57349890-AFC2-48BB-9DE2-84D07B55E963}") = "MultiCameraComp", "MultiCameraComp_vc8.vcproj", "{C737F854-D0A2-4049-BFD4-E2D62DA5F939}"
+	ProjectSection(ProjectDependencies) = postProject
+	EndProjectSection
+EndProject
+Project("{57349890-AFC2-48BB-9DE2-84D07B55E963}") = "MultiCamera", "MultiCamera_vc8.vcproj", "{7584FD8A-DBCF-4511-9C41-93DD6C75E670}"
+	ProjectSection(ProjectDependencies) = postProject
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Release|Win32 = Release|Win32
+		Debug|Win32 = Debug|Win32
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{C737F854-D0A2-4049-BFD4-E2D62DA5F939}.Release|Win32.ActiveCfg = Release|Win32
+		{C737F854-D0A2-4049-BFD4-E2D62DA5F939}.Release|Win32.Build.0   = Release|Win32
+		{C737F854-D0A2-4049-BFD4-E2D62DA5F939}.Debug|Win32.ActiveCfg = Debug|Win32
+		{C737F854-D0A2-4049-BFD4-E2D62DA5F939}.Debug|Win32.Build.0   = Debug|Win32
+		{7584FD8A-DBCF-4511-9C41-93DD6C75E670}.Release|Win32.ActiveCfg = Release|Win32
+		{7584FD8A-DBCF-4511-9C41-93DD6C75E670}.Release|Win32.Build.0   = Release|Win32
+		{7584FD8A-DBCF-4511-9C41-93DD6C75E670}.Debug|Win32.ActiveCfg = Debug|Win32
+		{7584FD8A-DBCF-4511-9C41-93DD6C75E670}.Debug|Win32.Build.0   = Debug|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
