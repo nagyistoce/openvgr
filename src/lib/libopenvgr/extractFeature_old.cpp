@@ -2275,7 +2275,7 @@ check_conic_match(Feature2D_old	*f_p, // 点列用
       for (i = start; i <= goal; i++)
 	{
 	  ip = mod_nPoint(i, nPoint);
-          e = fabs(distanceAConic((double *)coef, &point[i*2]));
+          e = fabs(distanceAConic((double *)coef, &point[ip*2]));
 	  sum += e;
 	  np++;
           if (e > maxError)
