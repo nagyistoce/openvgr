@@ -101,9 +101,46 @@ fitLine(double center[2], double direction[2], double sum[5][5], double offset[2
   const double M11 = sum[1][1] - center[0] * center[1] * sum[0][0];
   const double M02 = sum[0][2] - pow(center[1], 2) * sum[0][0];
 
+  /*
   const double theta = atan2(M11 * 2.0, M20 - M02) / 2.0;
   direction[0] = cos(theta);
   direction[1] = sin(theta);
+  */
+  {
+    double	lambdamax;
+    double	vec[2][2];
+    int	k;
+    double	len2[2], len1;
+    int	kmax;
+    double	evmin[2];
+
+    lambdamax=(M20+M02+sqrt((M20-M02)*(M20-M02)+4.0*M11*M11))/2;
+    vec[0][0] = M20 - lambdamax;
+    vec[0][1] = M11;
+    vec[1][0] = M11;
+    vec[1][1] = M02-lambdamax;
+    for (k=0;k<2;k++)
+      {
+	len2[k] = vec[k][0]*vec[k][0]+vec[k][1]*vec[k][1];
+      }
+    if (len2[0] < len2[1])
+      {
+	kmax=1;
+      }
+    else
+      {
+	kmax=0;
+      }
+
+    len1 = sqrt(len2[kmax]);
+    for (k = 0; k < 2; k++)
+      {
+	evmin[k] = vec[kmax][k] / len1;
+      }
+
+    direction[0] = evmin[1];
+    direction[1] = -evmin[0];
+  }
   center[0] += offset[0];
   center[1] += offset[1];
   return;
@@ -190,9 +227,10 @@ checkConicInLine(double* maxError, double center[2], double direction[2],
                  int* point, const int nPoint, const int start,
                  const int end, const double errorLine)
 {
-  const double errorLine2 = pow(errorLine, 2); // 計算しやすいように２乗しておく
-  double maxError2 = 0.0;
-  double dx, dy, error2 = 0.0;
+  //const double errorLine2 = pow(errorLine, 2); // 計算しやすいように２乗しておく
+  //double maxError2 = 0.0;
+  //double dx, dy, error2 = 0.0;
+  double dx, dy, error1 = 0.0;
 
   *maxError = 0.0;
   if ((center[0] == 0.0) && (center[1] == 0.0) &&
@@ -215,18 +253,25 @@ checkConicInLine(double* maxError, double center[2], double direction[2],
       pp = p % nPoint;
       dx = (double) point[pp * 2] - center[0];
       dy = (double) point[pp * 2 + 1] - center[1];
-      error2 = pow(dx, 2) + pow(dy, 2) - pow(dx * direction[0] + dy * direction[1], 2);
-      if (error2 >= errorLine2)
+      //error2 = pow(dx, 2) + pow(dy, 2) - pow(dx * direction[0] + dy * direction[1], 2);
+      //if (error2 >= errorLine2)
+      error1 = fabs(dx*direction[1]-dy*direction[0]);
+      if (error1 >= errorLine)
         {
-          *maxError = sqrt(error2);
+	  *maxError = error1;
+          //*maxError = sqrt(error2);
           return 0;             // 誤差は大きい
         }
-      if (maxError2 < error2)
-        {
-          maxError2 = error2;
-        }
+      //if (maxError2 < error2)
+      //{
+      //maxError2 = error2;
+      //}
+      if (*maxError < error1)
+	{
+	  *maxError = error1;
+	}
     }
-  *maxError = sqrt(maxError2);
+  //*maxError = sqrt(maxError2);
 
   return 1;                     // すべての点の誤差は一定範囲内であった
 }
