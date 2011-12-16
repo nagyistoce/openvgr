@@ -1162,6 +1162,7 @@ mult_mat33 (double m[3][3], double n[3][3])
     }
 }
 
+#ifdef DEBUG_MULTICALIB
 static void
 disp_mat (double (*m)[3], const int dim)
 {
@@ -1176,6 +1177,7 @@ disp_mat (double (*m)[3], const int dim)
     }
   printf("\n");
 }
+#endif
 
 static double
 calib_calc_error (const camera_param_t *camera_params, const extrinsic_param_t *plane_poses, const trans2D_t *t2ds, const cdata_t *cdata, CvMat *JtJ, CvMat *JtF, const double *lambdas, const int flag)

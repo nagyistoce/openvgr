@@ -19,6 +19,7 @@
 
 const optimizer_context_t OPTI_CXT_INIT = {NULL, NULL, opti_update_default, -1, 1000};
 
+#ifdef DEBUG_MULTICALIB
 static void print_vec(CvMat *v)
 {
   int i;
@@ -39,6 +40,7 @@ static void print_mat(CvMat *m)
   }
   printf("\n");
 }
+#endif /* DEBUG_MULTICALIB */
 
 double optimize_lm(optimizer_context_t *cxt, CvMat *param)
 {
