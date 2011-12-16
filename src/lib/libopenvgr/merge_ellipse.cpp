@@ -81,6 +81,7 @@ typedef struct _MergeEllipseArrays_ {
   int	nFeature0;
 } MergeEllipseArrays;
 
+#ifdef DEBUG_MERGE_ELLIPSE
 static void
 debug_print_tab(int	nFeature,
 		int	**tab)
@@ -234,6 +235,7 @@ debug_track_data(char	*imgname,
   fclose(fp);
   return;
 }
+#endif
 
 // MergeEllipseArrays の配列メモリ確保
 

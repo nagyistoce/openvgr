@@ -949,6 +949,7 @@ P_to_avec_and_fix(Ellipse* ellipse,
   return;
 }
 
+#if 0
 // 固有値の絶対値の比を比較し、最大値が閾値より大きければ 0 を返す
 #define CHECK_EIGEN_VALUE_RATIO_NG	(0)
 #define CHECK_EIGEN_VALUE_RATIO_OK	(1)
@@ -986,6 +987,7 @@ check_eigen_value_ratio(Ellipse* ellipse,
 
   return CHECK_EIGEN_VALUE_RATIO_OK;
 }
+#endif
 
 static int
 point_to_ellipse(int  start1,
@@ -1434,6 +1436,7 @@ searchEllipseIW(Features2D_old* f2D,
   // 構造体の初期化
   sum = null_sum;
   sum0 = null_sum;
+  sum1 = null_sum;
   ellipse = null_ellipse;
   //max_ellipse = null_ellipse;
   max_f2D = null_f2D;
