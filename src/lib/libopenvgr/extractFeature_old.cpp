@@ -1004,7 +1004,6 @@ searchLineFeatures(unsigned char* work, Features2D_old* features,
   return 0;
 }
 
-#if 0
 // 特徴点を探す
 static int
 searchFeatures(unsigned char* work, Features2D_old* features,
@@ -1259,7 +1258,6 @@ searchFeatures(unsigned char* work, Features2D_old* features,
     }
   return 0;
 }
-#endif
 
 // 作業画像から長い直線を除去する
 static void
@@ -2342,7 +2340,6 @@ comp_flist (const void *pa,
   return (b->np - a->np);
 }
 
-#ifdef DEBUG_FLIST
 static void
 debug_flist(Feature_List	*flist,
 	    int	nflist)
@@ -2400,7 +2397,6 @@ debug_flist(Feature_List	*flist,
 
   return;
 }
-#endif
 
 static int
 compress_ellipse(Features2D_old	*f2Ds,
