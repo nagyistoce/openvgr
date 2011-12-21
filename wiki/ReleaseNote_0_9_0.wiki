@@ -3,8 +3,6 @@
 
 = What's new from 0.8.1 =
 
-*(draft)*
-
 Remarkable changes from 0.8.1 are shown below. To view the details, please check a log of [http://code.google.com/p/openvgr/source/list our repository].
 
 == Recognition RTCs ==
