@@ -138,10 +138,12 @@ static int s_clear_conf_param(conf_param_t *data);
 
 static int s_get_capture_size(unsigned int mode, int *width, int *height);
 static int s_get_capture_format(unsigned int mode, capture_frame_format_t *format);
-static int s_get_capture_framerate(unsigned int framerate, double *fps);
+// static int s_get_capture_framerate(unsigned int framerate, double *fps);
 
 static int s_camera_setting_init(camera_setting_t *s);
+#ifdef DEBUG_LIBCAPTURE
 static void s_camera_setting_disp(camera_setting_t *s);
+#endif
 static int s_camera_setting_set_feature(camera_setting_t *s, unsigned int feature, const int val);
 static int s_set_parameters(capture_t *cap, const int index, camera_setting_t *s);
 static int s_activate_camera(capture_t *cap, const int index);
@@ -796,8 +798,10 @@ static int s_read_conf_file(const char *conf_file, conf_param_t *data)
       }
     } while (ch != '\n' && ch != EOF);
 
-    //s_camera_setting_disp(&data->settings[num_confs]);
-    //printf("\n");
+#ifdef DEBUG_LIBCAPTURE
+    s_camera_setting_disp(&data->settings[num_confs]);
+    printf("\n");
+#endif
   }
 
   if (data->num_cameras != num_confs) {
@@ -944,6 +948,7 @@ static int s_get_capture_format(unsigned int mode, capture_frame_format_t *forma
   return CAPTURE_SUCCESS;
 }
 
+#if 0
 static int s_get_capture_framerate(unsigned int framerate, double *fps)
 {
   switch (framerate) {
@@ -986,6 +991,7 @@ static int s_get_capture_framerate(unsigned int framerate, double *fps)
 
   return CAPTURE_SUCCESS;
 }
+#endif
 
 static int s_camera_setting_init(camera_setting_t *s)
 {
@@ -1016,6 +1022,7 @@ static int s_camera_setting_init(camera_setting_t *s)
   return CAPTURE_SUCCESS;
 }
 
+#ifdef DEBUG_LIBCAPTURE
 static void s_camera_setting_disp(camera_setting_t *s)
 {
   printf("GUID         : 0x%0"PRIx64"\n", s->uid);
@@ -1047,6 +1054,7 @@ static void s_camera_setting_disp(camera_setting_t *s)
 
   printf("\n");
 }
+#endif /* DEBUG_LIBCAPTURE */
 
 static int s_camera_setting_set_feature(camera_setting_t *s, unsigned int feature, const int val)
 {

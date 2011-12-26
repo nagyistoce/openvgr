@@ -1,5 +1,5 @@
 /*
- calib_proc.c
+ calib_proc.cpp
 
  Copyright (c) 2011 AIST  All Rights Reserved.
  Eclipse Public License v1.0 (http://www.eclipse.org/legal/epl-v10.html)
@@ -9,9 +9,9 @@
  $Date::                            $
 */
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <math.h>
+#include <cstdio>
+#include <cstdlib>
+#include <cmath>
 
 #include <cv.h>
 
@@ -41,28 +41,28 @@ static void compute_initial_poses (camera_param_t *camera_params, const extrinsi
 static void compute_displacement (trans2D_t *t2ds, const camera_param_t *camera_params, const cdata_t *cdata, const extrinsic_param_t *plane_poses, const calib_opt_t *opt);
 static double optimize_camera_parameters (camera_param_t *camera_params, extrinsic_param_t *plane_poses, const trans2D_t *t2ds, const cdata_t *cdata, const calib_opt_t *opt, const int additional_flag);
 
-static CvSize guess_image_size (CvMat *imagePoints);
+static cv::Size guess_image_size (const cv::Mat& imagePoints);
 
-static void convert_rodrigues2quat (const CvMat *rvec, quaternion_t q);
+static void convert_rodrigues2quat (const cv::Mat& rvec, quaternion_t q);
 static void extract_plane_equation (double coeff[4], const extrinsic_param_t *ext);
 static void compute_rotation (camera_param_t *camera_params, double (*coeffs)[4], const int nobserv, const int ncamera);
 static void compute_translation (camera_param_t *camera_params, double (*coeffs)[4], const int nobserv, const int ncamera);
 
 /* plane coordinate = homo * image coordinate */
-static void construct_homography (CvMat *homo, const camera_param_t *camera_param, const extrinsic_param_t *plane);
-static void construct_homography_inv (CvMat *homo, const camera_param_t *camera_param, const extrinsic_param_t *plane);
+static void construct_homography (cv::Mat *homo, const camera_param_t *camera_param, const extrinsic_param_t *plane);
+static void construct_homography_inv (cv::Mat *homo, const camera_param_t *camera_param, const extrinsic_param_t *plane);
 
-static void compute_undistorted_points (CvMat *points, const camera_param_t *camera_param, const cdata_observed_points_t *op);
+static void compute_undistorted_points (std::vector<cv::Point2f> *points, const camera_param_t *camera_param, const cdata_observed_points_t *op);
 
-static void estimate_nearest_point (double refpos[2], CvMat *Homo, CvMat *Homo_inv, const double imgpos[2], const double interval);
+static void estimate_nearest_point (cv::Point2f *refpos, const cv::Mat& Homo, const cv::Mat& Homo_inv, const cv::Point2f& imgpos, const double interval);
 
 static void trans2D_apply (double y[2], const trans2D_t *t2d, const double x[2]);
 
-static double calib_calc_error (const camera_param_t *camera_params, const extrinsic_param_t *plane_poses, const trans2D_t *t2ds, const cdata_t *cdata, CvMat *JtJ, CvMat *JtF, const double *lambdas, const int flag);
-static void update_camera_params (camera_param_t *camera_params, extrinsic_param_t *plane_poses, double *lambdas, const CvMat *rev, const camera_param_t *camera_params_current, const int ncamera, const extrinsic_param_t *plane_poses_current, const int nobserv, const double *lambdas_current, const int flag);
+static double calib_calc_error (const camera_param_t *camera_params, const extrinsic_param_t *plane_poses, const trans2D_t *t2ds, const cdata_t *cdata, cv::Mat *JtJ, cv::Mat *JtF, const double *lambdas, const int flag);
+static void update_camera_params (camera_param_t *camera_params, extrinsic_param_t *plane_poses, double *lambdas, const cv::Mat& rev, const camera_param_t *camera_params_current, const int ncamera, const extrinsic_param_t *plane_poses_current, const int nobserv, const double *lambdas_current, const int flag);
 
 #ifndef USE_INFINITESIMAL_ROTATION
-static double mod_lambda (CvMat *JtJ, CvMat *JtF, const int pos, const int lpos, const double l, const quaternion_t q);
+static double mod_lambda (cv::Mat *JtJ, cv::Mat *JtF, const int pos, const int lpos, const double l, const quaternion_t q);
 #endif
 
 /****************************************************************/
@@ -126,80 +126,75 @@ individual_calibration (camera_param_t *camera_params, extrinsic_param_t *plane_
   const int ncamera = cdata->num_cameras, nobserv = cdata->num_observations;
   double mean_err = 0.0;
   int Nsum = 0;
-  int i, j, k;
 
 #ifdef _OPENMP
-#  pragma omp parallel for private (i, j, k) reduction (+: mean_err)
+#  pragma omp parallel for reduction (+: mean_err)
 #endif
-  for (i = 0; i < ncamera; ++i)
+  for (int i = 0; i < ncamera; ++i)
     {
-      CvMat *objectPoints, *imagePoints, *pointCounts, *cameraMatrix, *distCoeffs, *rvecs, *tvecs;
+      std::vector<std::vector<cv::Point3f> > objectPoints(nobserv);
+      std::vector<std::vector<cv::Point2f> > imagePoints(nobserv);
+      cv::Mat cameraMatrix, distCoeffs;
+      std::vector<cv::Mat> rvecs(nobserv), tvecs(nobserv);
       int N = 0, pos;
 
-      CvMat *projectedPoints;
+      std::vector<std::vector<cv::Point2f> > projectedPoints(nobserv);
+
       double error;
 
-      for (j = 0; j < nobserv; ++j)
+      for (int j = 0; j < nobserv; ++j)
         {
           N += cdata->data[ncamera*j + i].num_points;
         }
 
       /* allocate memories */
-      objectPoints = cvCreateMat (3, N, CV_64FC1);
-      imagePoints = cvCreateMat (2, N, CV_64FC1);
-      pointCounts = cvCreateMat (nobserv, 1, CV_32SC1);
-      cameraMatrix = cvCreateMat (3, 3, CV_64FC1); 
-      distCoeffs = cvCreateMat (opt->optimize_flag & CALIB_ZERO_HIGHER_ORDER_DIST ? 4 : 5, 1, CV_64FC1);
-      rvecs = cvCreateMat (nobserv, 3, CV_64FC1);
-      tvecs = cvCreateMat (nobserv, 3, CV_64FC1);
-
-      projectedPoints = cvCreateMat (2, N, CV_64FC1);
+      distCoeffs = cv::Mat(opt->optimize_flag & CALIB_ZERO_HIGHER_ORDER_DIST ? 4 : 5, 1, CV_64FC1);
+      for (int j = 0; j < nobserv; ++j)
+        {
+          rvecs[j] = cv::Mat(1, 3, CV_64FC1);
+          tvecs[j] = cv::Mat(1, 3, CV_64FC1);
+        }
 
       /* initialize the cameraMatrix */
-      cvSetIdentity (cameraMatrix, cvRealScalar (1.0));
+      cameraMatrix = cv::Mat::eye(3, 3, CV_64FC1);
 
       /* substitute reference coordinates and observed image coordinates */
-      pos = 0;
-      for (j = 0; j < nobserv; ++j)
+      for (int j = 0; j < nobserv; ++j)
         {
           const int npoint = cdata->data[ncamera*j + i].num_points;
-          
-          for (k = 0; k < npoint; ++k)
+
+          objectPoints[j] = std::vector<cv::Point3f>(npoint);
+          imagePoints[j] = std::vector<cv::Point2f>(npoint);
+
+          for (int k = 0; k < npoint; ++k)
             {
-              cvmSet (objectPoints, 0, pos, cdata->data[ncamera*j + i].ref[k][0]);
-              cvmSet (objectPoints, 1, pos, cdata->data[ncamera*j + i].ref[k][1]);
-              cvmSet (objectPoints, 2, pos, 0.0);
+              objectPoints[j][k].x = cdata->data[ncamera*j + i].ref[k][0];
+              objectPoints[j][k].y = cdata->data[ncamera*j + i].ref[k][1];
+              objectPoints[j][k].z = 0.0;
 
-              cvmSet (imagePoints, 0, pos, cdata->data[ncamera*j + i].cam[k][0]);
-              cvmSet (imagePoints, 1, pos, cdata->data[ncamera*j + i].cam[k][1]);
-
-              ++pos;
+              imagePoints[j][k].x = cdata->data[ncamera*j + i].cam[k][0];
+              imagePoints[j][k].y = cdata->data[ncamera*j + i].cam[k][1];
             }
-          pointCounts->data.i[j] = npoint;
         }
 
       /* calibrate camera */
-      cvCalibrateCamera2 (objectPoints, imagePoints, pointCounts, guess_image_size(imagePoints), cameraMatrix, distCoeffs, rvecs, tvecs, (opt->optimize_flag & CALIB_ZERO_TANGENT_DIST ? CV_CALIB_ZERO_TANGENT_DIST : 0));
+      cv::calibrateCamera (objectPoints, imagePoints, guess_image_size(imagePoints), cameraMatrix, distCoeffs, rvecs, tvecs, (opt->optimize_flag & CALIB_ZERO_TANGENT_DIST ? CV_CALIB_ZERO_TANGENT_DIST : 0));
 
       /* compute error */
       pos = 0;
-      for (j = 0; j < nobserv; ++j)
+      for (int j = 0; j < nobserv; ++j)
         {
-          CvMat objectPoint, projectedPoint, rvec, tvec;
+          projectedPoints[j] = std::vector<cv::Point2f>(imagePoints[j].size());
 
-          cvGetCols (objectPoints, &objectPoint, pos, pos + pointCounts->data.i[j]);
-          cvGetCols (projectedPoints, &projectedPoint, pos, pos + pointCounts->data.i[j]);
-          cvGetRow (rvecs, &rvec, j);
-          cvGetRow (tvecs, &tvec, j);
-
-          cvProjectPoints2 (&objectPoint, &rvec, &tvec, cameraMatrix, distCoeffs, &projectedPoint, NULL, NULL, NULL, NULL, NULL, 0);
-
-          pos += pointCounts->data.i[j];
+          cv::projectPoints (objectPoints[j], rvecs[j], tvecs[j], cameraMatrix, distCoeffs, projectedPoints[j]);
         }
       error = 0.0;
-      for (j = 0; j < N; ++j)
+      for (int j = 0; j < nobserv; ++j)
         {
-          error += pow (cvmGet (projectedPoints, 0, j) - cvmGet (imagePoints, 0, j), 2) + pow (cvmGet (projectedPoints, 1, j) - cvmGet (imagePoints, 1, j), 2);
+          for (size_t k = 0; k < imagePoints[j].size(); ++k)
+            {
+              error += pow (projectedPoints[j][k].x - imagePoints[j][k].x, 2) + pow (projectedPoints[j][k].y - imagePoints[j][k].y, 2);
+            }
         }
       mean_err += error;
       Nsum += N;
@@ -213,17 +208,17 @@ individual_calibration (camera_param_t *camera_params, extrinsic_param_t *plane_
       if (opt->verbose_mode)
         {
           printf ("camera %d: err = %g\n", i, error);
-          for (j = 0; j < cameraMatrix->rows; ++j)
+          for (int j = 0; j < cameraMatrix.rows; ++j)
             {
-              for (k = 0; k < cameraMatrix->cols; ++k)
+              for (int k = 0; k < cameraMatrix.cols; ++k)
                 {
-                  printf ("% 11.5g ", cvmGet (cameraMatrix, j, k));
+                  printf ("% 11.5g ", cameraMatrix.at<double>(j, k));
                 }
               printf ("\n");
             }
-          for (j = 0; j < distCoeffs->rows; ++j)
+          for (int j = 0; j < distCoeffs.rows; ++j)
             {
-              printf ("% 11.5g ", cvmGet (distCoeffs, j, 0));
+              printf ("% 11.5g ", distCoeffs.at<double>(j, 0));
             }
           printf ("\n");
         }
@@ -231,16 +226,16 @@ individual_calibration (camera_param_t *camera_params, extrinsic_param_t *plane_
 
       /* copy the result to camera_params */
       /* intrinsic */
-      camera_params[i].intr.alpha = cvmGet (cameraMatrix, 0, 0);
-      camera_params[i].intr.beta  = cvmGet (cameraMatrix, 1, 1);
-      camera_params[i].intr.gamma = cvmGet (cameraMatrix, 0, 1);
-      camera_params[i].intr.c[0]  = cvmGet (cameraMatrix, 0, 2);
-      camera_params[i].intr.c[1]  = cvmGet (cameraMatrix, 1, 2);
+      camera_params[i].intr.alpha = cameraMatrix.at<double>(0, 0);
+      camera_params[i].intr.beta  = cameraMatrix.at<double>(1, 1);
+      camera_params[i].intr.gamma = cameraMatrix.at<double>(0, 1);
+      camera_params[i].intr.c[0]  = cameraMatrix.at<double>(0, 2);
+      camera_params[i].intr.c[1]  = cameraMatrix.at<double>(1, 2);
       
       /* distortion */
-      for (j = 0; j < cvGetDimSize (distCoeffs, 0); ++j)
+      for (int j = 0; j < distCoeffs.rows; ++j)
         {
-          camera_params[i].dist.elem[j] = cvmGet (distCoeffs, j, 0);
+          camera_params[i].dist.elem[j] = distCoeffs.at<double>(j, 0);
         }
       if (!(opt->optimize_flag & CALIB_ZERO_DIST))
         {
@@ -264,35 +259,21 @@ individual_calibration (camera_param_t *camera_params, extrinsic_param_t *plane_
 
       /* extrinsic (R = I, t = 0 at this moment) */
       quat_copy (camera_params[i].ext.q, quat_one);
-      for (j = 0; j < 3; ++j)
+      for (int j = 0; j < 3; ++j)
         {
           camera_params[i].ext.t[j] = 0.0;
         }
 
       /* convert rvec to quaternion (poses of observed reference plane) */
-      for (j = 0; j < nobserv; ++j)
+      for (int j = 0; j < nobserv; ++j)
         {
-          CvMat rvec;
+          convert_rodrigues2quat (rvecs[j], plane_poses[ncamera*j + i].q);
 
-          cvGetRow (rvecs, &rvec, j);
-          convert_rodrigues2quat (&rvec, plane_poses[ncamera*j + i].q);
-
-          for (k = 0; k < 3; ++k)
+          for (int k = 0; k < 3; ++k)
             {
-              plane_poses[ncamera*j + i].t[k] = cvmGet (tvecs, j, k);
+              plane_poses[ncamera*j + i].t[k] = tvecs[j].at<double>(0, k);
             }
         }
-
-      /* free memories */
-      cvReleaseMat (&projectedPoints);
-
-      cvReleaseMat (&tvecs);
-      cvReleaseMat (&rvecs);
-      cvReleaseMat (&distCoeffs);
-      cvReleaseMat (&cameraMatrix);
-      cvReleaseMat (&pointCounts);
-      cvReleaseMat (&imagePoints);
-      cvReleaseMat (&objectPoints);
     }
   mean_err = sqrt (mean_err / (double) Nsum);
   
@@ -361,37 +342,33 @@ compute_displacement (trans2D_t *t2ds, const camera_param_t *camera_params, cons
       for (j = 1; j < ncamera; ++j)
         {
           const int npoint = cdata->data[ncamera*i + j].num_points;
-          CvMat *cam_points, *ref_points;
-          CvMat Homo, Homo_inv;
+          std::vector<cv::Point2f> cam_points(npoint), ref_points(npoint);
           double h[3*3], h_inv[3*3], mean[2], ref_mean[2], c, s;
+          cv::Mat Homo(3, 3, CV_64FC1, h), Homo_inv(3, 3, CV_64FC1, h_inv);
 
           int l;
 
           /* compute undistorted points of camera j at i-th observation */
-          cam_points = cvCreateMat (1, npoint, CV_64FC2);
-          compute_undistorted_points (cam_points, &camera_params[j], &cdata->data[ncamera*i + j]);
+          compute_undistorted_points (&cam_points, &camera_params[j], &cdata->data[ncamera*i + j]);
 
           /* compute homography for backprojecting image points onto reference plane */
-          cvInitMatHeader (&Homo, 3, 3, CV_64FC1, h, CV_AUTOSTEP);
           construct_homography (&Homo, &camera_params[j], &plane_poses[ncamera*i]);
-          cvInitMatHeader (&Homo_inv, 3, 3, CV_64FC1, h_inv, CV_AUTOSTEP);
           construct_homography_inv (&Homo_inv, &camera_params[j], &plane_poses[ncamera*i]);
 
           /* backproject each observed point to reference plane */
-          ref_points = cvCreateMat (1, npoint, CV_64FC2);
           mean[0] = mean[1] = 0.0;
           ref_mean[0] = ref_mean[1] = 0.0;
           for (k = 0; k < npoint; ++k)
             {
-              double *pos = (double *) CV_MAT_ELEM_PTR (*cam_points, 0, k);
-              double *bp = (double *) CV_MAT_ELEM_PTR (*ref_points, 0, k);
+              cv::Point2f& pos = cam_points[k];
+              float *bp[2] = {&ref_points[k].x, &ref_points[k].y};
               double *ref = cdata->data[ncamera*i + j].ref[k];
 
-              estimate_nearest_point (bp, &Homo, &Homo_inv, pos, cdata->interval);
+              estimate_nearest_point (&ref_points[k], Homo, Homo_inv, pos, cdata->interval);
 
               for (l = 0; l < 2; ++l)
                 {
-                  mean[l] += bp[l];
+                  mean[l] += *bp[l];
                   ref_mean[l] += ref[l];
                 }
             }
@@ -405,14 +382,14 @@ compute_displacement (trans2D_t *t2ds, const camera_param_t *camera_params, cons
           c = s = 0.0;
           for (k = 0; k < npoint; ++k)
             {
-              double *bp = (double *) CV_MAT_ELEM_PTR (*ref_points, 0, k);
+              float *bp[2] = {&ref_points[k].x, &ref_points[k].y};
               double *ref = cdata->data[ncamera*i + j].ref[k];
 
               double v[2], ref_v[2];
 
               for (l = 0; l < 2; ++l)
                 {
-                  v[l] = bp[l] - mean[l];
+                  v[l] = *bp[l] - mean[l];
                   ref_v[l] = ref[l] - ref_mean[l];
                 }
 
@@ -453,9 +430,6 @@ compute_displacement (trans2D_t *t2ds, const camera_param_t *camera_params, cons
                   fprintf (stderr, "\n");
                 }
             }
-
-          cvReleaseMat (&ref_points);
-          cvReleaseMat (&cam_points);
         }
     }
 }
@@ -480,7 +454,7 @@ optimize_camera_parameters (camera_param_t *camera_params, extrinsic_param_t *pl
   const int num_params = num_cam_param * ncamera + num_ext_param * (ncamera-1 + nobserv) + num_lambda;
 
   double error = 42, prev_error, norm, prev_norm, scale = 1.0e-6;
-  CvMat *JtJ, *JtF, *H, *rev, *JtJtemp, *JtFtemp;
+  cv::Mat JtJ, JtF, H, rev, JtJtemp, JtFtemp;
   camera_param_t *new_camera_params = NULL;
   extrinsic_param_t *new_plane_poses = NULL;
   double *lambdas = NULL, *new_lambdas = NULL;
@@ -515,14 +489,14 @@ optimize_camera_parameters (camera_param_t *camera_params, extrinsic_param_t *pl
     }
 
   /* allocate memories */
-  JtJ = cvCreateMat (num_params, num_params, CV_64FC1);
-  JtF = cvCreateMat (num_params, 1, CV_64FC1);
+  JtJ = cv::Mat(num_params, num_params, CV_64FC1);
+  JtF = cv::Mat(num_params, 1, CV_64FC1);
 
-  H = cvCreateMat (num_params, num_params, CV_64FC1);
-  rev = cvCreateMat (num_params, 1, CV_64FC1);
+  H = cv::Mat(num_params, num_params, CV_64FC1);
+  rev = cv::Mat(num_params, 1, CV_64FC1);
 
-  JtJtemp = cvCreateMat (cvGetDimSize (JtJ, 0), cvGetDimSize (JtJ, 1), CV_64FC1);
-  JtFtemp = cvCreateMat (cvGetDimSize (JtF, 0), cvGetDimSize (JtF, 1), CV_64FC1);
+  JtJtemp = cv::Mat(JtJ.size(), CV_64FC1);
+  JtFtemp = cv::Mat(JtF.size(), CV_64FC1);
   
   new_camera_params = (camera_param_t *) malloc (sizeof (camera_param_t) * ncamera);
   if (new_camera_params == NULL)
@@ -559,8 +533,8 @@ optimize_camera_parameters (camera_param_t *camera_params, extrinsic_param_t *pl
 #endif
 
   /* compute the initial value for optimization */
-  error = calib_calc_error (camera_params, plane_poses, t2ds, cdata, JtJ, JtF, lambdas, flag);
-  norm = cvNorm (JtF, NULL, CV_L2, NULL);
+  error = calib_calc_error (camera_params, plane_poses, t2ds, cdata, &JtJ, &JtF, lambdas, flag);
+  norm = cv::norm (JtF);
 
   /* count how many observed points we have */
   npoint = 0;
@@ -590,31 +564,31 @@ optimize_camera_parameters (camera_param_t *camera_params, extrinsic_param_t *pl
       do
         {
           /* construct H */
-          cvCopy (JtJ, H, NULL);
+          JtJ.copyTo(H);
           for (i = 0; i < num_params; ++i)
             {
-              CV_MAT_ELEM (*H, double, i, i) += scale * CV_MAT_ELEM (*H, double, i, i);
+              H.at<double>(i, i) += scale * H.at<double>(i, i);
             }
 
-          if (cvSolve (H, JtF, rev, CV_CHOLESKY) != 1)
+          if (cv::solve (H, JtF, rev, CV_CHOLESKY) != 1)
             {
-              cvSolve (H, JtF, rev, CV_SVD_SYM);
+              cv::solve (H, JtF, rev, CV_SVD_SYM);
             }
 
           /* predict reduction of error */
           pred = 0.0;
           for (i = 0; i < num_params; ++i)
             {
-              pred += 2.0 * cvmGet (JtF, i, 0) * cvmGet (rev, i, 0);
+              pred += 2.0 * JtF.at<double>(i, 0) * rev.at<double>(i, 0);
               for (j = 0; j < num_params; ++j)
                 {
-                  pred -= cvmGet (H, i, j) * cvmGet (rev, i, 0) * cvmGet (rev, j, 0);
+                  pred -= H.at<double>(i, j) * rev.at<double>(i, 0) * rev.at<double>(j, 0);
                 }
             }
 
           update_camera_params (new_camera_params, new_plane_poses, new_lambdas, rev, camera_params, ncamera, plane_poses, nobserv, lambdas, flag);
-          error = calib_calc_error (new_camera_params, new_plane_poses, t2ds, cdata, JtJtemp, JtFtemp, new_lambdas, flag);
-          norm = cvNorm (JtFtemp, NULL, CV_L2, NULL);
+          error = calib_calc_error (new_camera_params, new_plane_poses, t2ds, cdata, &JtJtemp, &JtFtemp, new_lambdas, flag);
+          norm = cv::norm (JtFtemp);
 
           rho = (prev_error - error) / pred;
 
@@ -654,7 +628,7 @@ optimize_camera_parameters (camera_param_t *camera_params, extrinsic_param_t *pl
 #endif
 
       /* compute derivertives and hessian matrix */
-      error = calib_calc_error (camera_params, plane_poses, t2ds, cdata, JtJ, JtF, lambdas, flag);
+      error = calib_calc_error (camera_params, plane_poses, t2ds, cdata, &JtJ, &JtF, lambdas, flag);
 
       /* display progress */
       if (opt->verbose_mode && iter % 10 == 0 && iter > 0)
@@ -713,18 +687,12 @@ optimize_camera_parameters (camera_param_t *camera_params, extrinsic_param_t *pl
  error_new_plane:
   free (new_camera_params);
  error_new_cam:
-  cvReleaseMat (&JtFtemp);
-  cvReleaseMat (&JtJtemp);
-  cvReleaseMat (&rev);
-  cvReleaseMat (&H);
-  cvReleaseMat (&JtF);
-  cvReleaseMat (&JtJ);
 
   return sqrt(error / (double) npoint);
 }
 
-static CvSize
-guess_image_size (CvMat *imagePoints)
+static cv::Size
+guess_image_size (const cv::Mat& imagePoints)
 {
   int i, n;
   double x_mean = 0.0, d;
@@ -732,11 +700,11 @@ guess_image_size (CvMat *imagePoints)
     {160, 120}, {320, 240}, {640, 480}, {800, 600}, {1024, 768}, {1280, 960}, {1600, 1200}
   };
 
-  for (i = 0; i < cvGetDimSize (imagePoints, 1); ++i)
+  for (i = 0; i < imagePoints.cols; ++i)
     {
-      x_mean += cvmGet (imagePoints, 0, i);
+      x_mean += imagePoints.at<double>(0, i);
     }
-  x_mean /= (double) cvGetDimSize (imagePoints, 1);
+  x_mean /= (double) imagePoints.cols;
 
   n = 0;
   d = fabs (2.0*x_mean - size[0][0]);
@@ -750,7 +718,7 @@ guess_image_size (CvMat *imagePoints)
         }
     }
 
-  return cvSize (size[n][0], size[n][1]);
+  return cv::Size (size[n][0], size[n][1]);
 }
 
 
@@ -758,16 +726,16 @@ guess_image_size (CvMat *imagePoints)
 /* misc functions */
 /****************************************************************/
 static void
-convert_rodrigues2quat (const CvMat *rvec, quaternion_t q)
+convert_rodrigues2quat (const cv::Mat& rvec, quaternion_t q)
 {
-  double theta = cvNorm (rvec, NULL, CV_L2, NULL);
+  double theta = cv::norm (rvec);
 
   if (theta > CALIB_EPS)
     {
       int i;
       for (i = 0; i < 3; ++i)
         {
-          quat_im (q, i) = sin (theta / 2.0) * cvmGet (rvec, 0, i) / theta;
+          quat_im (q, i) = sin (theta / 2.0) * rvec.at<double>(0, i) / theta;
         }
       quat_re (q) = cos (theta / 2.0);
     }
@@ -807,9 +775,7 @@ compute_rotation (camera_param_t *camera_params, double (*coeffs)[4], const int 
   for (i = 1; i < ncamera; ++i)
     {
       double M[4*4], dot, cross[3];
-      
-      double sigma_elem[4], q[4*4];
-      CvMat MM, sigma, MQ;
+      cv::Mat MM(4, 4, CV_64FC1, M);
       int j, k, l;
 
       for (j = 0; j < 4; ++j)
@@ -825,7 +791,7 @@ compute_rotation (camera_param_t *camera_params, double (*coeffs)[4], const int 
         {
           dot = s_dot3 (coeffs[ncamera*j], coeffs[ncamera*j + i]);
           s_cross3 (cross, coeffs[ncamera*j], coeffs[ncamera*j + i]);
-          
+
           for (k = 0; k < 3; ++k)
             {
               for (l = 0; l < 3; ++l)
@@ -843,34 +809,30 @@ compute_rotation (camera_param_t *camera_params, double (*coeffs)[4], const int 
               M[4*k + 3] += cross[k];
             }
         }
-      
-      cvInitMatHeader (&MM, 4, 4, CV_64FC1, M, CV_AUTOSTEP);
-      cvInitMatHeader (&sigma, 4, 1, CV_64FC1, sigma_elem, CV_AUTOSTEP);
-      cvInitMatHeader (&MQ, 4, 4, CV_64FC1, q, CV_AUTOSTEP);
 
       /* compute eigenvectors */
-      cvSVD (&MM, &sigma, &MQ, NULL, CV_SVD_U_T);
+      cv::SVD svd(MM, cv::SVD::MODIFY_A);
 
       /* copy the eigenvector corresponding to the largest eigenvalue to camera_params[i] */
-      quat_copy (camera_params[i].ext.q, q);
+      quat_copy (camera_params[i].ext.q, svd.vt.ptr<double>(0));
     }
 }
 
 static void
 compute_translation (camera_param_t *camera_params, double (*coeffs)[4], const int nobserv, const int ncamera)
 {
-  CvMat *AtA, *Atb, *ts;
+  cv::Mat AtA, Atb, ts;
 
   int i, j, k, l, num;
 
   /* allocate work memories */
-  AtA = cvCreateMat (3*(ncamera-1), 3*(ncamera-1), CV_64FC1);
-  Atb = cvCreateMat (3*(ncamera-1), 1, CV_64FC1);
-  ts = cvCreateMat (3*(ncamera-1), 1, CV_64FC1);
+  AtA = cv::Mat(3*(ncamera-1), 3*(ncamera-1), CV_64FC1);
+  Atb = cv::Mat(3*(ncamera-1), 1, CV_64FC1);
+  ts = cv::Mat(3*(ncamera-1), 1, CV_64FC1);
 
   /* clear entries */
-  cvSetZero (AtA);
-  cvSetZero (Atb);
+  AtA = 0.0;
+  Atb = 0.0;
 
   /* construct data matrix (A^T)A, and vector (A^T)b */
   for (num = 0; num < nobserv; ++num)
@@ -888,7 +850,7 @@ compute_translation (camera_param_t *camera_params, double (*coeffs)[4], const i
                 {
                   for (l = 0; l < 3; ++l)
                     {
-                      CV_MAT_ELEM (*AtA, double, 3*i + k, 3*j + l) +=  scale * coeffs[base + i+1][k] * coeffs[base + j+1][l];
+                      AtA.at<double>(3*i + k, 3*j + l) +=  scale * coeffs[base + i+1][k] * coeffs[base + j+1][l];
                     }
                 }
             }
@@ -899,7 +861,7 @@ compute_translation (camera_param_t *camera_params, double (*coeffs)[4], const i
         {
           for (j = 0; j < 3; ++j)
             {
-              CV_MAT_ELEM (*Atb, double, 3*i + j, 0) += coeffs[base + i+1][j] * (coeffs[base][3] - coeffs[base + i+1][3]);
+              Atb.at<double>(3*i + j, 0) += coeffs[base + i+1][j] * (coeffs[base][3] - coeffs[base + i+1][3]);
             }
 
           for (j = i+1; j < ncamera-1; ++j)
@@ -908,34 +870,29 @@ compute_translation (camera_param_t *camera_params, double (*coeffs)[4], const i
 
               for (k = 0; k < 3; ++k)
                 {
-                  CV_MAT_ELEM (*Atb, double, 3*i + k, 0) += coeffs[base + i+1][k] * val;
-                  CV_MAT_ELEM (*Atb, double, 3*j + k, 0) -= coeffs[base + j+1][k] * val;
+                  Atb.at<double>(3*i + k, 0) += coeffs[base + i+1][k] * val;
+                  Atb.at<double>(3*j + k, 0) -= coeffs[base + j+1][k] * val;
                 }
             }
         }
     }
 
   /* solve the equation */
-  cvSolve (AtA, Atb, ts, CV_SVD);
+  cv::solve (AtA, Atb, ts, CV_SVD);
 
   /* substitute the result */
   for (i = 0; i < ncamera-1; ++i)
     {
       for (j = 0; j < 3; ++j)
         {
-          camera_params[i+1].ext.t[j] = cvmGet (ts, 3*i + j, 0);
+          camera_params[i+1].ext.t[j] = ts.at<double>(3*i + j, 0);
         }
     }
-
-  /* free memories */
-  cvReleaseMat (&ts);
-  cvReleaseMat (&Atb);
-  cvReleaseMat (&AtA);
 }
 
 /* plane coordinate = homo * image coordinate */
 static void
-construct_homography (CvMat *homo, const camera_param_t *camera_param, const extrinsic_param_t *plane)
+construct_homography (cv::Mat *homo, const camera_param_t *camera_param, const extrinsic_param_t *plane)
 {
   double A[3*3], rt[3*3];
   extrinsic_param_t cam_plane;
@@ -956,17 +913,17 @@ construct_homography (CvMat *homo, const camera_param_t *camera_param, const ext
     {
       for (j = 0; j < 3; ++j)
         {
-          CV_MAT_ELEM (*homo, double, i, j) = 0.0;
+          homo->at<double>(i, j) = 0.0;
           for (k = 0; k < 3; ++k)
             {
-              CV_MAT_ELEM (*homo, double, i, j) += A[i + 3*k] * rt[k + 3*j];
+              homo->at<double>(i, j) += A[i + 3*k] * rt[k + 3*j];
             }
         }
     }
 }
 
 static void
-construct_homography_inv (CvMat *homo, const camera_param_t *camera_param, const extrinsic_param_t *plane)
+construct_homography_inv (cv::Mat *homo, const camera_param_t *camera_param, const extrinsic_param_t *plane)
 {
   double Ainv[3*3], temp[3*3], rt[3], rA[3*3];
   extrinsic_param_t cam_plane;
@@ -1007,43 +964,42 @@ construct_homography_inv (CvMat *homo, const camera_param_t *camera_param, const
     {
       for (j = 0; j < 3; ++j)
         {
-          CV_MAT_ELEM (*homo, double, i, j) = rA[i + 3*j] - rt[i] * rA[2 + 3*j];
+          homo->at<double>(i, j) = rA[i + 3*j] - rt[i] * rA[2 + 3*j];
         }
     }
   for (i = 0; i < 3; ++i)
     {
-      CV_MAT_ELEM (*homo, double, 2, i) = rA[2 + 3*i];
+      homo->at<double>(2, i) = rA[2 + 3*i];
     }
 }
 
 /* points: 2xN matrix */
 static void
-compute_undistorted_points (CvMat *points, const camera_param_t *camera_param, const cdata_observed_points_t *op)
+compute_undistorted_points (std::vector<cv::Point2f> *points, const camera_param_t *camera_param, const cdata_observed_points_t *op)
 {
-  CvMat *distorted, cameraMatrix, dcoeff;
   double A[3*3], dcoeff_elem[5];
   int i;
 
-  distorted = cvCreateMat (cvGetDimSize (points, 0), cvGetDimSize (points, 1), CV_64FC2);
+  std::vector<cv::Point2f> distorted(op->num_points);
+  cv::Mat cameraMatrix(3, 3, CV_64FC1, A), dcoeff(1, (camera_param->dist.dim < 5 ? 4 : 5), CV_64FC1, dcoeff_elem);
 
   /* copy intrinsic parameters */
-  cvInitMatHeader (&cameraMatrix, 3, 3, CV_64FC1, A, CV_AUTOSTEP);
   for (i = 0; i < 3*3; ++i)
     {
       A[i] = 0.0;
     }
-  cvmSet (&cameraMatrix, 0, 0, camera_param->intr.alpha);
-  cvmSet (&cameraMatrix, 0, 1, camera_param->intr.gamma);
-  cvmSet (&cameraMatrix, 1, 1, camera_param->intr.beta);
-  cvmSet (&cameraMatrix, 0, 2, camera_param->intr.c[0]);
-  cvmSet (&cameraMatrix, 1, 2, camera_param->intr.c[1]);
-  cvmSet (&cameraMatrix, 2, 2, 1.0);
+  cameraMatrix.at<double>(0, 0) = camera_param->intr.alpha;
+  cameraMatrix.at<double>(0, 1) = camera_param->intr.gamma;
+  cameraMatrix.at<double>(1, 1) = camera_param->intr.beta;
+  cameraMatrix.at<double>(0, 2) = camera_param->intr.c[0];
+  cameraMatrix.at<double>(1, 2) = camera_param->intr.c[1];
+  cameraMatrix.at<double>(2, 2) = 1.0;
 
   /* copy elements to the distorted */
   for (i = 0; i < op->num_points; ++i)
     {
-      ((double *) CV_MAT_ELEM_PTR (*distorted, 0, i))[0] = op->cam[i][0];
-      ((double *) CV_MAT_ELEM_PTR (*distorted, 0, i))[1] = op->cam[i][1];
+      distorted[i].x = op->cam[i][0];
+      distorted[i].y = op->cam[i][1];
     }
 
   /* set distortion coefficients */
@@ -1056,37 +1012,34 @@ compute_undistorted_points (CvMat *points, const camera_param_t *camera_param, c
       dcoeff_elem[i] = 0.0;
       ++i;
     }
-  cvInitMatHeader (&dcoeff, 1, (camera_param->dist.dim < 5 ? 4 : 5), CV_64FC1, dcoeff_elem, CV_AUTOSTEP);
 
   /* store undistorted points to points */
-  cvUndistortPoints (distorted, points, &cameraMatrix, &dcoeff, NULL, NULL);
+  cv::undistortPoints (distorted, *points, cameraMatrix, dcoeff);
 
   /* compute undistorted point on the image plane and overwrite it */
   for (i = 0; i < op->num_points; ++i)
     {
       const intrinsic_param_t *intr = &camera_param->intr;
-      double *ud, p[2];
+      cv::Point2f& ud = (*points)[i];
+      double p[2];
 
-      ud = (double *) CV_MAT_ELEM_PTR (*points, 0, i);
-      p[0] = intr->alpha * ud[0] + intr->gamma * ud[1] + intr->c[0];
-      p[1] = intr->beta * ud[1] + intr->c[1];
+      p[0] = intr->alpha * ud.x + intr->gamma * ud.y + intr->c[0];
+      p[1] = intr->beta * ud.y + intr->c[1];
 
-      ud[0] = p[0];
-      ud[1] = p[1];
+      ud.x = p[0];
+      ud.y = p[1];
     }
-
-  cvReleaseMat (&distorted);
 }
 
 static void
-estimate_nearest_point (double refpos[2], CvMat *Homo, CvMat *Homo_inv, const double imgpos[2], const double interval)
+estimate_nearest_point (cv::Point2f *refpos, const cv::Mat& Homo, const cv::Mat& Homo_inv, const cv::Point2f& imgpos, const double interval)
 {
   double bp[3], pos[2][2], ipos[4][3], distance;
   int i, j, k, min;
 
   for (i = 0; i < 3; ++i)
     {
-      bp[i] = cvmGet (Homo_inv, i, 0) * imgpos[0] + cvmGet (Homo_inv, i, 1) * imgpos[1] + cvmGet (Homo_inv, i, 2);
+      bp[i] = Homo_inv.at<double>(i, 0) * imgpos.x + Homo_inv.at<double>(i, 1) * imgpos.y + Homo_inv.at<double>(i, 2);
     }
   for (i = 0; i < 3; ++i)
     {
@@ -1105,7 +1058,7 @@ estimate_nearest_point (double refpos[2], CvMat *Homo, CvMat *Homo_inv, const do
         {
           for (k = 0; k < 3; ++k)
             {
-              ipos[2*i+j][k] = cvmGet (Homo, k, 0) * pos[0][j] + cvmGet (Homo, k, 1) * pos[1][i] + cvmGet (Homo, k, 2);
+              ipos[2*i+j][k] = Homo.at<double>(k, 0) * pos[0][j] + Homo.at<double>(k, 1) * pos[1][i] + Homo.at<double>(k, 2);
             }
           for (k = 0; k < 3; ++k)
             {
@@ -1114,12 +1067,12 @@ estimate_nearest_point (double refpos[2], CvMat *Homo, CvMat *Homo_inv, const do
         }
     }
   
-  distance = sqrt (pow (ipos[0][0] - imgpos[0], 2) + pow (ipos[0][1] - imgpos[1], 2));
+  distance = sqrt (pow (ipos[0][0] - imgpos.x, 2) + pow (ipos[0][1] - imgpos.y, 2));
 
   min = 0;
   for (i = 1; i < 4; ++i)
     {
-      double d = sqrt (pow (ipos[i][0] - imgpos[0], 2) + pow (ipos[i][1] - imgpos[1], 2));
+      double d = sqrt (pow (ipos[i][0] - imgpos.x, 2) + pow (ipos[i][1] - imgpos.y, 2));
 
       if (d < distance)
         {
@@ -1128,8 +1081,8 @@ estimate_nearest_point (double refpos[2], CvMat *Homo, CvMat *Homo_inv, const do
         }
     }
 
-  refpos[0] = pos[0][min % 2];
-  refpos[1] = pos[1][min / 2];
+  refpos->x = pos[0][min % 2];
+  refpos->y = pos[1][min / 2];
 }
 
 static void
@@ -1162,6 +1115,7 @@ mult_mat33 (double m[3][3], double n[3][3])
     }
 }
 
+#ifdef DEBUG_MULTICALIB
 static void
 disp_mat (double (*m)[3], const int dim)
 {
@@ -1176,9 +1130,10 @@ disp_mat (double (*m)[3], const int dim)
     }
   printf("\n");
 }
+#endif
 
 static double
-calib_calc_error (const camera_param_t *camera_params, const extrinsic_param_t *plane_poses, const trans2D_t *t2ds, const cdata_t *cdata, CvMat *JtJ, CvMat *JtF, const double *lambdas, const int flag)
+calib_calc_error (const camera_param_t *camera_params, const extrinsic_param_t *plane_poses, const trans2D_t *t2ds, const cdata_t *cdata, cv::Mat *JtJ, cv::Mat *JtF, const double *lambdas, const int flag)
 {
   const int nobserv = cdata->num_observations, ncamera = cdata->num_cameras;
 
@@ -1201,15 +1156,15 @@ calib_calc_error (const camera_param_t *camera_params, const extrinsic_param_t *
   int amount_points = 0;
   double lambda_term = 0.0;
 
-  CvMat *J = NULL;
+  cv::Mat J;
 
   int i, j, k, l, m;
 
   if (JtJ != NULL || JtF != NULL)
     {
-      J = cvCreateMat (2, num_params, CV_64FC1);
-      cvSetZero (JtJ);
-      cvSetZero (JtF);
+      J = cv::Mat(2, num_params, CV_64FC1);
+      *JtJ = 0.0;
+      *JtF = 0.0;
     }
 
   for (i = 0; i < nobserv; ++i)
@@ -1264,22 +1219,21 @@ calib_calc_error (const camera_param_t *camera_params, const extrinsic_param_t *
 
               if (JtJ != NULL || JtF != NULL)
                 {
-                  CvMat Mf;
+                  cv::Mat Mf(2, 1, CV_64FC1, f);
                   double dfdx[3][3] = {{1.0, 0.0, 0.0}, {0.0, 1.0, 0.0}, {0.0, 0.0, 1.0}};
 
-                  cvSetZero (J);
-                  cvInitMatHeader (&Mf, 2, 1, CV_64FC1, f, CV_AUTOSTEP);
+                  J = 0.0;
 #if 1
                   /* intrinsic */
                   if (!(flag & CALIB_FIX_INTRINSIC))
                     {
-                      CV_MAT_ELEM (*J, double, 0, num_cam_param*j    ) = dA[0][0]; /* alpha */
-                      CV_MAT_ELEM (*J, double, 1, num_cam_param*j + 1) = dA[2][1]; /* beta  */
-                      CV_MAT_ELEM (*J, double, 0, num_cam_param*j + 2) = dA[3][0]; /* c[0]  */
-                      CV_MAT_ELEM (*J, double, 1, num_cam_param*j + 3) = dA[4][1]; /* c[1]  */
+                      J.at<double>(0, num_cam_param*j    ) = dA[0][0]; /* alpha */
+                      J.at<double>(1, num_cam_param*j + 1) = dA[2][1]; /* beta  */
+                      J.at<double>(0, num_cam_param*j + 2) = dA[3][0]; /* c[0]  */
+                      J.at<double>(1, num_cam_param*j + 3) = dA[4][1]; /* c[1]  */
                       if (!(flag & CALIB_FIX_SHEAR))
                         {
-                          CV_MAT_ELEM (*J, double, 0, num_cam_param*j + 4) = dA[1][0]; /* gamma */
+                          J.at<double>(0, num_cam_param*j + 4) = dA[1][0]; /* gamma */
                         }
                     }
 #endif
@@ -1294,29 +1248,29 @@ calib_calc_error (const camera_param_t *camera_params, const extrinsic_param_t *
 
                           /* k1 */
                           val = dfdx[0][l] * dd[0][0] + dfdx[1][l] * dd[0][1];
-                          CV_MAT_ELEM (*J, double, l, num_cam_param*j + num_intr_param) = val;
+                          J.at<double>(l, num_cam_param*j + num_intr_param) = val;
 
                           /* k2 */
                           val = dfdx[0][l] * dd[1][0] + dfdx[1][l] * dd[1][1];
-                          CV_MAT_ELEM (*J, double, l, num_cam_param*j + num_intr_param + 1) = val;
+                          J.at<double>(l, num_cam_param*j + num_intr_param + 1) = val;
 
                           if (!(flag & CALIB_ZERO_HIGHER_ORDER_DIST))
                             {
                               const int p_off = (flag & CALIB_ZERO_TANGENT_DIST) ? 2 : 4;
                               /* k3 */
                               val = dfdx[0][l] * dd[4][0] + dfdx[1][l] * dd[4][1];
-                              CV_MAT_ELEM (*J, double, l, num_cam_param*j + num_intr_param + p_off) = val;
+                              J.at<double>(l, num_cam_param*j + num_intr_param + p_off) = val;
                             }
 
                           if (!(flag & CALIB_ZERO_TANGENT_DIST))
                             {
                               /* p1 */
                               val = dfdx[0][l] * dd[2][0] + dfdx[1][l] * dd[2][1];
-                              CV_MAT_ELEM (*J, double, l, num_cam_param*j + num_intr_param + 2) = val;
+                              J.at<double>(l, num_cam_param*j + num_intr_param + 2) = val;
 
                               /* p2 */
                               val = dfdx[0][l] * dd[3][0] + dfdx[1][l] * dd[3][1];
-                              CV_MAT_ELEM (*J, double, l, num_cam_param*j + num_intr_param + 3) = val;
+                              J.at<double>(l, num_cam_param*j + num_intr_param + 3) = val;
                             }
                         }
                     }
@@ -1340,7 +1294,7 @@ calib_calc_error (const camera_param_t *camera_params, const extrinsic_param_t *
                               for (m = 0; m < 2; ++m)
                                 {
                                   double val = dfdx[0][m] * dcp[l][0] + dfdx[1][m] * dcp[l][1] + dfdx[2][m] * dcp[l][2];
-                                  CV_MAT_ELEM (*J, double, m, intr_off + num_ext_param*(j-1) + l) = val;
+                                  J.at<double>(m, intr_off + num_ext_param*(j-1) + l) = val;
                                 }
                             }
                         }
@@ -1353,7 +1307,7 @@ calib_calc_error (const camera_param_t *camera_params, const extrinsic_param_t *
                             {
                               for (m = 0; m < 2; ++m)
                                 {
-                                  CV_MAT_ELEM (*J, double, m, intr_off + num_ext_param*(j-1) + 4 + l) = dfdx[l][m];
+                                  J.at<double>(m, intr_off + num_ext_param*(j-1) + 4 + l) = dfdx[l][m];
                                 }
                             }
                         }
@@ -1376,7 +1330,7 @@ calib_calc_error (const camera_param_t *camera_params, const extrinsic_param_t *
                           for (m = 0; m < 2; ++m)
                             {
                               double val = dfdx[0][m] * dpp[l][0] + dfdx[1][m] * dpp[l][1] + dfdx[2][m] * dpp[l][2];
-                              CV_MAT_ELEM (*J, double, m, plane_off + num_ext_param*i + l) = val;
+                              J.at<double>(m, plane_off + num_ext_param*i + l) = val;
                             }
                         }
                     }
@@ -1389,7 +1343,7 @@ calib_calc_error (const camera_param_t *camera_params, const extrinsic_param_t *
                         {
                           for (m = 0; m < 2; ++m)
                             {
-                              CV_MAT_ELEM (*J, double, m, plane_off + num_ext_param*i + 4 + l) = dfdx[l][m];
+                              J.at<double>(m, plane_off + num_ext_param*i + 4 + l) = dfdx[l][m];
                             }
                         }
                     }
@@ -1397,11 +1351,11 @@ calib_calc_error (const camera_param_t *camera_params, const extrinsic_param_t *
 
                   if (JtJ != NULL)
                     {
-                      cvGEMM (J, J, 1.0, JtJ, 1.0, JtJ, CV_GEMM_A_T);
+                      *JtJ += J.t() * J;
                     }
                   if (JtF != NULL)
                     {
-                      cvGEMM (J, &Mf, 1.0, JtF, 1.0, JtF, CV_GEMM_A_T);
+                      *JtF += J.t() * Mf;
                     }
                 }
             }
@@ -1432,17 +1386,12 @@ calib_calc_error (const camera_param_t *camera_params, const extrinsic_param_t *
     }
 #endif
 
-  if (J != NULL)
-    {
-      cvReleaseMat (&J);
-    }
-
   return error - lambda_term;
 }
 
 static void
 update_camera_params (camera_param_t *camera_params, extrinsic_param_t *plane_poses, double *lambdas,
-                      const CvMat *rev,
+                      const cv::Mat& rev,
                       const camera_param_t *camera_params_current, const int ncamera,
                       const extrinsic_param_t *plane_poses_current, const int nobserv,
                       const double *lambdas_current, const int flag)
@@ -1465,14 +1414,14 @@ update_camera_params (camera_param_t *camera_params, extrinsic_param_t *plane_po
 
       if (!(flag & CALIB_FIX_INTRINSIC))
         {
-          new_cam->intr.alpha = old_cam->intr.alpha - cvmGet (rev, num_cam_param*i, 0);
-          new_cam->intr.beta = old_cam->intr.beta - cvmGet (rev, num_cam_param*i + 1, 0);
-          new_cam->intr.c[0] = old_cam->intr.c[0] - cvmGet (rev, num_cam_param*i + 2, 0);
-          new_cam->intr.c[1] = old_cam->intr.c[1] - cvmGet (rev, num_cam_param*i + 3, 0);
+          new_cam->intr.alpha = old_cam->intr.alpha - rev.at<double>(num_cam_param*i, 0);
+          new_cam->intr.beta = old_cam->intr.beta - rev.at<double>(num_cam_param*i + 1, 0);
+          new_cam->intr.c[0] = old_cam->intr.c[0] - rev.at<double>(num_cam_param*i + 2, 0);
+          new_cam->intr.c[1] = old_cam->intr.c[1] - rev.at<double>(num_cam_param*i + 3, 0);
 
           if (!(flag & CALIB_FIX_SHEAR))
             {
-              new_cam->intr.gamma = old_cam->intr.gamma - cvmGet (rev, num_cam_param*i + 4, 0);
+              new_cam->intr.gamma = old_cam->intr.gamma - rev.at<double>(num_cam_param*i + 4, 0);
             }
         }
       else
@@ -1488,20 +1437,20 @@ update_camera_params (camera_param_t *camera_params, extrinsic_param_t *plane_po
         {
           for (j = 0; j < 2; ++j)
             {
-              new_cam->dist.elem[j] = old_cam->dist.elem[j] - cvmGet (rev, num_cam_param*i + num_intr_param + j, 0);
+              new_cam->dist.elem[j] = old_cam->dist.elem[j] - rev.at<double>(num_cam_param*i + num_intr_param + j, 0);
             }
 
           if (!(flag & CALIB_ZERO_TANGENT_DIST))
             {
               for (j = 0; j < 2; ++j)
                 {
-                  new_cam->dist.elem[2+j] = old_cam->dist.elem[2+j] - cvmGet (rev, num_cam_param*i + num_intr_param + 2 + j, 0);
+                  new_cam->dist.elem[2+j] = old_cam->dist.elem[2+j] - rev.at<double>(num_cam_param*i + num_intr_param + 2 + j, 0);
                 }
             }
           if (!(flag & CALIB_ZERO_HIGHER_ORDER_DIST))
             {
               const int dist_off = (flag & CALIB_ZERO_TANGENT_DIST) ? 2 : 4;
-              new_cam->dist.elem[4] = old_cam->dist.elem[4] - cvmGet (rev, num_cam_param*i + num_intr_param + dist_off, 0);
+              new_cam->dist.elem[4] = old_cam->dist.elem[4] - rev.at<double>(num_cam_param*i + num_intr_param + dist_off, 0);
             }
         }
       else
@@ -1522,7 +1471,7 @@ update_camera_params (camera_param_t *camera_params, extrinsic_param_t *plane_po
               double norm2 = 0.0;
               for (j = 0; j < 3; ++j)
                 {
-                  quat_im (q, j) = - cvmGet(rev, num_cam_param*ncamera + num_ext_param * (i-1) + j, 0) / 2.0;
+                  quat_im (q, j) = - rev.at<double>(num_cam_param*ncamera + num_ext_param * (i-1) + j, 0) / 2.0;
                   norm2 += quat_im (q, j) * quat_im (q, j);
                 }
               quat_re (q) = sqrt(1.0 - norm2);
@@ -1531,9 +1480,9 @@ update_camera_params (camera_param_t *camera_params, extrinsic_param_t *plane_po
 #else
               for (j = 0; j < 3; ++j)
                 {
-                  quat_im (new_cam->ext.q, j) = quat_im (old_cam->ext.q, j) - cvmGet (rev, num_cam_param*ncamera + num_ext_param * (i-1) + j, 0);
+                  quat_im (new_cam->ext.q, j) = quat_im (old_cam->ext.q, j) - rev.at<double>(num_cam_param*ncamera + num_ext_param * (i-1) + j, 0);
                 }
-              quat_re (new_cam->ext.q) = quat_re (old_cam->ext.q) - cvmGet (rev, num_cam_param*ncamera + num_ext_param * (i-1) + 3, 0);
+              quat_re (new_cam->ext.q) = quat_re (old_cam->ext.q) - rev.at<double>(num_cam_param*ncamera + num_ext_param * (i-1) + 3, 0);
 #endif
               if (flag & CALIB_FORCE_Q_NORM_1)
                 {
@@ -1553,7 +1502,7 @@ update_camera_params (camera_param_t *camera_params, extrinsic_param_t *plane_po
             {
               for (j = 0; j < 3; ++j)
                 {
-                  new_cam->ext.t[j] = old_cam->ext.t[j] - cvmGet (rev, num_cam_param*ncamera + num_ext_param * (i-1) + 4 + j, 0);
+                  new_cam->ext.t[j] = old_cam->ext.t[j] - rev.at<double>(num_cam_param*ncamera + num_ext_param * (i-1) + 4 + j, 0);
                 }
             }
           else
@@ -1590,7 +1539,7 @@ update_camera_params (camera_param_t *camera_params, extrinsic_param_t *plane_po
             double norm2 = 0.0;
             for (j = 0; j < 3; ++j)
               {
-                quat_im (q, j) = - cvmGet(rev, plane_off + num_ext_param*i + j, 0) / 2.0;
+                quat_im (q, j) = - rev.at<double>(plane_off + num_ext_param*i + j, 0) / 2.0;
                 norm2 += quat_im (q, j) * quat_im (q, j);
               }
             quat_re (q) = sqrt(1.0 - norm2);
@@ -1599,9 +1548,9 @@ update_camera_params (camera_param_t *camera_params, extrinsic_param_t *plane_po
 #else
             for (j = 0; j < 3; ++j)
               {
-                quat_im (new_plane->q, j) = quat_im (old_plane->q, j) - cvmGet (rev, plane_off + num_ext_param*i + j, 0);
+                quat_im (new_plane->q, j) = quat_im (old_plane->q, j) - rev.at<double>(plane_off + num_ext_param*i + j, 0);
               }
-            quat_re (new_plane->q) = quat_re (old_plane->q) - cvmGet (rev, plane_off + num_ext_param*i + 3, 0);
+            quat_re (new_plane->q) = quat_re (old_plane->q) - rev.at<double>(plane_off + num_ext_param*i + 3, 0);
 #endif
 
             if (flag & CALIB_FORCE_Q_NORM_1)
@@ -1622,7 +1571,7 @@ update_camera_params (camera_param_t *camera_params, extrinsic_param_t *plane_po
           {
             for (j = 0; j < 3; ++j)
               {
-                new_plane->t[j] = old_plane->t[j] - cvmGet (rev, plane_off + num_ext_param*i + 4 + j, 0);
+                new_plane->t[j] = old_plane->t[j] - rev.at<double>(plane_off + num_ext_param*i + 4 + j, 0);
               }
           }
         else
@@ -1639,14 +1588,14 @@ update_camera_params (camera_param_t *camera_params, extrinsic_param_t *plane_po
   /* lambdas */
   for (i = 0; i < num_lambda; ++i)
     {
-      lambdas[i] = lambdas_current[i] - cvmGet (rev, num_cam_param * ncamera + num_ext_param * (ncamera-1 + nobserv) + i, 0);
+      lambdas[i] = lambdas_current[i] - rev.at<double>(num_cam_param * ncamera + num_ext_param * (ncamera-1 + nobserv) + i, 0);
     }
 #endif
 }
 
 #ifndef USE_INFINITESIMAL_ROTATION
 static double
-mod_lambda (CvMat *JtJ, CvMat *JtF, const int pos, const int lpos, const double l, const quaternion_t q)
+mod_lambda (cv::Mat *JtJ, cv::Mat *JtF, const int pos, const int lpos, const double l, const quaternion_t q)
 {
   int i, j;
   double qq, qq_1, lambda, JtJq[4], dldq[4];
@@ -1660,32 +1609,32 @@ mod_lambda (CvMat *JtJ, CvMat *JtF, const int pos, const int lpos, const double 
   qq = quat_norm2 (q);
   qq_1 = qq - 1.0;
 
-  lambda = cvmGet (JtF, pos + 3, 0) * quat_re (q);
+  lambda = JtF->at<double>(pos + 3, 0) * quat_re (q);
   for (i = 0; i < 3; ++i)
     {
-      lambda += cvmGet (JtF, pos + i, 0) * quat_im (q, i);
+      lambda += JtF->at<double>(pos + i, 0) * quat_im (q, i);
     }
   lambda /= qq;
 
   for (i = 0; i < 4; ++i)
     {
-      JtJq[i] = CV_MAT_ELEM (*JtJ, double, pos + i, pos + 3) * quat_re (q);
+      JtJq[i] = JtJ->at<double>(pos + i, pos + 3) * quat_re (q);
       for (j = 0; j < 3; ++j)
         {
-          JtJq[i] += CV_MAT_ELEM (*JtJ, double, pos + i, pos + j) * quat_im (q, j);
+          JtJq[i] += JtJ->at<double>(pos + i, pos + j) * quat_im (q, j);
         }
 
-      dldq[i] = JtJq[i] + CV_MAT_ELEM (*JtF, double, pos + i, 0);
+      dldq[i] = JtJq[i] + JtF->at<double>(pos + i, 0);
     }
 
   if (JtJ != NULL)
     {
       for (i = 0; i < 4; ++i)
         {
-          CV_MAT_ELEM (*JtJ, double, pos + i, pos + i) -= l * scale;
+          JtJ->at<double>(pos + i, pos + i) -= l * scale;
 
-          CV_MAT_ELEM (*JtJ, double, pos + i, lpos) -= q[i] * scale;
-          CV_MAT_ELEM (*JtJ, double, lpos, pos + i) -= q[i] * scale;
+          JtJ->at<double>(pos + i, lpos) -= q[i] * scale;
+          JtJ->at<double>(lpos, pos + i) -= q[i] * scale;
         }
     }
 
@@ -1693,11 +1642,11 @@ mod_lambda (CvMat *JtJ, CvMat *JtF, const int pos, const int lpos, const double 
     {
       for (i = 0; i < 3; ++i)
         {
-          CV_MAT_ELEM (*JtF, double, pos + i, 0) -= l * quat_im (q, i) * scale;
+          JtF->at<double>(pos + i, 0) -= l * quat_im (q, i) * scale;
         }
-      CV_MAT_ELEM (*JtF, double, pos + 3, 0) -= l * quat_re (q) * scale;
+      JtF->at<double>(pos + 3, 0) -= l * quat_re (q) * scale;
 
-      CV_MAT_ELEM (*JtF, double, lpos, 0) = - qq_1 / 2.0 * scale;
+      JtF->at<double>(lpos, 0) = - qq_1 / 2.0 * scale;
     }
 
   return qq_1 * l;

@@ -1,5 +1,5 @@
 /* -*- mode: c; coding: utf-8 -*-
- optimizer.c
+ optimizer.cpp
 
  Copyright (c) 2011 AIST  All Rights Reserved.
  Eclipse Public License v1.0 (http://www.eclipse.org/legal/epl-v10.html)
@@ -9,9 +9,9 @@
  $Date::                            $
 */
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <math.h>
+#include <cstdio>
+#include <cstdlib>
+#include <cmath>
 
 #include <cv.h>
 
@@ -19,6 +19,7 @@
 
 const optimizer_context_t OPTI_CXT_INIT = {NULL, NULL, opti_update_default, -1, 1000};
 
+#ifdef DEBUG_MULTICALIB
 static void print_vec(CvMat *v)
 {
   int i;
@@ -39,6 +40,7 @@ static void print_mat(CvMat *m)
   }
   printf("\n");
 }
+#endif /* DEBUG_MULTICALIB */
 
 double optimize_lm(optimizer_context_t *cxt, CvMat *param)
 {

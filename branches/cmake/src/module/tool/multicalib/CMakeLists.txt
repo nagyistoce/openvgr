@@ -9,7 +9,7 @@ if (LIBDC1394_FOUND)
 
   # ichimatsu
   include_directories (${OpenVGR_SOURCE_DIR}/src/lib/libcapture)
-  add_executable (ichimatsu ichimatsu.c checker_data.c detect_checker.c)
+  add_executable (ichimatsu ichimatsu.cpp checker_data.c detect_checker.cpp)
   target_link_libraries (ichimatsu capture ${OpenCV_LIBS} ${LIBDC1394_LIBRARIES})
   set_target_properties (ichimatsu PROPERTIES
     COMPILE_FLAGS "-I ${OpenVGR_SOURCE_DIR}/src/lib/libcapture")
@@ -26,5 +26,5 @@ if (LIBDC1394_FOUND)
 endif (LIBDC1394_FOUND)
 
 # multicalib
-add_executable (multicalib multicalib.c calib_proc.c calib_data.c camera_param.c quaternion.c optimizer.c)
+add_executable (multicalib multicalib.cpp calib_proc.cpp calib_data.c camera_param.c quaternion.c optimizer.cpp)
 target_link_libraries (multicalib ${OpenCV_LIBS})

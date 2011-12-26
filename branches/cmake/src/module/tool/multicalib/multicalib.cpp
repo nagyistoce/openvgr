@@ -1,5 +1,5 @@
 /*
- multicalib.c
+ multicalib.cpp
 
  Copyright (c) 2011 AIST  All Rights Reserved.
  Eclipse Public License v1.0 (http://www.eclipse.org/legal/epl-v10.html)
@@ -10,8 +10,8 @@
 */
 
 #include <unistd.h>
-#include <stdio.h>
-#include <time.h>
+#include <cstdio>
+#include <ctime>
 
 #include <cv.h>
 #include <highgui.h>
