@@ -1,7 +1,0 @@
-../dataset/param/can190A.txt   105 ../dataset/calib set0 ../dataset/image can190A.0.ppm can190A.1.ppm can190A.2.ppm 0 1
-../dataset/param/cube.txt      109 ../dataset/calib set0 ../dataset/image cubeA.0.ppm cubeA.1.ppm cubeA.2.ppm 0 1
-../dataset/param/w00.txt       117 ../dataset/calib/set1 calib.yaml ../dataset/image cookiebox.0.png cookiebox.1.png cookiebox.2.png 0 1
-../dataset/param/w00.txt       409 ../dataset/calib/set1 calib.yaml ../dataset/image work1.0.png work1.1.png work1.2.png 0 1
-../dataset/param/w00.txt       402 ../dataset/calib/set1 calib.yaml ../dataset/image work0.0.png work0.1.png work0.2.png 0 1
-../dataset/param/w00.txt       403 ../dataset/calib/set1 calib.yaml ../dataset/image work3.0.png work3.1.png work3.2.png 0 1
-../dataset/param/w01.txt       404 ../dataset/calib/set1 calib.yaml ../dataset/image work4.0.png work4.1.png work4.2.png 0 1
