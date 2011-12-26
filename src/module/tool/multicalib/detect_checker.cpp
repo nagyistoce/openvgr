@@ -1,5 +1,5 @@
 /*
- detect_checker.c
+ detect_checker.cpp
 
  Copyright (c) 2011 AIST  All Rights Reserved.
  Eclipse Public License v1.0 (http://www.eclipse.org/legal/epl-v10.html)
@@ -9,12 +9,12 @@
  $Date::                            $
 */
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <math.h>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
+#include <cmath>
 
-#include <assert.h>
+#include <cassert>
 
 #include <cv.h>
 #include <highgui.h>

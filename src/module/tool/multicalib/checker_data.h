@@ -12,7 +12,7 @@
 #ifndef CHECKER_DATA_H
 #define CHECKER_DATA_H
 
-struct FILE;
+#include <stdio.h>
 
 typedef struct tag_checker_point
 {
@@ -36,6 +36,10 @@ typedef struct tag_checker_data
   checker_point_t **data;
 } checker_data_t;
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 void checker_data_init (checker_data_t *cd, const double size, const int num_cameras);
 void checker_data_clear (checker_data_t *cd);
 void checker_data_final (checker_data_t *cd);
@@ -45,5 +49,9 @@ void checker_data_write_compat (checker_data_t *cd, FILE *fp);
 
 checker_point_t *checker_data_new_observation (checker_data_t *cd);
 int checker_point_resize (checker_point_t *cp, const int num_points);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* CHECKER_DATA_H */
