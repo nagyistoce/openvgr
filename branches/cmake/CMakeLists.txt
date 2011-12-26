@@ -152,3 +152,4 @@ endif (USE_OpenMP)
 #set (CMAKE_VERBOSE_MAKEFILE ON)
 
 add_subdirectory (src)
+add_subdirectory (example)
