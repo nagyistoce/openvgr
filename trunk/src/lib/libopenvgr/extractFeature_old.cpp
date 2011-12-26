@@ -875,6 +875,8 @@ Line2Vertex(Features2D_old* lineFeatures, Features2D_old* features, Parameters p
           // その他の情報のセット
           feature.error = 0.0;
           feature.nTrack = -1;
+	  feature.arclist.n = 0;
+	  feature.arclist.arc = NULL;
 
           // 特徴を保存
           if (addFeature(features, &feature) < 0)
@@ -1546,6 +1548,9 @@ Ellipse2Ellipse(Features2D_old* features, Features2D_old* ellipseFeatures,
                            &newFeature.axis[1]);
           newFeature.nTrack = -1;
           newFeature.nPoints = -1;
+	  newFeature.arclist.n = 0;
+	  newFeature.arclist.arc = NULL;
+
           // 生成特徴を追加
           if (addFeature(newFeatures, &newFeature) < 0)
             {
@@ -1889,6 +1894,9 @@ Ellipse2Ellipse2(Features2D_old* features,
 
                   newFeature.nTrack = -1;
                   newFeature.nPoints = -1;
+		  newFeature.arclist.n = 0;
+		  newFeature.arclist.arc = NULL;
+
                   // 生成特徴を追加
                   if (addFeature(newFeatures, &newFeature) < 0)
                     {
