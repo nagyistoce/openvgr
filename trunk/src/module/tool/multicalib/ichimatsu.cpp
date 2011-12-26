@@ -1,5 +1,5 @@
 /*
- ichimatsu.c
+ ichimatsu.cpp
 
  A sample program for calibration data creation.
 
@@ -11,10 +11,10 @@
  $Date::                            $
 */
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <ctype.h>
-#include <time.h>
+#include <cstdio>
+#include <cstdlib>
+#include <cctype>
+#include <ctime>
 
 #include <unistd.h>
 #include <sys/time.h>
@@ -207,7 +207,8 @@ show_help (const char *prog_name)
 static int
 get_grid (const char *str, int *row, int *col)
 {
-  int i, n, r = -1, c = -1;
+  size_t i, n;
+  int r = -1, c = -1;
   char buf[10];
   
   buf[sizeof (buf) - 1] = '\0';
@@ -761,7 +762,7 @@ s_convert_frame_to_iplimage (capture_frame_t *frame, IplImage *ipl)
 
     case CAPTURE_FRAME_FORMAT_RGB:
       cvInitImageHeader (&temp, cvSize (frame->width, frame->height), IPL_DEPTH_8U, 3, 0, 4);
-      temp.imageData = frame->raw_data;
+      temp.imageData = static_cast<char*>(frame->raw_data);
       cvCvtColor (&temp, ipl, CV_RGB2BGR);
       break;
 

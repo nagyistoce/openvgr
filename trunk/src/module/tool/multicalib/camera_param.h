@@ -48,6 +48,10 @@ typedef struct tag_camera_param
   extrinsic_param_t ext;
 } camera_param_t;
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* projection:
  * image = cp_mult_intrinsic <= cp_distort <= (division by z value) <= cp_mult_extrinsic
  *
@@ -95,5 +99,9 @@ void cp_copy_camera_param (camera_param_t *dst, const camera_param_t *src);
 void cp_print_intrinsic (FILE *fp, const intrinsic_param_t *intr);
 void cp_print_extrinsic (FILE *fp, const extrinsic_param_t *ext, const int output_4th_row);
 void cp_print_distortion (FILE *fp, const distortion_param_t *dist);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* CAMERA_PARAM_H */

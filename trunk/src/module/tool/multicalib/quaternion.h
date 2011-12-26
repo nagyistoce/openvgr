@@ -27,6 +27,10 @@ extern const quaternion_t quat_one;
 #define quat_re(q) (q)[3]
 #define quat_im(q, i) (q)[(i)]
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* print the entries of q */
 void quat_fprintf (FILE *fp, const char *fmt, const char sep, const quaternion_t q);
 #define quat_printf(fmt, sep, q) quat_fprintf(stdout, (fmt), (sep), (q))
@@ -54,5 +58,9 @@ void quat_make_from_rvec (quaternion_t result, const double theta, const double 
 /* conversion between quaternion <-> rotation matrix (column major) */
 void quat_R_from_q (double *R, const int ldim, const quaternion_t q);
 void quat_q_from_R (quaternion_t q, const double *R, const int ldim);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* QUATERNION_H */

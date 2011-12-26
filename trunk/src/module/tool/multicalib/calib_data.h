@@ -41,6 +41,9 @@ typedef struct tag_cdata_observed_points
   double *weights;
 } cdata_observed_points_t;
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 int cdata_create (cdata_t **cdata);
 int cdata_init (cdata_t *cdata);
@@ -56,5 +59,9 @@ int cdata_observed_points_init (cdata_observed_points_t *op);
 int cdata_observed_points_alloc (cdata_observed_points_t *op, const int npoint);
 int cdata_observed_points_free (cdata_observed_points_t *op);
 int cdata_observed_points_final (cdata_observed_points_t *op);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* CALIB_DATA_H */
