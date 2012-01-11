@@ -241,7 +241,7 @@ reconstruct_hyperbola_to_vertex3D(const std::vector<const ovgr::Features2D*> fea
         {
           for (int j = i+1; j < 3; ++j)
             {
-              F[i + (j-1)*j/2] = ovgr::calc_fundamental_matrix(*camParam[i], *camParam[j]);
+              F[s_tri_upper (i, j-1)] = ovgr::calc_fundamental_matrix(*camParam[i], *camParam[j]);
             }
         }
     }
@@ -302,11 +302,11 @@ reconstruct_hyperbola_to_vertex3D(const std::vector<const ovgr::Features2D*> fea
       cv::Mat Fmat;
       if (!inv)
         {
-          Fmat = F[c_index[0] + (c_index[1]-1)*c_index[1]/2];
+          Fmat = F[s_tri_upper (c_index[0], c_index[1] - 1)];
         }
       else
         {
-          Fmat = F[c_index[1] + (c_index[0]-1)*c_index[0]/2];
+          Fmat = F[s_tri_upper (c_index[1], c_index[0] - 1)];
         }
 #endif
 
