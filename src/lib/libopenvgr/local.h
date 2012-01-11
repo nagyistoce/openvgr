@@ -15,6 +15,7 @@
 inline static double s_dot3 (const double x[3], const double y[3]);
 inline static void s_cross3 (double result[3], const double x[3], const double y[3]);
 inline static double s_normalize (double x[3]);
+inline static size_t s_tri_upper (const size_t row, const size_t col);
 
 /*
  * static function
@@ -45,7 +46,8 @@ s_cross3 (double result[3], const double x[3], const double y[3])
     }
 }
 
-static double s_normalize (double x[3])
+static double
+s_normalize (double x[3])
 {
   double norm = sqrt (s_dot3 (x, x));
 
@@ -60,6 +62,17 @@ static double s_normalize (double x[3])
     }
 
   return norm;
+}
+
+static size_t
+s_tri_upper (const size_t row, const size_t col)
+{
+  if (row > col)
+    {
+      return 0;
+    }
+
+  return row + col*(col+1) / 2;
 }
 
 #endif /* _LOCAL_H */
