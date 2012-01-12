@@ -41,7 +41,7 @@ static void compute_initial_poses (camera_param_t *camera_params, const extrinsi
 static void compute_displacement (trans2D_t *t2ds, const camera_param_t *camera_params, const cdata_t *cdata, const extrinsic_param_t *plane_poses, const calib_opt_t *opt);
 static double optimize_camera_parameters (camera_param_t *camera_params, extrinsic_param_t *plane_poses, const trans2D_t *t2ds, const cdata_t *cdata, const calib_opt_t *opt, const int additional_flag);
 
-static cv::Size guess_image_size (const cv::Mat& imagePoints);
+static cv::Size guess_image_size (const std::vector<std::vector<cv::Point2f> >& imagePoints);
 
 static void convert_rodrigues2quat (const cv::Mat& rvec, quaternion_t q);
 static void extract_plane_equation (double coeff[4], const extrinsic_param_t *ext);
@@ -163,8 +163,8 @@ individual_calibration (camera_param_t *camera_params, extrinsic_param_t *plane_
         {
           const int npoint = cdata->data[ncamera*j + i].num_points;
 
-          objectPoints[j] = std::vector<cv::Point3f>(npoint);
-          imagePoints[j] = std::vector<cv::Point2f>(npoint);
+          objectPoints[j].resize(npoint);
+          imagePoints[j].resize(npoint);
 
           for (int k = 0; k < npoint; ++k)
             {
@@ -178,7 +178,7 @@ individual_calibration (camera_param_t *camera_params, extrinsic_param_t *plane_
         }
 
       /* calibrate camera */
-      cv::calibrateCamera (objectPoints, imagePoints, guess_image_size(imagePoints), cameraMatrix, distCoeffs, rvecs, tvecs, (opt->optimize_flag & CALIB_ZERO_TANGENT_DIST ? CV_CALIB_ZERO_TANGENT_DIST : 0));
+      cv::calibrateCamera (objectPoints, imagePoints, guess_image_size(imagePoints), cameraMatrix, distCoeffs, rvecs, tvecs, ((opt->optimize_flag & CALIB_ZERO_TANGENT_DIST) ? CV_CALIB_ZERO_TANGENT_DIST : 0));
 
       /* compute error */
       pos = 0;
@@ -692,23 +692,28 @@ optimize_camera_parameters (camera_param_t *camera_params, extrinsic_param_t *pl
 }
 
 static cv::Size
-guess_image_size (const cv::Mat& imagePoints)
+guess_image_size (const std::vector<std::vector<cv::Point2f> >& imagePoints)
 {
-  int i, n;
+  int n;
   double x_mean = 0.0, d;
   const static int size[][2] = {
     {160, 120}, {320, 240}, {640, 480}, {800, 600}, {1024, 768}, {1280, 960}, {1600, 1200}
   };
 
-  for (i = 0; i < imagePoints.cols; ++i)
+  size_t num = 0;
+  for (size_t i = 0; i < imagePoints.size(); ++i)
     {
-      x_mean += imagePoints.at<double>(0, i);
+      for (size_t j = 0; j < imagePoints[i].size(); ++j)
+        {
+          x_mean += imagePoints[i][j].x;
+        }
+      num += imagePoints[i].size();
     }
-  x_mean /= (double) imagePoints.cols;
+  x_mean /= (double) num;
 
   n = 0;
   d = fabs (2.0*x_mean - size[0][0]);
-  for (i = 1; i < 7; ++i)
+  for (size_t i = 1; i < 7; ++i)
     {
       double dd = fabs (2.0*x_mean - size[i][0]);
       if (dd < d)
