@@ -16,6 +16,11 @@
 #include "conic.h"
 #include "match3Dfeature.h"
 
+#define ALLOC_STEP	(1024)
+
+#define SKIP_LEN	(10)
+#define MAX_SLIDE_LEN	(10)
+
 // 楕円arclist
 typedef struct _ellipse_arc_
 {
@@ -54,6 +59,7 @@ typedef struct Feature2D_old
   int nTrack;                   //!< 輪郭番号
   double error;                 //!< 当てはめ誤差
   double lineLength;            //!< 直線の長さ
+  double lineLengthSQ;          //!< 直線の長さの自乗
   double lineLength1;           //!< 双曲線の線分1の長さ
   double lineLength2;           //!< 双曲線の線分2の長さ
   double lineAngle;             //!< 双曲線の2線分のなす角度
