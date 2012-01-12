@@ -95,9 +95,9 @@ clearFeatures2Dpointer(Features2D_old** features)
 Features2D_old*
 expandFeatures(Features2D_old* features)
 {
-  const int allocStep = 1024 * 5;       // 1024;
+  //const int allocStep = 1024 * 5;       // 1024;
 
-  features->nAlloc += allocStep;
+  features->nAlloc += ALLOC_STEP;
 
   if (features->feature == NULL)
     {                           // 新たに確保する
@@ -487,9 +487,9 @@ overlapFeatures(int* overlap, Features2D_old* features,
   // 直線の場合は長さ優先
   if (feature2->type == ConicType_Line && feature->type == ConicType_Line)
     {
-      if (len / (double) feature->nPoints > paramF2D.overlapRatioLine)
+      if (len / (double) feature2->nPoints > paramF2D.overlapRatioLine)
         {
-          if (feature2->lineLength > feature->lineLength)
+          if (feature2->lineLengthSQ > feature->lineLengthSQ)
             {                   // 長さ優先
               return 0;
             }
@@ -615,7 +615,7 @@ memorizeFeature(Feature2D_old* feature, double error,
     {
       dx = feature->endSPoint[0] - feature->startSPoint[0];
       dy = feature->endSPoint[1] - feature->startSPoint[1];
-      feature->lineLength = sqrt(dx * dx + dy * dy);
+      feature->lineLengthSQ = dx * dx + dy * dy;
       feature->direction[0] = dx;
       feature->direction[1] = dy;
     }
@@ -682,6 +682,294 @@ intersectLineSegment(const double coef1[3], const double coef2[3], double out[2]
   out[1] = p[1] / p[2];
 
   return 1;
+}
+
+// 内積の計算
+#define INPROD2D(vec0, vec1)	(vec0[0]*vec1[0]+vec0[1]*vec1[1])
+
+static void
+norm2tangent(const double	*norm,
+	     double	*tangent)
+{
+  tangent[0] = norm[1];
+  tangent[1] = -norm[0];
+  return;
+}
+
+
+static void
+calc_h_t(const double	*coef_l0, //line 0
+	 const double	*point_l1, // point
+	 const double	*zero, // point t=0
+	 double	*h, // height
+	 double	*t, // t
+	 double	*q) // foot if not NULL
+{
+  double	tangent[2];
+  int	k;
+  double	diff[2];
+
+  *h = -INPROD2D(coef_l0, point_l1) - coef_l0[2];
+
+  norm2tangent(coef_l0, tangent);
+
+  for(k = 0; k < 2; k++)
+    {
+      diff[k] = point_l1[k] - zero[k];
+    }
+
+  *t = INPROD2D(diff, tangent);
+
+  if(q)
+    {
+      for(k = 0; k < 2; k++)
+	q[k] = point_l1[k] + *h * coef_l0[k];
+    }
+
+  return;
+}
+
+// 二つの直線の交点と二点でvertex featureを登録する
+// 交点と端点の距離が短ければ登録しない
+static int
+set_vertex_feature(Features2D_old	*VertexF,
+		   double	**coef, //[2][3]
+		   double	*point0,//[2]
+		   double	*point1,//[2]
+		   const Parameters	*param)
+{
+  double	cross[2];
+  double	th_minlengthSQ;
+  const ParametersFeature2D	*paramF2D = &param->feature2D;
+  Feature2D_old	feature;
+  double	*point[2];
+  int	ip, k;
+  double	diff[2][2];
+  double	lenSQ[2];
+
+  point[0] = point0;
+  point[1] = point1;
+
+  // coef から交点の計算
+  cross[0] = ((coef[1][1])*(-coef[0][2])+(-coef[0][1])*(-coef[1][2]))
+    /(coef[0][0]*coef[1][1]-coef[0][1]*coef[1][0]);
+  cross[1] = ((-coef[1][0])*(-coef[0][2])+(coef[0][0])*(-coef[1][2]))
+    /(coef[0][0]*coef[1][1]-coef[0][1]*coef[1][0]);
+
+  if(cross[0] < 0.0 || cross[0] >= (double)param->colsize ||
+     cross[1] < 0.0 || cross[1] >= (double)param->rowsize)
+    {
+      // 交点が画像内にない
+      return 0;
+    }
+
+  // 交点とpointの距離を調べ閾値より短ければ何もしない
+  th_minlengthSQ = paramF2D->min_length_line*paramF2D->min_length_line;
+  for(ip = 0; ip < 2; ip++)
+    {
+      for(k = 0; k < 2; k++)
+	{
+	  diff[ip][k] = point[ip][k]- cross[k];
+	}
+      lenSQ[ip] = INPROD2D(diff[ip], diff[ip]);
+      if(lenSQ[ip] < th_minlengthSQ)
+	{
+	  // 交点と端点 ip が近すぎる
+	  return 0;
+	}
+    }
+
+  // 登録作業
+  feature.type = ConicType_Hyperbola;
+  // lineAngle は、extractFeature.cppで再計算される
+  for(k = 0; k < 2; k++)
+    {
+      feature.center[k] = cross[k];
+      feature.startSPoint[k] = point0[k];
+      feature.endSPoint[k] = point1[k];
+    }
+  feature.lineLength1 = sqrt(lenSQ[0]);
+  feature.lineLength2 = sqrt(lenSQ[1]);
+
+  // 線分１からみた線分２の角度が１８０度を越えないようにする。
+  // 越えていたら入れ替え
+  if(diff[0][0]*diff[1][1] - diff[0][1]*diff[1][0] < 0.0)
+    {
+      for(k = 0; k < 2; k++)
+	{
+	  std::swap(feature.startSPoint[k], feature.endSPoint[k]);
+	}
+      std::swap(feature.lineLength1, feature.lineLength2);
+    }
+  feature.error = 0.0;
+  feature.nTrack = -1;
+
+  feature.arclist.n = 0;
+  feature.arclist.arc = NULL;
+
+  // 特徴を保存
+  if (addFeature(VertexF, &feature) < 0)
+    {
+      return -1;
+    }
+
+  return 0;
+}
+
+// 二本の直線から頂点を形成するかをテストする
+// メモリエラー時には-1を返す そのほかは0
+static int
+test_vertex(Features2D_old	*VertexF,
+	    double	**coef, //[NLINE(2)][3]
+	    double	*point[2][2], //[NLINE(2)][NPOINT(2)][2]
+	    const double	*tmax,    // [NLINE(2)]
+	    const Parameters	*param) 
+//const ParametersFeature2D	*paramF2D) 
+{
+  int	i0, i1;
+  double	dx, dy, len2;
+  double	thr_dist, thr_dist2;
+  int	il, ip;
+  double	h[2][2], t;
+  int	iv;
+  int	ip0, ip1;
+  const ParametersFeature2D	*paramF2D = &param->feature2D;
+
+  thr_dist = paramF2D->max_distance_end_points;
+  thr_dist2 = thr_dist * thr_dist;
+
+  // 1 端点x端点のチェック
+  for(i0 = 0; i0 < 2; i0++) // endpoint id for line 0
+    {
+      for(i1 = 0; i1 < 2; i1++) // endpoint id for line 1
+	{
+	  dx = point[0][i0][0] - point[1][i1][0];
+	  dy = point[0][i0][1] - point[1][i1][1];
+	  len2 = dx * dx + dy * dy;
+
+	  if(len2 < thr_dist2)
+	    {
+	      if(set_vertex_feature(VertexF,
+				    coef, point[0][1-i0], point[1][1-i1],
+				    param) == -1)
+		{
+		  return -1;
+		}
+	      return 0; // only one vertex
+	    }
+	}
+    }
+
+  // 2 check endpoint x line
+  for(il = 0; il < 2; il++) // line id
+    {
+      for(ip = 0; ip < 2; ip++) // point id for another line
+	{
+	  calc_h_t(coef[il], point[1-il][ip], point[il][0],
+		   &h[1-il][ip], &t, NULL);
+	  if(fabs(h[1-il][ip]) < thr_dist && 0.0 <= t && t <= tmax[il])
+	    // 垂線の足の長さが短く、垂線の足が線分il上にある
+	    {
+	      for(iv = 0; iv < 2; iv++)
+		{
+		  if(set_vertex_feature(VertexF, coef,
+					point[il][0], point[1-il][ip],
+					param) == -1)
+		    {
+		      return -1;
+		    }
+		}
+	      return 0;
+	    }
+	}
+    }
+
+  // 3 非常に稀であるが、交差する場合
+  if(h[0][0]*h[0][1] < 0.0 && h[1][0]*h[1][1] < 0.0)
+    {
+      for(ip0 = 0; ip0 < 2; ip0++)
+	{
+	  for(ip1 = 0; ip1 < 2; ip1++)
+	    {
+	      if(set_vertex_feature(VertexF, coef,
+				    point[0][ip0], point[1][ip1],
+				    param) == -1)
+		{
+		  return -1;
+		}
+	    }
+	}
+    }
+
+  return 0;
+}
+
+// ２直線から頂点を形成
+static int
+line_to_vertex(Features2D_old	*LineF,
+	       Features2D_old	*VertexF,
+	       const Parameters	*param)
+{
+  double	cos_max;
+  Feature2D_old	*pfi, *pfj;
+  int	i, j;
+  double	*point[2][2]; //[NLINE][NPTS]([DIM])
+  double	*coef[2]; //[NLINE](0-2) coef[][0]*x+coef[][1]*y+coef[][2]=0
+  double	tmax[2];
+  double	cos_ij;
+  const ParametersFeature2D	*paramF2D = &param->feature2D;
+
+  cos_max = cos(paramF2D->min_radian_hyperbola);
+
+  // check linelength
+  pfi = LineF->feature;
+  for(i = 0; i < LineF->nFeature; i++, pfi++)
+    {
+      if(pfi->type == ConicType_Line)
+	{
+	  if(pfi->lineLength < paramF2D->min_length_line)
+	    {
+	      pfi->type = ConicType_Unknown;
+	    }
+	}
+    }
+
+  // main loop
+  pfi = LineF->feature;
+  for(i = 0; i < LineF->nFeature-1; i++, pfi++)
+    {
+      if(pfi->type == ConicType_Line){
+	point[0][0] = pfi->startSPoint;//開始点
+	point[0][1] = pfi->endSPoint;  //終端点
+	coef[0] = &pfi->coef[3];      //係数　c[][0]*x+c[][1]*y+c[][2] = 0
+	tmax[0] = pfi->lineLength; // t の最大値 = lineLength
+	
+	pfj = pfi+1;
+	for(j = 0; j < LineF->nFeature; j++, pfj++)
+	  {
+	    if(pfj->type == ConicType_Line){
+	      point[1][0] = pfj->startSPoint;//開始点
+	      point[1][1] = pfj->endSPoint;  //終端点
+	      coef[1] = &pfj->coef[3];      //係数　c[][0]*x+c[][1]*y+c[][2] = 0
+	      tmax[1] = pfj->lineLength; // t の最大値 = lineLength
+
+	      // 角度チェック
+	      // 法線の内積の絶対値
+	      cos_ij = fabs(INPROD2D(coef[0], coef[1]));
+	      if(cos_ij < cos_max)
+		{
+		  // 法線の角度が十分に大きい
+		  if(test_vertex(VertexF, coef, point, tmax, param) == -1)
+		    {
+		      return -1;
+		    }
+		}
+	    } 
+	  }
+      }
+    }
+  
+  return 0;
 }
 
 // 2直線の組み合わせで端点の距離が閾値以内でなす角度が閾値以上の場合に頂点を生成する
@@ -875,6 +1163,7 @@ Line2Vertex(Features2D_old* lineFeatures, Features2D_old* features, Parameters p
           // その他の情報のセット
           feature.error = 0.0;
           feature.nTrack = -1;
+
 	  feature.arclist.n = 0;
 	  feature.arclist.arc = NULL;
 
@@ -905,8 +1194,8 @@ searchLineFeatures(unsigned char* work, Features2D_old* features,
   ConicType type = ConicType_Unknown;
   double coef[6];
 
-  int skip_len = 10;            // 当てはめに必要な最低限の長さ
-  int max_slide_len = 10;       // スライドする最大長さ
+  int skip_len = SKIP_LEN;            // 当てはめに必要な最低限の長さ
+  int max_slide_len = MAX_SLIDE_LEN;       // スライドする最大長さ
   int len;
 
   if (nPoint < skip_len)
@@ -1550,7 +1839,6 @@ Ellipse2Ellipse(Features2D_old* features, Features2D_old* ellipseFeatures,
           newFeature.nPoints = -1;
 	  newFeature.arclist.n = 0;
 	  newFeature.arclist.arc = NULL;
-
           // 生成特徴を追加
           if (addFeature(newFeatures, &newFeature) < 0)
             {
@@ -1896,7 +2184,6 @@ Ellipse2Ellipse2(Features2D_old* features,
                   newFeature.nPoints = -1;
 		  newFeature.arclist.n = 0;
 		  newFeature.arclist.arc = NULL;
-
                   // 生成特徴を追加
                   if (addFeature(newFeatures, &newFeature) < 0)
                     {
@@ -2488,9 +2775,10 @@ compress_ellipse(Features2D_old	*f2Ds,
 // 含まれてしまうfeatureをUnknownにする
 static void
 check_overlap_feature (Features2D_old	*features,
-		       int		feature_from)
+		       int		feature_from,
+		       int		feature_to,
+		       ConicType	type0)
 {
-  int	feature_to;
   int	i_all;
   Feature2D_old	*pfi, *pfj;
   int	iFeature, jFeature;
@@ -2508,7 +2796,7 @@ check_overlap_feature (Features2D_old	*features,
       return;
     }
 
-  feature_to = features->nFeature;
+  //feature_to = features->nFeature;
   nPoint = features->feature[feature_from].all;
 
   // start を　0<=start<nPointになるように、goalを start+len-1にする
@@ -2517,7 +2805,7 @@ check_overlap_feature (Features2D_old	*features,
   for (iFeature = feature_from; iFeature < feature_to && i_all == -1;
        iFeature++, pfi++)
     {
-      if (pfi->type == ConicType_Ellipse)
+      if (pfi->type == type0)
 	{
 	  len = pfi->end - pfi->start + 1;
 	  pfi->start = mod_nPoint(pfi->start, nPoint);
@@ -2536,7 +2824,7 @@ check_overlap_feature (Features2D_old	*features,
       for (iFeature = feature_from; iFeature < feature_to;
 	   iFeature++, pfi++)
 	{
-	  if (pfi->type == ConicType_Ellipse && iFeature != i_all)
+	  if (pfi->type == type0 && iFeature != i_all)
 	    {
 	      pfi->type = ConicType_Unknown;
 	    }
@@ -2549,14 +2837,14 @@ check_overlap_feature (Features2D_old	*features,
   for (iFeature = feature_from; iFeature < feature_to-1; iFeature++, pfi++)
     {
       check_i = 1;
-      if (pfi->type == ConicType_Ellipse)
+      if (pfi->type == type0)
 	{
 	  leni = pfi->end - pfi->start + 1;
 	  pfj = pfi+1;
 	  for (jFeature = iFeature+1; jFeature < feature_to && check_i;
 	       jFeature++, pfj++)
 	    {
-	      if (pfj->type == ConicType_Ellipse)
+	      if (pfj->type == type0)
 		{
 		  // 長い方 lpf,llen, 短い方 spf,slen
 		  lenj = pfj->end - pfj->start + 1;
@@ -2592,6 +2880,453 @@ check_overlap_feature (Features2D_old	*features,
 	    }
 	}
     }
+
+  return;
+}
+
+static double
+tmpgett(Track	*ptrack,
+	Feature2D_old	*pf,
+	int	i0)
+{
+  int	i1;
+  double	tangent[2];
+  double	point[2];
+
+  i1 = i0 % pf->all;
+  norm2tangent(&pf->coef[3], tangent);
+
+  point[0] = (double)ptrack->Point[i1*2];
+  point[1] = (double)ptrack->Point[i1*2+1];
+
+  return INPROD2D(point, tangent);
+}
+	
+
+static void
+debug_print_lineFeature(Features2D_old* lineFeatures)
+{
+  int	i;
+  Feature2D_old	*pf;
+  Track	*pt;
+  double	mint, maxt, tmpt;
+  int	jmint, jmaxt, jend, j;
+  int	count;
+
+  count = 0;
+  pf = lineFeatures->feature;
+  for(i = 0; i < lineFeatures->nFeature; i++, pf++)
+    {
+      if(pf->type == ConicType_Line){
+	count++;
+      }
+    }
+    
+
+  printf("#nFeature = %d nline=%d\n", lineFeatures->nFeature, count);
+  pf = lineFeatures->feature;
+  for(i = 0; i < lineFeatures->nFeature; i++, pf++){
+    printf("%d ",i);
+    if(pf->type == ConicType_Line){
+      printf("L ");
+    }else{
+      printf("U ");
+    }
+    printf("%d %d %d %d %g %g %g %g %g %g ",
+	   pf->nTrack,
+	   pf->all,
+	   pf->start, pf->end,
+	   pf->coef[3],
+	   pf->coef[4],
+	   //pf->center[0],
+	   //pf->center[1],
+	   pf->startSPoint[0],
+	   pf->startSPoint[1],
+	   pf->endSPoint[0],
+	   pf->endSPoint[1]);
+    pt = &lineFeatures->track[pf->nTrack];
+    mint = maxt = tmpgett(pt, pf, pf->start);
+    jmint = jmaxt = pf->start;
+    if(pf->start >= pf->end){
+      jend = pf->end + pf->all;
+    }else{
+      jend = pf->end;
+    }
+    for(j = pf->start+1; j <= jend; j++){
+      tmpt = tmpgett(pt, pf, j);
+      if(tmpt < mint){
+	mint = tmpt;
+	jmint = j;
+      }else if(tmpt > maxt){
+	maxt = tmpt;
+	jmaxt = j;
+      }
+    }
+    jmint = jmint % pf->all;
+    printf("%d %d %d %g %d %d %d %g\n",
+	   jmint,
+	   pt->Point[jmint*2],
+	   pt->Point[jmint*2+1],
+	   mint,
+	   jmaxt,
+	   pt->Point[jmaxt*2],
+	   pt->Point[jmaxt*2+1],
+	   maxt);
+  }
+  return;
+}
+
+// qsort 用比較関数
+#define RET_AB	(-1)
+#define RET_BA	(1)
+#define RET_UNDEF	(0)
+
+static int
+sort_linefeature(const void *pa,
+		 const void *pb)
+{
+  Feature2D_old	*a,*b;
+
+  a = (Feature2D_old *)pa;
+  b = (Feature2D_old *)pb;
+
+  if(a->type == ConicType_Unknown)
+    {
+      if(b->type == ConicType_Unknown)
+	{
+	  return RET_UNDEF;
+	}
+      return RET_BA;
+    }
+
+  if(b->type == ConicType_Unknown)
+    {
+      return RET_AB;
+    }
+  
+  if(a->lineLength > b->lineLength)
+    {
+      return RET_AB;
+    }
+  else if(a->lineLength < b->lineLength)
+    {
+      return RET_BA;
+    }
+
+  return RET_UNDEF;
+}
+
+// 長い線分に短い線分の端点が閾値内に存在しており、媒介変数が重複していれば長い方にマージ
+static void
+merge_line_features(Features2D_old* lF2D,
+		    ParametersFeature2D	*pmF2D)
+{
+  Feature2D_old	*pfi, *pfj;
+  int	i, j, k;
+  double	h, h0, h1;
+  double	tvec[2];
+  double	diff[2];
+  double	tmp;
+  double	ta0, ta1, tb0, tb1;
+  double	zeroP[2];
+  double	b0[2], b1[2];
+  double	t0, t1;
+  double	dx, dy;
+
+  // 端点の計算しなおし
+  pfi = lF2D->feature;
+  for(i = 0; i < lF2D->nFeature; i++, pfi++)
+    {
+      if(pfi->type == ConicType_Line)
+	{
+	  //垂線の足の計算
+	  h = -(pfi->coef[3]*pfi->startSPoint[0]+
+		pfi->coef[4]*pfi->startSPoint[1])-pfi->coef[5];
+	  for(k = 0; k < 2; k++)
+	    {
+	      pfi->startSPoint[k] += h*pfi->coef[3+k];
+	    }
+	  h = -(pfi->coef[3]*pfi->endSPoint[0]+
+		pfi->coef[4]*pfi->endSPoint[1])-pfi->coef[5];
+	  for(k = 0; k < 2; k++)
+	    {
+	      pfi->endSPoint[k] += h*pfi->coef[3+k];
+	    }
+
+	  // 接線方向の入れ替え
+	  tvec[0] = pfi->coef[4];
+	  tvec[1] = -pfi->coef[3];
+	  for(k = 0; k < 2; k++)
+	    {
+	      diff[k] = pfi->endSPoint[k] - pfi->startSPoint[k];
+	    }
+	  if(tvec[0]*diff[0]+tvec[1]*diff[1] < 0.0)
+	    {
+	      // swap
+	      for(k = 0; k < 2; k++)
+		{
+		  tmp = pfi->endSPoint[k];
+		  pfi->endSPoint[k] = pfi->startSPoint[k];
+		  pfi->startSPoint[k] = tmp;
+		}
+	    }
+
+	  for(k = 0; k < 2; k++)
+	    {
+	      pfi->middleSPoint[k] = (pfi->startSPoint[k]+
+				      pfi->endSPoint[k]) / 2.0;
+	    }
+	}
+    }
+
+  // ソートする。長いLine->短いLine->Unknown
+  qsort(lF2D->feature, lF2D->nFeature,
+	sizeof(Feature2D_old), sort_linefeature);
+
+  pfi = lF2D->feature;
+  for(i = 0; i < lF2D->nFeature; i++, pfi++)
+    {
+      if(pfi->type == ConicType_Line)
+	{
+	  // ta1　の計算、ta0 = 0.0
+	  tvec[0] = pfi->coef[4];
+	  tvec[1] = -pfi->coef[3];
+	  for(k = 0; k < 2; k++)
+	    {
+	      diff[k] = pfi->endSPoint[k] - pfi->startSPoint[k];
+	    }
+	  ta0 = 0.0;
+	  ta1 = tvec[0]*diff[0]+tvec[1]*diff[1];
+	  for(k = 0; k < 2; k++)
+	    {
+	      zeroP[k] = pfi->startSPoint[k];
+	    }
+	  
+	  pfj = pfi+1;
+	  for(j = i+1; j < lF2D->nFeature; j++, pfj++)
+	    {
+	      if(pfj->type == ConicType_Line)
+		{
+		  // pfj の両端点のpfiへの垂線の足を計算
+		  h0 = -(pfi->coef[3]*pfj->startSPoint[0]+
+			pfi->coef[4]*pfj->startSPoint[1])-pfi->coef[5];
+		  for(k = 0; k < 2; k++)
+		    {
+		      b0[k] = pfj->startSPoint[k] + h*pfi->coef[3+k];
+		    }
+		  h1 = -(pfi->coef[3]*pfj->endSPoint[0]+
+			pfi->coef[4]*pfj->endSPoint[1])-pfi->coef[5];
+		  for(k = 0; k < 2; k++)
+		    {
+		      b1[k] = pfj->startSPoint[k] + h*pfi->coef[3+k];
+		    }
+
+		  // どちらの垂線の長さも閾値以内
+		  if(fabs(h0) < pmF2D->maxErrorofLineFit &&
+		     fabs(h1) < pmF2D->maxErrorofLineFit)
+		    {
+		      // tb{01} の計算
+		      for(k = 0; k < 2; k++)
+			{
+			  diff[k] = b0[k] - pfi->startSPoint[k];
+			}
+		      tb0 = tvec[0]*diff[0]+tvec[1]*diff[1];
+		      for(k = 0; k < 2; k++)
+			{
+			  diff[k] = b1[k] - pfi->startSPoint[k];
+			}
+		      tb1 = tvec[0]*diff[0]+tvec[1]*diff[1];
+
+		      // tb0 < tb1 にする
+		      if(tb0 > tb1)
+			{
+			  tmp = tb0;
+			  tb0 = tb1;
+			  tb1 = tmp;
+			}
+
+		      // t の範囲比較
+		      if(ta0 <= tb1 && tb0 <= ta1)
+			{
+			  // 重複あり
+			  if(ta0 < tb0)
+			    {
+			      t0 = ta0;
+			    }
+			  else
+			    {
+			      t0 = tb0;
+			    }
+			  if(ta1 < tb1)
+			    {
+			      t1 = tb1;
+			    }
+			  else
+			    {
+			      t1 = ta1;
+			    }
+
+			  // pfiの端点を修正し、pfjを消す
+			  for(k = 0; k < 2; k++)
+			    {
+			      pfi->startSPoint[k] = zeroP[k]+tvec[k]*t0;
+			      pfi->endSPoint[k] = zeroP[k]+tvec[k]*t1;
+			      pfi->middleSPoint[k] = (pfi->startSPoint[k]+
+						      pfi->endSPoint[k])/2.0;
+			    }
+			  pfj->type = ConicType_Unknown;
+			}
+		    }
+		}
+	    }
+	}
+    }
+  
+  // 仕上げ
+  
+  pfi = lF2D->feature;
+  for(i = 0; i < lF2D->nFeature; i++, pfi++)
+    {
+      if(pfi->type == ConicType_Line)
+	{
+	  dx = pfi->endSPoint[0] - pfi->startSPoint[0];
+	  dy = pfi->endSPoint[1] - pfi->startSPoint[1];
+	  pfi->lineLengthSQ = dx * dx + dy * dy;
+	  pfi->lineLength = sqrt(pfi->lineLengthSQ);
+	  pfi->direction[0] = dx;
+	  pfi->direction[1] = dy;
+	}
+    }
+
+  return;
+}
+
+// 直線特徴を整形する
+// (1) 端点のはりかえ
+// (2) マージ
+static void
+reform_line_features(Features2D_old* lineFeatures,
+		     ParametersFeature2D	*pmF2D)
+{
+  Feature2D_old	*pfi;
+  Track	*pt;
+  int	iFeature;
+  double	mint, maxt;
+  int	jmint, jmaxt, tmp;
+  int	jend;
+  int	j;
+  double	tmpt;
+  int	middle;
+  double	dx, dy;
+  int	from, to;
+  Feature2D_old	*pto;  
+
+  // 端点のはりかえ
+  pfi = lineFeatures->feature;
+  for (iFeature = 0; iFeature < lineFeatures->nFeature; iFeature++, pfi++)
+    {
+      if (pfi->type == ConicType_Line)
+	{
+	  pt = &lineFeatures->track[pfi->nTrack];
+	  mint = maxt = tmpgett(pt, pfi, pfi->start);
+
+	  // 点列内で接線方向の最大最小点を探しなおし
+	  jmint = jmaxt = pfi->start;
+	  if(pfi->start >= pfi->end)
+	    {
+	      jend = pfi->end + pfi->all;
+	    }
+	  else
+	    {
+	      jend = pfi->end;
+	    }
+
+	  for(j = pfi->start+1; j <= jend; j++)
+	    {
+	      tmpt = tmpgett(pt, pfi, j);
+	      if(tmpt < mint){
+		mint = tmpt;
+		jmint = j;
+	      }
+	      else if(tmpt > maxt)
+		{
+		  maxt = tmpt;
+		  jmaxt = j;
+		}
+	    }
+
+	  // 大小関係を調整
+	  if (jmaxt < jmint)
+	    {
+	      // swap
+	      tmp = jmaxt;
+	      jmaxt = jmint;
+	      jmint = tmp;
+	    }
+
+	  if (jmint != pfi->start || jmaxt != jend)
+	    {
+	      // 探し直した最大最小点がもとの始点終点とちがっている
+	      if (jmaxt - jmint +1 < SKIP_LEN)
+		{
+		  // 直線フラグを消す
+		  pfi->type = ConicType_Unknown;
+		}
+	      else
+		{
+		  pfi->start = mod_nPoint(jmint, pfi->all);
+		  pfi->end = mod_nPoint(jmaxt, pfi->all);
+		  pfi->startSPoint[0] = pt->Point[pfi->start*2];
+		  pfi->startSPoint[1] = pt->Point[pfi->start*2+1];
+		  pfi->endSPoint[0] = pt->Point[pfi->end*2];
+		  pfi->endSPoint[1] = pt->Point[pfi->end*2+1];
+
+		  middle = mod_nPoint((jmint+jmaxt)/2, pfi->all);
+		  pfi->middleSPoint[0] = pt->Point[middle*2];
+		  pfi->middleSPoint[1] = pt->Point[middle*2+1];
+
+		  pfi->nPoints = jmaxt - jmint + 1;
+
+		  dx = pfi->endSPoint[0] - pfi->startSPoint[0];
+		  dy = pfi->endSPoint[1] - pfi->startSPoint[1];
+		  pfi->lineLengthSQ = dx * dx + dy * dy;
+		  pfi->direction[0] = dx;
+		  pfi->direction[1] = dy;
+		}
+	    }
+
+	  // lineLength はここではじめてセットされる
+	  pfi->lineLength = sqrt(pfi->lineLengthSQ);
+	}
+    }
+
+  // 重複した特徴のチェック
+  pfi = lineFeatures->feature;
+  for (iFeature = 0; iFeature < lineFeatures->nFeature; iFeature++, pfi++)
+    {
+      if (pfi->type == ConicType_Line)
+	{
+	  // 同じ nTrack を持つfeatureの範囲を調べる
+	  from = to = iFeature;
+	  pto = pfi;
+	  while(to < lineFeatures->nFeature &&
+		pto->nTrack == pfi->nTrack)
+	    {
+	      to++;
+	      pto++;
+	    }
+	  
+	  // from には pfi->nTrackの最初の番号、toには次のnTrackを持つ番号
+	  check_overlap_feature(lineFeatures, from, to, ConicType_Line);
+
+	  // 次のループではtoから調べ始める
+	  iFeature = to;
+	  pfi = pto;
+	}
+    }
+      
+  // 隣接した特徴のマージ
+  merge_line_features(lineFeatures, pmF2D);
 
   return;
 }
@@ -2673,6 +3408,9 @@ extractFeatures_old (unsigned char* edge,   // エッジ画像
         }
     }
 
+  // 端点のはりかえ、マージ等
+  //reform_line_features(lineFeatures, &parameters.feature2D);
+
   // それぞれの端点が近い線分に印をつける(error < 0.0)
   if (parameters.feature2D.max_distance_similar_line >= 0.0)
     {
@@ -2718,6 +3456,9 @@ extractFeatures_old (unsigned char* edge,   // エッジ画像
         }
     }
 
+  // 端点のはりかえ、マージ等
+  reform_line_features(lineFeatures, &parameters.feature2D);
+
   if (parameters.dbgimag)
     {
       // 直線検出結果カラー表示・保存
@@ -2731,7 +3472,13 @@ extractFeatures_old (unsigned char* edge,   // エッジ画像
   if (model.numOfVertices > 0 && !(no_search & NO_SEARCH_VERTEX))
     {
       // 2直線の組み合わせで端点の距離が閾値以内でなす角度が閾値以上の場合に頂点を生成する
+      /*
       if (Line2Vertex(lineFeatures, features, parameters) < 0)
+        {
+          clearFeatures2Dpointer(&features);
+          goto ending; // メモリ確保失敗
+	  }*/
+      if (line_to_vertex(lineFeatures, features, &parameters) < 0)
         {
           clearFeatures2Dpointer(&features);
           goto ending; // メモリ確保失敗
@@ -2762,7 +3509,9 @@ extractFeatures_old (unsigned char* edge,   // エッジ画像
 		  clearFeatures2Dpointer(&features);
 		  goto ending; // メモリ確保失敗
 		}
-	      check_overlap_feature(features, feature_from);
+	      check_overlap_feature(features, feature_from,
+				    features->nFeature,
+				    ConicType_Ellipse);
 	    }
 
 	  // 楕円に当てはめられたエッジ情報を保存する
@@ -2875,7 +3624,9 @@ extractFeatures_old (unsigned char* edge,   // エッジ画像
 		  clearFeatures2Dpointer(&features);
 		  goto ending; // メモリ確保失敗
 		}
-	      check_overlap_feature(features, feature_from);
+	      check_overlap_feature(features, feature_from,
+				    features->nFeature,
+				    ConicType_Ellipse);
 	    }
 
 	  // tracklist_1 の準備
