@@ -945,7 +945,7 @@ line_to_vertex(Features2D_old	*LineF,
 	tmax[0] = pfi->lineLength; // t の最大値 = lineLength
 	
 	pfj = pfi+1;
-	for(j = 0; j < LineF->nFeature; j++, pfj++)
+	for(j = i+1; j < LineF->nFeature; j++, pfj++)
 	  {
 	    if(pfj->type == ConicType_Line){
 	      point[1][0] = pfj->startSPoint;//開始点
