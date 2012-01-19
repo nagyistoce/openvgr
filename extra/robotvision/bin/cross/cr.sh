@@ -23,7 +23,6 @@ getCrossData()
 	for i in $inputfiles; do
 		base=`basename $i $cnext`
 		num=${base##testin}
-		lnum=`expr $num + 1`
         # クロス点画素座標の検出
 		cr=`./findx -i $i -t template.$ext -o out$num$cnext $opts`
 		echo $cr >> $output
