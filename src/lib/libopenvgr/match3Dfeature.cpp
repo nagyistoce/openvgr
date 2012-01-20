@@ -384,12 +384,17 @@ mergeMatch3Dresults(Match3Dresults* base, Match3Dresults* append)
 
   if (base == NULL || append == NULL)
     {
-      return VISION_PARAM_ERROR;
+      return 0;
     }
 
-  if (base->error || append->error)
+  if (base->error)
     {
-      return VISION_PARAM_ERROR;
+      return base->error;
+    }
+
+  if (append->error)
+    {
+      return append->error;
     }
 
   if (append->numOfResults == 0)
