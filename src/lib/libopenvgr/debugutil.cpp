@@ -418,7 +418,7 @@ drawCircleCandidate(const uchar* edge,
 
   FILE *fp;
   char fname[100];
-  sprintf(fname, "center-circle%d.txt", pairing);
+  sprintf(fname, "circle3D%d.txt", pairing);
   fp = fopen(fname, "w");
 
   // 円の描画
