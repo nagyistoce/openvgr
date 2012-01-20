@@ -646,7 +646,7 @@ makePairTable(Circle* mcir, int** cortbl, int tblen, int* nmodel)
 
 // 組み合わせテーブルのメモリ解放
 static void
-freePairTable(PairTable* pairtbl, int nmodel)
+freePairTable(PairTable* pairtbl)
 {
   if (pairtbl)
     {
@@ -896,6 +896,6 @@ outOfLoop:
 
 ending:
   freeCorrespondenceTable(cortbl, nmc);
-  freePairTable(pairtbl, nm);
+  freePairTable(pairtbl);
   return Match;
 }
