@@ -770,9 +770,15 @@ matchPairedCircles(Features3D& scene,          // シーンの３次元特徴情
 
   // シーン円と対応があるモデル円どうしの組合せを取り、中心間距離順に並べる
   pairtbl = makePairTable(models, cortbl, nmc, &nm);
-  if (pairtbl == NULL || nm == 0)
+  if (pairtbl == NULL)
     {
       Match.error = VISION_MALLOC_ERROR;
+      goto ending;
+    }
+
+  // 対応円なし
+  if (nm == 0)
+    {
       goto ending;
     }
 
