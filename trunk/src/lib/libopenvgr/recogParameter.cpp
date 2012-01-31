@@ -182,7 +182,7 @@ static const char* paramKeyString[] = {
   "IW_OffsetMode",
   "IW_SwLineEllipse",
   "IW_SwOldMergeFunc",
-  "IW_ShorenEllipseMerging"
+  "IW_ShortenEllipseMerging"
 };
 
 //
