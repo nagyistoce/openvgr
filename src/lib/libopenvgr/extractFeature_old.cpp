@@ -2807,7 +2807,7 @@ check_overlap_feature (Features2D_old	*features,
     {
       if (pfi->type == type0)
 	{
-	  len = pfi->end - pfi->start + 1;
+	  len = mod_nPoint(pfi->end - pfi->start, nPoint) + 1;
 	  pfi->start = mod_nPoint(pfi->start, nPoint);
 	  pfi->end = pfi->start + len - 1;
 	  if (len == pfi->all)
@@ -3108,17 +3108,23 @@ merge_line_features(Features2D_old* lF2D,
 	      if(pfj->type == ConicType_Line)
 		{
 		  // pfj の両端点のpfiへの垂線の足を計算
+		  // Q = P + h n
+		  // Q n + c5 = 0
+		  // (P+hn)n + c5 = 0
+		  // P n + c5 = -h n^2 = -h
+		  // h = -(P n + c5)
+		  
 		  h0 = -(pfi->coef[3]*pfj->startSPoint[0]+
 			pfi->coef[4]*pfj->startSPoint[1])-pfi->coef[5];
 		  for(k = 0; k < 2; k++)
 		    {
-		      b0[k] = pfj->startSPoint[k] + h*pfi->coef[3+k];
+		      b0[k] = pfj->startSPoint[k] + h0*pfi->coef[3+k];
 		    }
 		  h1 = -(pfi->coef[3]*pfj->endSPoint[0]+
 			pfi->coef[4]*pfj->endSPoint[1])-pfi->coef[5];
 		  for(k = 0; k < 2; k++)
 		    {
-		      b1[k] = pfj->startSPoint[k] + h*pfi->coef[3+k];
+		      b1[k] = pfj->endSPoint[k] + h1*pfi->coef[3+k];
 		    }
 
 		  // どちらの垂線の長さも閾値以内
@@ -3167,12 +3173,16 @@ merge_line_features(Features2D_old* lF2D,
 			    }
 
 			  // pfiの端点を修正し、pfjを消す
-			  for(k = 0; k < 2; k++)
+			  if(t0 != ta0 || t1 != ta1)
 			    {
-			      pfi->startSPoint[k] = zeroP[k]+tvec[k]*t0;
-			      pfi->endSPoint[k] = zeroP[k]+tvec[k]*t1;
-			      pfi->middleSPoint[k] = (pfi->startSPoint[k]+
-						      pfi->endSPoint[k])/2.0;
+			      for(k = 0; k < 2; k++)
+				{
+				  pfi->startSPoint[k] = zeroP[k]+tvec[k]*t0;
+				  pfi->endSPoint[k] = zeroP[k]+tvec[k]*t1;
+				  pfi->middleSPoint[k] = (pfi->startSPoint[k]+
+							  pfi->endSPoint[k])/2.0;
+				}
+			      ta0 = t0, ta1 = t1;
 			    }
 			  pfj->type = ConicType_Unknown;
 			}
@@ -3320,8 +3330,8 @@ reform_line_features(Features2D_old* lineFeatures,
 	  check_overlap_feature(lineFeatures, from, to, ConicType_Line);
 
 	  // 次のループではtoから調べ始める
-	  iFeature = to;
-	  pfi = pto;
+	  iFeature = to-1;
+	  pfi = pto-1;
 	}
     }
       
