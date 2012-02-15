@@ -8,7 +8,7 @@ multicalib is a program to estimate camera parameters of a multi-camera system. 
 
 = Calibration steps =
 
-== Generate a camera setting file by genconf ==
+== 1. Generate a camera setting file by genconf ==
 
 genconf generates a template of setting file for your cameras on IEEE1394 buses.
 {{{
@@ -33,20 +33,20 @@ $ ./ichimatsu
 It will read the ieee1394board.0 in a current directory, and show live images taken by your cameras. To exit the program, press 'q'.
 
 
-== Observe a reference plane ==
+== 2. Observe a reference plane ==
 
-ichimatsu has another mode to detect a chessboard pattern (by a function in OpenCV).
+ichimatsu has another mode to detect a [http://openvgr.googlecode.com/svn/trunk/src/module/tool/multicalib/chessboard_8x8_20mm.svg chessboard pattern] (by a function in OpenCV).
 {{{
 $ ./ichimatsu -g 16x16 -s 20 -o calib_data.txt
 }}}
 
 where, number of grid in each row/col (-g), length of a side of square `[mm]` (-s), and file name of calibration data to be output (-o).
 
-When launching the sample program with a correct setting file, you may see live images taken by the cameras. As pressing "c" key, the program will enter the chess board detection mode. Then, move your reference plane to be detected for all camera image, and press "enter" key to store the data. You shold repeate this "move -> enter" process at least three times to gather sufficient information for calibration. I usually observe a reference plane about 5 times. Finally, press "W" (shift-w) to output calibration data.
+When launching the program with a correct setting file, you may see live images taken by the cameras. As pressing "c" key, the program will enter the chessboard detection mode. Then, move your reference plane to be detected for all camera image, and press "enter" key to store the data. You shold repeate this "move -> enter" process at least three times to gather sufficient information for calibration. I usually observe a reference plane about 5 times. Finally, press "W" (shift-w) to output calibration data.
 
 The key point of the observation is normal vector of a reference plane. The set of observed normal vectors must span 3-D space. For instance, rotational motion around one axis is insufficient because all of the normal vectors reside on a 2-D plane. So, if you receive poor result from multicalib, please check poses of a reference plane.
 
-== Generate a camera parameter file by multicalib ==
+== 3. Generate a camera parameter file by multicalib ==
 
 {{{
 $ ./multicalib calib_data.txt
@@ -56,6 +56,7 @@ will output result to console. If you specify file name by -o option (e.g. -o ca
 
 = calibration data format =
 
+You can use multicalib in conjunction with your plane detection programs. The format multicalib reads is as follows.
 {{{
 MLTCLB 1
 (pattern_period) (pattern_rotation_period)
