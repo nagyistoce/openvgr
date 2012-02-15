@@ -75,7 +75,7 @@ tarball:<br>
 Go to [http://code.google.com/p/openvgr/downloads/list download page] and choose one.
 Then unpack the archive:
 {{{
-$ tar zxvf OpenVGR-X.Y.Z
+$ tar zxvf OpenVGR-X.Y.Z.tgz
 }}}
 
 = Building programs =
