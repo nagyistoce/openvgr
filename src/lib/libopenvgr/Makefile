@@ -10,7 +10,7 @@
 .cpp.o:
 	$(CXX) -c $(CPPFLAGS) $(CXXFLAGS) $(INCLUDES) $(DEFS) -o $@ $<
 
-OPENCVINC = -I/usr/include/opencv
+OPENCVINC = `pkg-config --cflags opencv`
 RTMINC = -I`rtm-config --prefix`/include/rtm/idl
 INCLUDES = $(OPENCVINC) $(RTMINC)
 

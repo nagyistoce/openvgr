@@ -17,12 +17,11 @@
 #
 # $Id$
 #
-OPENCVINCDIR = /usr/include/opencv
 VGRINCDIR = ../../../src/lib/libopenvgr
 
 OPENCVLIBS = `pkg-config opencv --libs`
 
-CXXFLAGS = -Wall -g `rtm-config --cflags` -I. -I$(VGRINCDIR) -I$(OPENCVINCDIR)
+CXXFLAGS = -Wall -g `rtm-config --cflags` -I. -I$(VGRINCDIR) `pkg-config --cflags opencv`
 LDFLAGS  = `rtm-config --libs` $(OPENCVLIBS)
 SHFLAGS  = -shared
 
