@@ -197,7 +197,7 @@ choose_index(size_t *index, const size_t n, const size_t max_index)
 
 /* 2点を通る直線を求める */
 static void
-compute_line_coef(double coef[3], const cv::Point& p1, const cv::Point& p2)
+compute_line_coef(double coef[3], const Point2D& p1, const Point2D& p2)
 {
   double norm = 0.0;
   int i;
