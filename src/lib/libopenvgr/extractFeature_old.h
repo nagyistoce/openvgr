@@ -16,19 +16,24 @@
 #include "conic.h"
 #include "match3Dfeature.h"
 
+#define ALLOC_STEP      (1024)
+
+#define SKIP_LEN        (10)
+#define MAX_SLIDE_LEN   (10)
+
 // 楕円arclist
 typedef struct _ellipse_arc_
 {
-  struct Features2D_old	*f2Ds;
-  int	ntrack;
-  int	start;
-  int	goal;
+  struct Features2D_old *f2Ds;
+  int ntrack;
+  int start;
+  int goal;
 } EllipseArc;
 
 typedef struct _ellipse_arc_list_
 {
-  int	n;
-  EllipseArc	*arc;
+  int n;
+  EllipseArc *arc;
 } EllipseArcList;
   
 
@@ -54,11 +59,12 @@ typedef struct Feature2D_old
   int nTrack;                   //!< 輪郭番号
   double error;                 //!< 当てはめ誤差
   double lineLength;            //!< 直線の長さ
+  double lineLengthSQ;          //!< 直線の長さの自乗
   double lineLength1;           //!< 双曲線の線分1の長さ
   double lineLength2;           //!< 双曲線の線分2の長さ
   double lineAngle;             //!< 双曲線の2線分のなす角度
 
-  EllipseArcList	arclist; // マージされた楕円特徴の点列集合
+  EllipseArcList arclist; // マージされた楕円特徴の点列集合
 } Feature2D_old;
 
 //! 輪郭情報
