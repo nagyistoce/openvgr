@@ -186,7 +186,7 @@ individual_calibration (camera_param_t *camera_params, extrinsic_param_t *plane_
         {
           projectedPoints[j] = std::vector<cv::Point2f>(imagePoints[j].size());
 
-          cv::projectPoints (objectPoints[j], rvecs[j], tvecs[j], cameraMatrix, distCoeffs, projectedPoints[j]);
+          cv::projectPoints (cv::Mat(objectPoints[j]), rvecs[j], tvecs[j], cameraMatrix, distCoeffs, projectedPoints[j]);
         }
       error = 0.0;
       for (int j = 0; j < nobserv; ++j)
@@ -1019,7 +1019,7 @@ compute_undistorted_points (std::vector<cv::Point2f> *points, const camera_param
     }
 
   /* store undistorted points to points */
-  cv::undistortPoints (distorted, *points, cameraMatrix, dcoeff);
+  cv::undistortPoints (cv::Mat(distorted), *points, cameraMatrix, dcoeff);
 
   /* compute undistorted point on the image plane and overwrite it */
   for (i = 0; i < op->num_points; ++i)
