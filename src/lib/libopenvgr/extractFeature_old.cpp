@@ -663,6 +663,7 @@ compareAndAddFeature(Features2D_old* features, Feature2D_old* feature,
     }
 }
 
+#if 0
 // 線分の交点
 // 戻り値：0 線分が平行、1 交点あり
 static int
@@ -683,6 +684,7 @@ intersectLineSegment(const double coef1[3], const double coef2[3], double out[2]
 
   return 1;
 }
+#endif
 
 // 内積の計算
 #define INPROD2D(vec0, vec1)    (vec0[0]*vec1[0]+vec0[1]*vec1[1])
@@ -973,6 +975,7 @@ line_to_vertex(Features2D_old   *LineF,
   return 0;
 }
 
+#if 0
 // 2直線の組み合わせで端点の距離が閾値以内でなす角度が閾値以上の場合に頂点を生成する
 static int
 Line2Vertex(Features2D_old* lineFeatures,
@@ -1181,6 +1184,7 @@ Line2Vertex(Features2D_old* lineFeatures,
     }
   return 0;
 }
+#endif
 
 // 直線を検出する
 static int
