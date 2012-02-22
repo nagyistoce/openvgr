@@ -14,4 +14,8 @@ To view the details, please check a log of [http://code.google.com/p/openvgr/sou
 
 == General ==
  * Added an experimental support for cmake.
+   {{{
+$ mkdir release && cd release
+$ cmake .. && make
+   }}}
  * Fixed misc bugs.
