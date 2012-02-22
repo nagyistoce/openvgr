@@ -1,0 +1,17 @@
+#summary Release note for OpenVGR-0.9.1
+#labels Phase-Implementation
+
+= What's new from 0.9.0 (draft) =
+
+This is a maintenance release of the 0.9.x series. Remarkable changes from the 0.9.0 are shown below.
+To view the details, please check a log of [http://code.google.com/p/openvgr/source/list our repository].
+
+== Recognition RTCs ==
+ * Accuracy of line fitting has been slightly improved.
+
+== Calibration related programs ==
+ * Modified to use C++ apis (`cv::*`) rather than C apis (`Cv*`).
+
+== General ==
+ * Added an experimental support for cmake.
+ * Fixed misc bugs.
