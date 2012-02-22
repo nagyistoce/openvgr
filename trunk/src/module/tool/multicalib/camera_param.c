@@ -290,7 +290,7 @@ double
 s_calc_Hr (double H[3], double r[2], const double d[5], const double ref[2], const double x[2])
 {
   const double r2 = x[0]*x[0] + x[1]*x[1];
-  const double d123 = d[0] + (2.0*d[1] + 3.0*d[5]*r2) * r2;
+  const double d123 = d[0] + (2.0*d[1] + 3.0*d[4]*r2) * r2;
   double dx[2], diff[2], f[2][2];
   
   /* distorted point of x */
