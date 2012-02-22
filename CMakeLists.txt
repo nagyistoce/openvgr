@@ -77,7 +77,13 @@ if (NOT OpenRTM_FOUND)
 
     _rtm_config_execute (OPENRTM_DIR "" "--prefix")
     _rtm_config_execute (OPENRTM_INCLUDE_DIRS "^-I.*" "--cflags")
-    string (REGEX REPLACE "-I([^ ;-]*)" "\\1;" OPENRTM_INCLUDE_DIRS ${OPENRTM_INCLUDE_DIRS})
+    # trim preceded -I
+    set (_temp)
+    foreach (_item ${OPENRTM_INCLUDE_DIRS})
+        string (REGEX REPLACE " *-I(.*)" "\\1" _item ${_item})
+        list (APPEND _temp ${_item})
+    endforeach (_item ${OPENRTM_INCLUDE_DIRS})
+    set (OPENRTM_INCLUDE_DIRS ${_temp})
 
     _rtm_config_execute (OPENRTM_CFLAGS "^-[^I].*" "--cflags")
     set (OPENRTM_LDFLAGS "")
