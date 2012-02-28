@@ -4,7 +4,7 @@
 = multicalib =
 
 multicalib is a program to estimate camera parameters of a multi-camera system. It comes with genconf and ichimatsu.
-
+multicalib can calibrate even a single camera, in that case, the result is (almost) identical to the one by the calibration function in OpenCV.
 
 = Calibration steps =
 
