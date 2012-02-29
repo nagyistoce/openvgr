@@ -130,6 +130,7 @@ parse_args (multicalib_opt_t *opt, const int argc, char **argv)
 
         case 'd':
           num = atoi (optarg);
+          opt->calib_opt.optimize_flag &= ~(CALIB_ZERO_DIST | CALIB_ZERO_TANGENT_DIST | CALIB_ZERO_HIGHER_ORDER_DIST);
           switch (num)
             {
             case 0:
@@ -145,7 +146,7 @@ parse_args (multicalib_opt_t *opt, const int argc, char **argv)
               break;
 
             case 5:
-              opt->calib_opt.optimize_flag &= !(CALIB_ZERO_DIST | CALIB_ZERO_TANGENT_DIST | CALIB_ZERO_HIGHER_ORDER_DIST);
+              opt->calib_opt.optimize_flag &= ~(CALIB_ZERO_DIST | CALIB_ZERO_TANGENT_DIST | CALIB_ZERO_HIGHER_ORDER_DIST);
               break;
 
             default:
@@ -168,7 +169,7 @@ parse_args (multicalib_opt_t *opt, const int argc, char **argv)
           break;
 
         case 's':
-          opt->calib_opt.optimize_flag &= !CALIB_FIX_SHEAR;
+          opt->calib_opt.optimize_flag &= ~CALIB_FIX_SHEAR;
           break;
 
         case 'o':
