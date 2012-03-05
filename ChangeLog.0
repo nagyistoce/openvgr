@@ -1,3 +1,162 @@
+2012-03-05  takase.ryuichi@gmail.com
+
+	* Copyright, README:
+	  
+	  年の更新
+
+	* doc/developer/機能仕様書.pdf, doc/user/はじめにお読みください.pdf,
+	  doc/user/操作手順書.pdf,
+	  doc/reference/Recognition.pdf,
+	  doc/reference/RecognitionResultViewer.pdf,
+	  doc/reference/VGRModeler.pdf, doc/reference/libopenvgr.pdf,
+	  src/lib/libopenvgr/doc/doxygen/Doxyfile,
+	  src/module/component/Recognition/doc/doxygen/Doxyfile,
+	  src/module/component/RecognitionResultViewer/doc/doxygen/Doxyfile,
+	  src/module/tool/VGRModeler/doc/doxygen/Doxyfile:
+	  
+	  バージョン番号を0.9.1に更新
+
+2012-03-05  kawabata.aist@gmail.com
+
+	* CMakeLists.txt, VERSION:
+	  
+	  updated the version string.
+
+2012-02-29  kawabata.aist@gmail.com
+
+	* src/module/tool/multicalib/multicalib.cpp:
+	  
+	  fixed bitwise not operator.
+
+2012-02-22  kawabata.aist@gmail.com
+
+	* src/module/tool/multicalib/camera_param.c:
+	  
+	  fixed an illegal access; the array index is out of range.
+
+2012-02-21  tak.yoshimi.aist@gmail.com
+
+	* src/lib/libopenvgr/extractFeature.cpp,
+	  src/lib/libopenvgr/extractFeature_old.cpp,
+	  src/lib/libopenvgr/extractFeature_old.h:
+	  
+	  branches開発版の手動マージ。頂点特徴アルゴリズムの改良
+
+2012-01-12  kawabata.aist@gmail.com
+
+	* src/module/tool/multicalib/calib_proc.cpp:
+	  
+	  fixed a bug; guess_image_size() returns wrong value.
+
+2011-12-26  kawabata.aist@gmail.com
+
+	* CMakeLists.txt, example/CMakeLists.txt,
+	  example/component/CMakeLists.txt,
+	  example/component/MultiCameraTrigger/CMakeLists.txt,
+	  example/component/SendImage/CMakeLists.txt,
+	  example/component/SetModelID/CMakeLists.txt, src/CMakeLists.txt,
+	  src/lib/CMakeLists.txt, src/lib/libcapture/CMakeLists.txt,
+	  src/lib/libopenvgr/CMakeLists.txt, src/module/CMakeLists.txt,
+	  src/module/component/CMakeLists.txt,
+	  src/module/component/Measure3D/CMakeLists.txt,
+	  src/module/component/MultiCamera/CMakeLists.txt,
+	  src/module/component/MultiDisp/CMakeLists.txt,
+	  src/module/component/Recognition/CMakeLists.txt,
+	  src/module/component/RecognitionResultViewer/CMakeLists.txt,
+	  src/module/tool/CMakeLists.txt,
+	  src/module/tool/VGRModeler/CMakeLists.txt,
+	  src/module/tool/multicalib/CMakeLists.txt:
+	  
+	  merged the cmake branch to the trunk
+
+	* src/module/tool/multicalib/calib_proc.cpp:
+	  
+	  changed Cv* fashion to cv::*.
+
+	* src/module/tool/multicalib/calib_data.h,
+	  src/module/tool/multicalib/calib_proc.c,
+	  src/module/tool/multicalib/calib_proc.cpp,
+	  src/module/tool/multicalib/camera_param.h,
+	  src/module/tool/multicalib/checker_data.h,
+	  src/module/tool/multicalib/detect_checker.c,
+	  src/module/tool/multicalib/detect_checker.cpp,
+	  src/module/tool/multicalib/ichimatsu.c,
+	  src/module/tool/multicalib/ichimatsu.cpp,
+	  src/module/tool/multicalib/multicalib.c,
+	  src/module/tool/multicalib/multicalib.cpp,
+	  src/module/tool/multicalib/optimizer.c,
+	  src/module/tool/multicalib/optimizer.cpp,
+	  src/module/tool/multicalib/quaternion.h:
+	  
+	  converted some sources that include cv.h to C++.
+
+2011-12-26  tak.yoshimi.aist@gmail.com
+
+	* src/lib/libopenvgr/extractFeature_old.cpp:
+	  
+	  構造体メンバ Feature2D_old.arclist.{n,arc}の初期化忘れ修正
+
+2011-12-20  takase.ryuichi@gmail.com
+
+	* doc/reference/Recognition.pdf,
+	  doc/reference/RecognitionResultViewer.pdf,
+	  doc/reference/VGRModeler.pdf, doc/reference/libopenvgr.pdf,
+	  src/module/component/RecognitionResultViewer/doc/doxygen/Doxyfile,
+	  src/module/component/Recognition/doc/doxygen/Doxyfile,
+      	  src/module/tool/VGRModeler/doc/doxygen/Doxyfile,
+                  src/lib/libopenvgr/doc/doxygen/Doxyfile:
+	  
+	  バージョン番号を0.9.0に更新
+
+2011-12-16  tak.yoshimi.aist@gmail.com
+
+	* src/lib/libopenvgr/conic.cpp,
+	  src/lib/libopenvgr/extractFeature_old.cpp,
+	  src/lib/libopenvgr/merge_ellipse.cpp,
+	  src/lib/libopenvgr/searchEllipse_IW.cpp:
+	  
+	  コンパイル警告の削除、直線フィット部分の効率化
+
+2011-12-14  kawabata.aist@gmail.com
+
+	* src/module/tool/multicalib/ichimatsu.c:
+	  
+	  added an option (-f) to specify a setting file.
+
+	* src/module/tool/multicalib/ichimatsu.c:
+	  
+	  modified the parameter of check_dir().
+
+2011-12-12  tak.yoshimi.aist@gmail.com
+
+	* src/lib/libopenvgr/extractFeature_old.cpp,
+	  src/lib/libopenvgr/extractFeature_old.h,
+	  src/lib/libopenvgr/merge_ellipse.cpp:
+	  
+	  楕円の重複を判定し、重複している場合には使用している点列が短いものを排除する
+
+2011-12-02  kawabata.aist@gmail.com
+
+	* src/module/tool/multicalib/ichimatsu.c:
+	  
+	  added a scaling feature.
+
+2011-12-01  kawabata.aist@gmail.com
+
+	* src/module/tool/multicalib/ichimatsu.c:
+	  
+	  added an option (-d) to store images of detected chessboard
+	  pattern.
+
+	* src/module/tool/multicalib/ichimatsu.c:
+	  
+	  moved a process of creating timestamp into an individual
+	  function.
+
+	* ChangeLog.0:
+	  
+	  updated a ChangeLog.0.
+
 2011-11-29  tak.yoshimi.aist@gmail.com
 
 	* src/lib/libopenvgr/merge_ellipse.cpp,
