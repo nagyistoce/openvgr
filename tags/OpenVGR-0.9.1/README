@@ -1,0 +1,17 @@
+ 作業対象認識モジュール群 (OpenVGR)
+                                            Copyright (c) 2011-2012 AIST
+                                  Vision and Manipulation Research Group
+                                         http://unit.aist.go.jp/is/vmrg/
+○作業対象認識モジュール群とは
+NEDO「次世代ロボット知能化技術開発プロジェクト」において開発された
+ロボットシステムがカメラを使って周囲の環境から対象物を認識するための
+ソフトウェアです。
+
+○インストール
+インストール、設定方法の詳細は
+ doc/user/はじめにお読みください.pdf
+ doc/user/操作手順書.pdf
+をお読みください。
+
+○ライセンス
+LICENSEファイルおよびCopyrightファイルをお読みください。
