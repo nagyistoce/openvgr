@@ -11,6 +11,7 @@ To view the details, please check a log of [http://code.google.com/p/openvgr/sou
 
 == Calibration related programs ==
  * Modified to use C++ apis (`cv::*`) rather than C apis (`Cv*`).
+ * Fixed the bug in multicalib; -d option is not correctly handled.
 
 == General ==
  * Added an experimental support for cmake.
