@@ -3,7 +3,7 @@ project (OpenVGR)
 
 set (OpenVGR_VERSION_MAJOR 0)
 set (OpenVGR_VERSION_MINOR 9)
-set (OpenVGR_VERSION_PATCH 0)
+set (OpenVGR_VERSION_PATCH 1)
 set (OpenVGR_VERSION "${OpenVGR_VERSION_MAJOR}.${OpenVGR_VERSION_MINOR}.${OpenVGR_VERSION_PATCH}")
 
 message (STATUS "Package: OpenVGR-${OpenVGR_VERSION}")
