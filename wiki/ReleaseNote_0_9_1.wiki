@@ -8,6 +8,7 @@ To view the details, please check a log of [http://code.google.com/p/openvgr/sou
 
 == Recognition RTCs ==
  * Accuracy of line fitting has been slightly improved.
+ * Algorithm for generating vertex features from pairs of lines has been changed. Vertices at T-junctions are available.
 
 == Calibration related programs ==
  * Modified to use C++ apis (`cv::*`) rather than C apis (`Cv*`).
