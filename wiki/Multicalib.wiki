@@ -54,7 +54,7 @@ $ ./multicalib calib_data.txt
 
 will output result to console. If you specify file name by -o option (e.g. -o calib.yaml), the result will be written to the file in yaml format.
 
-= calibration data format =
+= Calibration data format =
 
 You can use multicalib in conjunction with your plane detection programs. The format multicalib reads is as follows.
 {{{
@@ -69,4 +69,29 @@ MLTCLB 1
 (# observed points by n-th camera at 1st observation)
 :
 (# observed points by 1st camera at 2nd observation)
+}}}
+
+= Compilation without OpenRTM =
+
+multicalib only depends on the OpenCV. So you can build it without OpenRTM.
+
+== Using makefiles ==
+
+{{{
+$ cd ${TOPDIR}/src/lib/libcapture && make
+$ cd ${TOPDIR}/src/module/tool/multicalib && make
+}}}
+Where `${TOPDIR}` stands for the top directory of the OpenVGR (i.e. contains Copyright, LISENCE and so forth).
+
+If you don't have `libdc1394-22-dev`, you can only build the multicalib.
+{{{
+$ cd ${TOPDIR}/src/module/tool/multicalib && make multicalib
+}}}
+
+== Using cmake ==
+
+Cmake may automatically do the same thing above mentioned.
+{{{
+$ mkdir ${TOPDIR}/release && cd ${TOPDIR}/release
+$ cmake .. && make
 }}}
