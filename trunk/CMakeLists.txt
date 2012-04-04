@@ -158,4 +158,7 @@ endif (USE_OpenMP)
 #set (CMAKE_VERBOSE_MAKEFILE ON)
 
 add_subdirectory (src)
-add_subdirectory (example)
+
+if (OpenRTM_FOUND)
+  add_subdirectory (example)
+endif (OpenRTM_FOUND)
