@@ -136,7 +136,7 @@ individual_calibration (camera_param_t *camera_params, extrinsic_param_t *plane_
       std::vector<std::vector<cv::Point2f> > imagePoints(nobserv);
       cv::Mat cameraMatrix, distCoeffs;
       std::vector<cv::Mat> rvecs(nobserv), tvecs(nobserv);
-      int N = 0, pos;
+      int N = 0;
 
       std::vector<std::vector<cv::Point2f> > projectedPoints(nobserv);
 
@@ -181,7 +181,6 @@ individual_calibration (camera_param_t *camera_params, extrinsic_param_t *plane_
       cv::calibrateCamera (objectPoints, imagePoints, guess_image_size(imagePoints), cameraMatrix, distCoeffs, rvecs, tvecs, ((opt->optimize_flag & CALIB_ZERO_TANGENT_DIST) ? CV_CALIB_ZERO_TANGENT_DIST : 0));
 
       /* compute error */
-      pos = 0;
       for (int j = 0; j < nobserv; ++j)
         {
           projectedPoints[j] = std::vector<cv::Point2f>(imagePoints[j].size());
