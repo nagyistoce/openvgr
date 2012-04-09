@@ -726,7 +726,7 @@ proc (capture_t *cap, capture_frame_t *frames, opt_t *opt)
   checker_data_final (&checker_data);
 
   fprintf (stderr, "quit.\n");
-  return EXIT_SUCCESS;
+  return ret_status;
 }
 
 static void
