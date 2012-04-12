@@ -1,5 +1,5 @@
 /*
- calib_proc.h
+ calib_proc.hpp
 
  Copyright (c) 2011 AIST  All Rights Reserved.
  Eclipse Public License v1.0 (http://www.eclipse.org/legal/epl-v10.html)
@@ -9,8 +9,8 @@
  $Date::                            $
 */
 
-#ifndef CALIB_PROC_H
-#define CALIB_PROC_H
+#ifndef CALIB_PROC_HPP
+#define CALIB_PROC_HPP
 
 #include "calib_data.h"
 #include "camera_param.h"
@@ -37,8 +37,8 @@ typedef struct tag_calib_opt
   int verbose_mode;
 } calib_opt_t;
 
-#define CALIB_OPT_INIT {CALIB_FIX_SHEAR, 0, 0, CALIB_MAX_ITER, CALIB_MIN_UPDATE, 0, 0}
+const static calib_opt_t CALIB_OPT_INIT = {CALIB_FIX_SHEAR, 0, 0, CALIB_MAX_ITER, CALIB_MIN_UPDATE, 0, 0};
 
 double calibrate_cameras (camera_param_t *camera_params, const cdata_t *cdata, const calib_opt_t *opt);
 
-#endif /* CALIB_PROC_H */
+#endif /* CALIB_PROC_HPP */

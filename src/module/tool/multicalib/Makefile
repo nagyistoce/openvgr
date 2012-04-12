@@ -31,8 +31,8 @@ reset_bus: LDLIBS += $(LIBDC1394)
 
 multicalib: multicalib.o calib_proc.o calib_data.o camera_param.o quaternion.o optimizer.o
 
-multicalib.o: multicalib.h calib_proc.h
-calib_proc.o: calib_proc.h local.h
+multicalib.o: multicalib.hpp calib_proc.hpp
+calib_proc.o: calib_proc.hpp local.h
 calib_data.o: calib_data.h
 camera_param.o: camera_param.h local.h
 quaternion.o: quaternion.h local.h
