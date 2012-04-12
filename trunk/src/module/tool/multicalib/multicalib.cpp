@@ -13,40 +13,42 @@
 #include <cstdio>
 #include <ctime>
 
+#include <vector>
+
 #include <cv.h>
 #include <highgui.h>
 
-#include "multicalib.h"
-#include "calib_proc.h"
+#include "multicalib.hpp"
+#include "calib_proc.hpp"
 #include "calib_data.h"
 
-static void parse_args (multicalib_opt_t *opt, const int argc, char **argv);
-static void display_help (const char *name);
-static void output_params (const camera_param_t *params, const int ncamera);
-static void output_params_yaml (const camera_param_t *params, const int ncamera, const double error, const multicalib_opt_t *opt);
+typedef std::vector<camera_param_t> CameraParameterSet;
 
-static char *alloc_strcpy (const char *str);
+static void parse_args (MulticalibOpt* opt, const int argc, char** argv);
+static void display_help (const char* name);
+static void output_params (const CameraParameterSet& params, const double error, const MulticalibOpt& opt);
+static void output_params_yaml (const CameraParameterSet& params, const double error, const MulticalibOpt& opt);
 
 int
-main (int argc, char **argv)
+main (int argc, char** argv)
 {
-  multicalib_opt_t opt = MULTICALIB_OPT_INIT;
-  camera_param_t *params = NULL;
+  MulticalibOpt opt;
+  CameraParameterSet params;
   cdata_t cdata;
 
-  FILE *fp = NULL;
+  FILE* fp = NULL;
   double err = 0.0;
 
   parse_args (&opt, argc, argv);
 
   cdata_init (&cdata);
 
-  if (opt.ifile)
+  if (! opt.ifile.empty ())
     {
-      fp = fopen (opt.ifile, "r");
+      fp = fopen (opt.ifile.c_str (), "r");
       if (fp == NULL)
         {
-          fprintf (stderr, "could not open '%s'.\n", opt.ifile);
+          fprintf (stderr, "could not open '%s'.\n", opt.ifile.c_str ());
           return -1;
         }
     }
@@ -69,44 +71,27 @@ main (int argc, char **argv)
       cdata.interval = opt.interval;
     }
 
-  params = (camera_param_t *) malloc (sizeof (camera_param_t) * cdata.num_cameras);
-  if (params == NULL)
-    {
-      fprintf (stderr, "could not allocate memory.\n");
-      return -1;
-    }
-
-  err = calibrate_cameras (params, &cdata, &opt.calib_opt);
+  params.resize (cdata.num_cameras);
+  err = calibrate_cameras (&params[0], &cdata, &opt.calib_opt);
   fprintf (stderr, "error: %g\n", err);
 
-  if (opt.ofile == NULL || opt.calib_opt.verbose_mode)
+  if (opt.ofile.empty () || opt.calib_opt.verbose_mode)
     {
-      output_params (params, cdata.num_cameras);
+      output_params (params, err, opt);
     }
 
-  if (opt.ofile)
+  if (! opt.ofile.empty ())
     {
-      output_params_yaml (params, cdata.num_cameras, err, &opt);
+      output_params_yaml (params, err, opt);
     }
 
   cdata_final (&cdata);
-  free (params); params = NULL;
-
-  if (opt.ifile != NULL)
-    {
-      free (opt.ifile);
-    }
-
-  if (opt.ofile != NULL)
-    {
-      free (opt.ofile);
-    }
 
   return EXIT_SUCCESS;
 }
 
 static void
-parse_args (multicalib_opt_t *opt, const int argc, char **argv)
+parse_args (MulticalibOpt* opt, const int argc, char** argv)
 {
   const char optstr[] = "d:hl:m:o:qsvw:";
   int c, num;
@@ -173,7 +158,7 @@ parse_args (multicalib_opt_t *opt, const int argc, char **argv)
           break;
 
         case 'o':
-          opt->ofile = alloc_strcpy (optarg);
+          opt->ofile = optarg;
           break;
 
         default:
@@ -184,12 +169,12 @@ parse_args (multicalib_opt_t *opt, const int argc, char **argv)
 
   if (argv[optind] != NULL && strlen (argv[optind]) > 0)
     {
-      opt->ifile = alloc_strcpy (argv[optind]);
+      opt->ifile = argv[optind];
     }
 }
 
 static void
-display_help (const char *name)
+display_help (const char* name)
 {
   printf ("usage: %s [-h] [-v] [-w <val>] [-d <val>] [-m <val>] [-l <val>] [-q] [-s] [-o <file>.yaml] <calib_data>\n", name);
   printf ("\n");
@@ -210,13 +195,11 @@ display_help (const char *name)
 }
 
 static void
-output_params (const camera_param_t *params, const int ncamera)
+output_params (const CameraParameterSet& params, const double error, const MulticalibOpt& opt)
 {
-  int i;
-
-  for (i = 0; i < ncamera; ++i)
+  for (size_t i = 0; i < params.size(); ++i)
     {
-      printf ("# camera %d\n", i);
+      printf ("# camera %zd\n", i);
 
       printf ("# intrinsic\n");
       cp_print_intrinsic (stdout, &params[i].intr);
@@ -233,20 +216,19 @@ output_params (const camera_param_t *params, const int ncamera)
 }
 
 static void
-output_params_yaml (const camera_param_t *params, const int ncamera, const double error, const multicalib_opt_t *opt)
+output_params_yaml (const CameraParameterSet& params, const double error, const MulticalibOpt& opt)
 {
-  CvFileStorage *fs = NULL;
+  CvFileStorage* fs = NULL;
 
   char str[64];
   time_t calib_time;
-  int i;
 
-  if (opt->ofile == NULL)
+  if (opt.ofile.empty ())
     {
       return;
     }
 
-  fs = cvOpenFileStorage (opt->ofile, NULL, CV_STORAGE_WRITE
+  fs = cvOpenFileStorage (opt.ofile.c_str (), NULL, CV_STORAGE_WRITE
 #if ((CV_MAJOR_VERSION) == 2) && ((CV_MINOR_VERSION) >= 3)
                           , NULL
 #endif
@@ -259,11 +241,11 @@ output_params_yaml (const camera_param_t *params, const int ncamera, const doubl
   strftime (str, sizeof (str), "date: %c", localtime(&calib_time));
   cvWriteComment (fs, str, 0);
 
-  cvWriteInt (fs, "num_cameras", ncamera);
+  cvWriteInt (fs, "num_cameras", params.size());
 
-  for (i = 0; i < ncamera; ++i)
+  for (size_t i = 0; i < params.size(); ++i)
     {
-      const int num_coeff = (opt->calib_opt.optimize_flag & CALIB_ZERO_HIGHER_ORDER_DIST) ? 4 : 5;
+      const int num_coeff = (opt.calib_opt.optimize_flag & CALIB_ZERO_HIGHER_ORDER_DIST) ? 4 : 5;
       CvMat mat;
       double elem[4*4], R[3*3];
       
@@ -283,7 +265,7 @@ output_params_yaml (const camera_param_t *params, const int ncamera, const doubl
       cvmSet (&mat, 2, 1, 0.0);
       cvmSet (&mat, 2, 2, 1.0);
 
-      snprintf (str, sizeof (str), "camera%d_intr", i);
+      snprintf (str, sizeof (str), "camera%zd_intr", i);
       cvWrite (fs, str, &mat, cvAttrList (0, 0));
 
       /* distortion */
@@ -299,7 +281,7 @@ output_params_yaml (const camera_param_t *params, const int ncamera, const doubl
           ++j;
         }
 
-      snprintf (str, sizeof (str), "camera%d_dist", i);
+      snprintf (str, sizeof (str), "camera%zd_dist", i);
       cvWrite (fs, str, &mat, cvAttrList (0, 0));
 
       /* extrinsic */
@@ -320,33 +302,9 @@ output_params_yaml (const camera_param_t *params, const int ncamera, const doubl
           cvmSet (&mat, 3, j, j != 3 ? 0.0 : 1.0);
         }
 
-      snprintf (str, sizeof (str), "camera%d_ext", i);
+      snprintf (str, sizeof (str), "camera%zd_ext", i);
       cvWrite (fs, str, &mat, cvAttrList (0, 0));
     }
 
   cvReleaseFileStorage (&fs);
-}
-
-static char *
-alloc_strcpy (const char *str)
-{
-  char *buf = NULL;
-  int len = 0;
-
-  len = strlen (str);
-  if (str == NULL || len < 1)
-    {
-      return NULL;
-    }
-
-  buf = (char *) malloc (sizeof (char) * (len + 1));
-  if (buf == NULL)
-    {
-      return NULL;
-    }
-
-  strncpy (buf, str, len);
-  buf[len] = '\0';
-
-  return buf;
 }

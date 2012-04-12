@@ -16,7 +16,7 @@
 #include <cv.h>
 
 #include "local.h"
-#include "calib_proc.h"
+#include "calib_proc.hpp"
 
 /* for inner use */
 #define CALIB_FIX_INTRINSIC          (1 <<  5)

@@ -1,5 +1,5 @@
 /*
- multicalib.h
+ multicalib.hpp
 
  Copyright (c) 2011 AIST  All Rights Reserved.
  Eclipse Public License v1.0 (http://www.eclipse.org/legal/epl-v10.html)
@@ -9,22 +9,22 @@
  $Date::                            $
 */
 
-#ifndef MULTICALIB_H
-#define MULTICALIB_H
+#ifndef MULTICALIB_HPP
+#define MULTICALIB_HPP
 
-#include <stdio.h>
-#include "calib_proc.h"
+#include <string>
+#include "calib_proc.hpp"
 
-typedef struct tag_multicalib_opt
+struct MulticalibOpt
 {
-  char *ifile;
-  char *ofile;
+  std::string ifile;
+  std::string ofile;
 
   double interval;
 
   calib_opt_t calib_opt;
-} multicalib_opt_t;
 
-#define MULTICALIB_OPT_INIT {NULL, NULL, 0, CALIB_OPT_INIT}
+  MulticalibOpt() : interval(0.0), calib_opt(CALIB_OPT_INIT) {}
+};
 
-#endif /* MULTICALIB_H */
+#endif /* MULTICALIB_HPP */
