@@ -53,13 +53,14 @@ quat_mult (quaternion_t result, const quaternion_t q1, const quaternion_t q2)
   double dot, cross[3];
   int i;
 
+  dot = s_dot3 (&quat_im (q1, 0), &quat_im (q2, 0));
   s_cross3 (cross, &quat_im (q1, 0), &quat_im (q2, 0));
+
   for (i = 0; i < 3; ++i)
     {
       quat_im (result, i) = quat_re (q1) * quat_im (q2, i) + quat_re (q2) * quat_im (q1, i) + cross[i];
     }
 
-  dot = s_dot3 (&quat_im (q1, 0), &quat_im (q2, 0));
   quat_re (result) = quat_re (q1) * quat_re (q2) - dot;
 }
 
