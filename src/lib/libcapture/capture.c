@@ -1298,7 +1298,7 @@ static dc1394video_mode_t s_get_appropriate_mode(dc1394camera_t *cam, dc1394vide
   uint32_t width, height;
   dc1394color_coding_t coding;
   int found = 0;
-  unsigned int num_pixels;
+  unsigned int num_pixels = 0;
 
   dc1394error_t err;
   unsigned int i;
@@ -1325,6 +1325,7 @@ static dc1394video_mode_t s_get_appropriate_mode(dc1394camera_t *cam, dc1394vide
   if (err != DC1394_SUCCESS) {
     return mode;
   }
+  num_pixels = width * height;
 
   err = dc1394_get_color_coding_from_video_mode(cam, mode, &coding);
   DC1394_WRN(err, "failed to get color coding.");
