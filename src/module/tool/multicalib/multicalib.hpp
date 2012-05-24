@@ -21,10 +21,11 @@ struct MulticalibOpt
   std::string ofile;
 
   double interval;
+  int output_projection_matrix;
 
   calib_opt_t calib_opt;
 
-  MulticalibOpt() : interval(0.0), calib_opt(CALIB_OPT_INIT) {}
+  MulticalibOpt() : interval(0.0), output_projection_matrix(0), calib_opt(CALIB_OPT_INIT) {}
 };
 
 #endif /* MULTICALIB_HPP */

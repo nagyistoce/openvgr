@@ -99,6 +99,7 @@ void cp_copy_camera_param (camera_param_t *dst, const camera_param_t *src);
 void cp_print_intrinsic (FILE *fp, const intrinsic_param_t *intr);
 void cp_print_extrinsic (FILE *fp, const extrinsic_param_t *ext, const int output_4th_row);
 void cp_print_distortion (FILE *fp, const distortion_param_t *dist);
+void cp_print_projection (FILE *fp, const intrinsic_param_t *intr, const extrinsic_param_t* ext, const int output_4th_row);
 
 #ifdef __cplusplus
 }

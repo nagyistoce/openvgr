@@ -93,7 +93,7 @@ main (int argc, char** argv)
 static void
 parse_args (MulticalibOpt* opt, const int argc, char** argv)
 {
-  const char optstr[] = "d:hl:m:o:qsvw:";
+  const char optstr[] = "d:hl:m:o:qsvw:p";
   int c, num;
 
   while ((c = getopt (argc, argv, optstr)) >= 0)
@@ -161,6 +161,10 @@ parse_args (MulticalibOpt* opt, const int argc, char** argv)
           opt->ofile = optarg;
           break;
 
+        case 'p':
+          opt->output_projection_matrix = -1;
+          break;
+
         default:
           exit (EXIT_FAILURE);
           break;
@@ -176,7 +180,7 @@ parse_args (MulticalibOpt* opt, const int argc, char** argv)
 static void
 display_help (const char* name)
 {
-  printf ("usage: %s [-h] [-v] [-w <val>] [-d <val>] [-m <val>] [-l <val>] [-q] [-s] [-o <file>.yaml] <calib_data>\n", name);
+  printf ("usage: %s [-h] [-v] [-p] [-w <val>] [-d <val>] [-m <val>] [-l <val>] [-q] [-s] [-o <file>.yaml] <calib_data>\n", name);
   printf ("\n");
 
   printf ("\t-h: show this help.\n");
@@ -190,7 +194,9 @@ display_help (const char* name)
   printf ("\t-q: force |q| == 1 in each iteration.\n");
   printf ("\t-s: estimate shear coefficient of intrinsic parameter.\n");
   printf ("\t-o <file>: specifies a yaml filename to write the result.\n");
+  printf ("\n");
 
+  printf ("\t-p: output projection matrices (i.e. A * [R t])\n");
   printf ("\n");
 }
 
@@ -201,17 +207,30 @@ output_params (const CameraParameterSet& params, const double error, const Multi
     {
       printf ("# camera %zd\n", i);
 
-      printf ("# intrinsic\n");
-      cp_print_intrinsic (stdout, &params[i].intr);
-      printf ("\n");
+      if (opt.output_projection_matrix == 0)
+        {
+          printf ("# intrinsic\n");
+          cp_print_intrinsic (stdout, &params[i].intr);
+          printf ("\n");
 
-      printf ("# distortion\n");
-      cp_print_distortion (stdout, &params[i].dist);
-      printf ("\n");
+          printf ("# distortion\n");
+          cp_print_distortion (stdout, &params[i].dist);
+          printf ("\n");
 
-      printf ("# extrinsic\n");
-      cp_print_extrinsic (stdout, &params[i].ext, 1);
-      printf ("\n");
+          printf ("# extrinsic\n");
+          cp_print_extrinsic (stdout, &params[i].ext, 1);
+          printf ("\n");
+        }
+      else
+        {
+          printf ("# projection\n");
+          cp_print_projection (stdout, &params[i].intr, &params[i].ext, 0);
+          printf ("\n");
+
+          printf ("# distortion\n");
+          cp_print_distortion (stdout, &params[i].dist);
+          printf ("\n");
+        }
     }
 }
 
