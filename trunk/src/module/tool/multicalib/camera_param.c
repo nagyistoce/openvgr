@@ -540,3 +540,44 @@ cp_print_distortion (FILE *fp, const distortion_param_t *dist)
     }
   fprintf (fp, "\n");
 }
+
+void
+cp_print_projection (FILE *fp, const intrinsic_param_t *intr, const extrinsic_param_t* ext, const int output_4th_row)
+{
+  int i, j, k;
+  double A[3*3], R[3*3];
+
+  cp_mat_intrinsic (A, 3, intr);
+  quat_R_from_q (R, 3, ext->q);
+
+  for (i = 0; i < 3; ++i)
+    {
+      double val;
+
+      for (j = 0; j < 3; ++j)
+        {
+          val = 0.0;
+          for (k = 0; k < 3; ++k)
+            {
+              val += A[i + 3*k] * R[k + 3*j];
+            }
+          fprintf (fp, "% 22.16g ", val);
+        }
+
+      val = 0.0;
+      for (j = 0; j < 3; ++j)
+        {
+          val += A[i + 3*j] * ext->t[j];
+        }
+      fprintf (fp, "% 22.16g\n", val);
+    }
+
+  if (output_4th_row)
+    {
+      for (i = 0; i < 3; ++i)
+        {
+          fprintf (fp, "% 22.16g ", 0.0);
+        }
+      fprintf (fp, "% 22.16g\n", 1.0);
+    }
+}
