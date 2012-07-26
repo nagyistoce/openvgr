@@ -35,6 +35,24 @@ endmacro (show_var_info)
 
 # OpenRTM
 find_package (OpenRTM QUIET)
+if (OpenRTM_FOUND)
+    # trim preceded -I
+    set (_temp)
+    foreach (_item ${OPENRTM_INCLUDE_DIRS})
+        string (REGEX REPLACE " *-I(.*)" "\\1" _item ${_item})
+        list (APPEND _temp ${_item})
+    endforeach (_item ${OPENRTM_INCLUDE_DIRS})
+    set (OPENRTM_INCLUDE_DIRS ${_temp})
+
+    # trim preceded -L
+    set (_temp)
+    foreach (_item ${OPENRTM_LIBRARY_DIRS})
+        string (REGEX REPLACE " *-L(.*)" "\\1" _item ${_item})
+        list (APPEND _temp ${_item})
+    endforeach (_item ${OPENRTM_LIBRARY_DIRS})
+    set (OPENRTM_LIBRARY_DIRS ${_temp})
+endif (OpenRTM_FOUND)
+
 if (NOT OpenRTM_FOUND)
   message (STATUS "Fall back to rtm-config")
   find_program(RTM_CONFIG rtm-config)
@@ -76,6 +94,8 @@ if (NOT OpenRTM_FOUND)
     endmacro (_rtm_config_execute)
 
     _rtm_config_execute (OPENRTM_DIR "" "--prefix")
+    set (OPENRTM_INCLUDE_DIR "-I${OPENRTM_DIR}/include")
+
     _rtm_config_execute (OPENRTM_INCLUDE_DIRS "^-I.*" "--cflags")
     # trim preceded -I
     set (_temp)
@@ -93,7 +113,7 @@ if (NOT OpenRTM_FOUND)
     _rtm_config_execute (OPENRTM_ORB "" "--orb")
     _rtm_config_execute (OPENRTM_IDLC "" "--idlc")
     _rtm_config_execute (OPENRTM_IDLFLAGS "" "--idlflags")
-    set (OPENRTM_IDLFLAGS ${OPENRTM_IDLFLAGS} "-I${OPENRTM_DIR}/include/rtm/idl")
+    set (OPENRTM_IDLFLAGS ${OPENRTM_IDLFLAGS})
 
     find_program (OPENRTM_IDL_WRAPPER NAMES rtm-skelwrapper)
     set (OPENRTM_IDL_WRAPPER_FLAGS "--include-dir=\"\";--skel-suffix=Skel;--stub-suffix=Stub")
@@ -102,6 +122,13 @@ if (NOT OpenRTM_FOUND)
     show_var_info (OPENRTM_ORB OPENRTM_IDLC OPENRTM_IDLFLAGS)
     show_var_info (OPENRTM_IDL_WRAPPER OPENRTM_IDL_WRAPPER_FLAGS)
 
+    set (OpenRTM_FOUND 1)
+  else (RTM_CONFIG)
+    message (WARNING "Neither OpenRTMConfig.cmake nor rtm-config found. RT components will NOT be built.")
+  endif (RTM_CONFIG)
+endif (NOT OpenRTM_FOUND)
+
+if (OpenRTM_FOUND)
     # define a macro to generate *.hh/*Skel.h/*Stub.h from *.idl
     macro (genheader_from_idl)
       foreach (_idl_file ${ARGN})
@@ -109,7 +136,7 @@ if (NOT OpenRTM_FOUND)
         
         add_custom_command (
           OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/${_filename}.hh
-          COMMAND ${OPENRTM_IDLC} -I${OpenVGR_SOURCE_DIR}/src/idl ${OPENRTM_IDLFLAGS} ${_idl_file}
+          COMMAND ${OPENRTM_IDLC} ${OPENRTM_IDLFLAGS} -I${OpenVGR_SOURCE_DIR}/src/idl -I${OPENRTM_INCLUDE_DIR}/rtm/idl ${_idl_file}
           DEPENDS ${_idl_file})
 
         add_custom_command (
@@ -118,17 +145,12 @@ if (NOT OpenRTM_FOUND)
                  ${CMAKE_CURRENT_BINARY_DIR}/${_filename}Stub.h
                  ${CMAKE_CURRENT_BINARY_DIR}/${_filename}Stub.cpp
           COMMAND ${CMAKE_COMMAND} -E create_symlink ${_idl_file} ${CMAKE_CURRENT_BINARY_DIR}/${_filename}.idl
-          COMMAND ${OPENRTM_IDLC} -I${OpenVGR_SOURCE_DIR}/src/idl ${OPENRTM_IDLFLAGS} ${_idl_file}
+          COMMAND ${OPENRTM_IDLC} ${OPENRTM_IDLFLAGS} -I${OpenVGR_SOURCE_DIR}/src/idl -I${OPENRTM_INCLUDE_DIR}/rtm/idl ${_idl_file}
           COMMAND ${OPENRTM_IDL_WRAPPER} ${OPENRTM_IDL_WRAPPER_FLAGS} --idl-file=${_filename}.idl > /dev/null 2>&1
           DEPENDS ${_idl_file})
       endforeach (_idl_file ${ARGN})
     endmacro (genheader_from_idl)
-
-    set (OpenRTM_FOUND 1)
-  else (RTM_CONFIG)
-    message (WARNING "Neither OpenRTMConfig.cmake nor rtm-config found. RT components will NOT be built.")
-  endif (RTM_CONFIG)
-endif (NOT OpenRTM_FOUND)
+endif (OpenRTM_FOUND)
 
 # OpenCV
 find_package (OpenCV QUIET)
