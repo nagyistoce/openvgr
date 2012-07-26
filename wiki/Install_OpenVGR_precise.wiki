@@ -53,7 +53,7 @@ Please follow the instructions at [http://openrtm.org official page].
 == OpenCV-2.3.1 ==
 for Ubuntu 12.04 LTS:
 {{{
-$ sudo apt-get install lib{cv,cvaux,highgui}-dev
+$ sudo apt-get install lib{cv,cvaux,highgui}-dev libopencv-dev
 }}}
 
 == libdc1394-22 ==
@@ -82,6 +82,10 @@ $ cd ${OPENVGR_HOME}
 $ make
 }}}
 where ${OPENVGR_HOME} is the top directory of the package.
+
+From OpenRTM-1.1, the default location of include files has changed from `/usr/include/rtm...` to `/usr/include/`*`openrtm-1.1/`*`rtm...`.
+You may need to correct include paths in all the Makefiles in the source tree.
+Or, you can try the alternative; cmake. ;-)
 
 After the compilation finishes, the following commands create soft links in the build directory.
 {{{
