@@ -94,7 +94,7 @@ if (NOT OpenRTM_FOUND)
     endmacro (_rtm_config_execute)
 
     _rtm_config_execute (OPENRTM_DIR "" "--prefix")
-    set (OPENRTM_INCLUDE_DIR "-I${OPENRTM_DIR}/include")
+    set (OPENRTM_INCLUDE_DIR "${OPENRTM_DIR}/include")
 
     _rtm_config_execute (OPENRTM_INCLUDE_DIRS "^-I.*" "--cflags")
     # trim preceded -I
