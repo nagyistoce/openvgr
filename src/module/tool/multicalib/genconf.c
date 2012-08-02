@@ -88,7 +88,7 @@ s_get_color_mode_str (dc1394camera_t *camera, dc1394video_mode_t mode)
   dc1394error_t err;
   dc1394color_coding_t coding;
 
-  const static char *mode_str[DC1394_COLOR_CODING_NUM + 1] = {
+  static const char *mode_str[DC1394_COLOR_CODING_NUM + 1] = {
     "Y(mono)",
     "YUV(4:1:1)",
     "YUV(4:2:2)",

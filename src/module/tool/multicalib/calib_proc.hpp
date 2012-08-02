@@ -37,7 +37,7 @@ typedef struct tag_calib_opt
   int verbose_mode;
 } calib_opt_t;
 
-const static calib_opt_t CALIB_OPT_INIT = {CALIB_FIX_SHEAR, 0, 0, CALIB_MAX_ITER, CALIB_MIN_UPDATE, 0, 0};
+static const calib_opt_t CALIB_OPT_INIT = {CALIB_FIX_SHEAR, 0, 0, CALIB_MAX_ITER, CALIB_MIN_UPDATE, 0, 0};
 
 double calibrate_cameras (camera_param_t *camera_params, const cdata_t *cdata, const calib_opt_t *opt);
 

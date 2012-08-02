@@ -8,5 +8,5 @@
 */
 
 namespace ovgr {
-  const static double epsilon = 1.0e-12;
+  static const double epsilon = 1.0e-12;
 }
