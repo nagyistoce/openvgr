@@ -18,7 +18,7 @@
 #include "globj.hpp"
 #include "cv3d.hpp"
 
-const static int update_interval = 250;
+static const int update_interval = 250;
 
 enum mouse_state {
   MS_NORMAL, MS_ROTATE, MS_TRANS
@@ -314,7 +314,7 @@ set_projection_matrix ()
   const double divisor = (camera_width > camera_height) ? camera_width : camera_height;
   const double aspect_ratio = (double)s_window_width / (double)s_window_height;
 
-  const static double near = 1.0, far = 5000.0;
+  static const double near = 1.0, far = 5000.0;
 
   glMatrixMode (GL_PROJECTION);
 

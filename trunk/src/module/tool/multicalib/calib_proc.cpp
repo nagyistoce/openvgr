@@ -695,7 +695,7 @@ guess_image_size (const std::vector<std::vector<cv::Point2f> >& imagePoints)
 {
   int n;
   double x_mean = 0.0, d;
-  const static int size[][2] = {
+  static const int size[][2] = {
     {160, 120}, {320, 240}, {640, 480}, {800, 600}, {1024, 768}, {1280, 960}, {1600, 1200}
   };
 

@@ -67,7 +67,7 @@ typedef struct tag_conf_token
   const int key;
 } conf_token_t;
 
-const static conf_token_t conf_mode[] = {
+static const conf_token_t conf_mode[] = {
   {"160x120-YUV(4:4:4)",   DC1394_VIDEO_MODE_160x120_YUV444},
   {"320x240-YUV(4:2:2)",   DC1394_VIDEO_MODE_320x240_YUV422},
   {"640x480-YUV(4:1:1)",   DC1394_VIDEO_MODE_640x480_YUV411},
@@ -97,7 +97,7 @@ const static conf_token_t conf_mode[] = {
 };
 
 
-const static conf_token_t conf_framerate[] = {
+static const conf_token_t conf_framerate[] = {
   {"1.875fps", DC1394_FRAMERATE_1_875},
   {"3.75fps",  DC1394_FRAMERATE_3_75},
   {"7.5fps",   DC1394_FRAMERATE_7_5},
@@ -110,7 +110,7 @@ const static conf_token_t conf_framerate[] = {
 };
 
 
-const static conf_token_t conf_feature[] = {
+static const conf_token_t conf_feature[] = {
   {"BRIGHTNESS",    DC1394_FEATURE_BRIGHTNESS},
   {"AUTO_EXPOSURE", DC1394_FEATURE_EXPOSURE},
   {"SHARPNESS",     DC1394_FEATURE_SHARPNESS},
@@ -130,7 +130,7 @@ const static conf_token_t conf_feature[] = {
 };
 
 
-const static size_t s_num_ports_max = 16;
+static const size_t s_num_ports_max = 16;
 
 static inline int s_byte_per_packet(const capture_frame_format_t format);
 static int s_read_conf_file(const char *conf_file, conf_param_t *data);

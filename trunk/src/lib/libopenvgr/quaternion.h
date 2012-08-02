@@ -19,8 +19,8 @@ typedef double quaternion_t[4];
 #define QUAT_INIT_ZERO {0.0, 0.0, 0.0, 0.0}
 #define QUAT_INIT_ONE  {0.0, 0.0, 0.0, 1.0}
 
-const static quaternion_t quat_zero = QUAT_INIT_ZERO;
-const static quaternion_t quat_one  = QUAT_INIT_ONE;
+static const quaternion_t quat_zero = QUAT_INIT_ZERO;
+static const quaternion_t quat_one  = QUAT_INIT_ONE;
 
 #define quat_re(q) (q)[3]
 #define quat_im(q, i) (q)[(i)]

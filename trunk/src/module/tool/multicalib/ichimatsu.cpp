@@ -260,7 +260,7 @@ get_grid (const char *str, int *row, int *col)
 static void
 parse_opt (int argc, char **argv, opt_t *opt)
 {
-  const static char optstr[] = "f:d:s:g:lm:o:w:h";
+  static const char optstr[] = "f:d:s:g:lm:o:w:h";
   char ch;
 
   opt->pattern_col  =  8;
