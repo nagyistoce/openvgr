@@ -69,7 +69,7 @@ from subversion:
 $ svn co http://openvgr.googlecode.com/svn/trunk/ somewhere
 }}}
 
-tarball:<br>
+tarball: *current version (<=0.9.1) does not support 12.04, please get the latest version from the svn.*<br>
 Go to [http://code.google.com/p/openvgr/downloads/list download page] and choose one.
 Then unpack the archive:
 {{{
