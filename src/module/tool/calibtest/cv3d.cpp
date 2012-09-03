@@ -48,8 +48,10 @@ DepthMap::init (const CameraParameter& left_param, const CameraParameter& right_
 
   cv::stereoRectify (left_param.intr, left_param.dist, right_param.intr, right_param.dist, size, R, t, R1, R2, P1, P2, m_Q, 0);
 
+#if !defined(CV_MAJOR_VERSION) || (CV_MAJOR_VERSION < 2) || (CV_MAJOR_VERSION == 2 && CV_MINOR_VERSION < 4)
   /* As of OpenCV-2.0, the matrix Q contains wrong value.. */
   m_Q.at<double>(3, 2) *= -1.0;
+#endif
 
 #if 0
   print_mat (R1);
