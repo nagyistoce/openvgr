@@ -550,6 +550,7 @@ capture_frame_t *capture_frame_new(const int width, const int height, const capt
     return NULL;
   }
 
+  cf->raw_data = NULL;
   switch (format) {
   case CAPTURE_FRAME_FORMAT_GRAY:
     cf->raw_data = malloc(sizeof(unsigned char) * width * height);
