@@ -17,8 +17,9 @@ namespace globj
 
     public:
       DefaultDepthFunc ()
-        : m_sbm (cv::StereoBM::NORMALIZED_RESPONSE, 16 * 10, 21)
+        : m_sbm (cv::StereoBM::BASIC_PRESET, 16 * 16, 21)
       {
+        //m_sbm.state->minDisparity = 64;
         m_sbm.state->trySmallerWindows = 1;
       }
 
