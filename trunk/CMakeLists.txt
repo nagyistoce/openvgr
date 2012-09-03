@@ -177,6 +177,12 @@ if (USE_OpenMP)
   set (CMAKE_CXXFLAGS "${CMAKE_CXXFLAGS} ${OpenMP_CXX_FLAGS}")
 endif (USE_OpenMP)
 
+# OpenGL
+find_package (OpenGL)
+
+# glut
+find_package (GLUT)
+
 #set (CMAKE_VERBOSE_MAKEFILE ON)
 
 add_subdirectory (src)
