@@ -88,7 +88,7 @@ CORBA::Long RecognitionServiceSVC_impl::getModelID()
 void
 RecognitionServiceSVC_impl::setModelID(CORBA::Long ModelID)
 {
-  printf("Accept ModelID: %ld\n", ModelID);
+  printf("Accept ModelID: %"PRId32"\n", ModelID);
 
   if (ModelID < 0)
     {
