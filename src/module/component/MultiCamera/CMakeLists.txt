@@ -62,3 +62,5 @@ target_link_libraries (${RTC_NAME}Comp capture)
 target_link_libraries (${RTC_NAME}Comp ${OpenCV_LIBS})
 target_link_libraries (${RTC_NAME}Comp ${LIBRARIES})
 target_link_libraries (${RTC_NAME}Comp ${LIBDC1394_LIBRARIES})
+
+install (TARGETS ${RTC_NAME}Comp RUNTIME DESTINATION bin)

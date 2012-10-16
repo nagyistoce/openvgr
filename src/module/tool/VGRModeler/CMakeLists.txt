@@ -7,3 +7,5 @@ add_executable (VGRModeler
   trans.cpp
   VRMLWriter.cpp)
 target_link_libraries (VGRModeler openvgr_misc)
+
+install (TARGETS VGRModeler RUNTIME DESTINATION bin)

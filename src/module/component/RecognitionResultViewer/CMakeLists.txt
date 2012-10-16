@@ -64,3 +64,5 @@ target_link_libraries (${RTC_NAME}Comp openvgr)
 target_link_libraries (${RTC_NAME}Comp ${LIBRARIES})
 target_link_libraries (${RTC_NAME}Comp ${OpenCV_LIBS})
 target_link_libraries (${RTC_NAME}Comp ${GTK2_LIBRARIES})
+
+install (TARGETS ${RTC_NAME}Comp RUNTIME DESTINATION bin)

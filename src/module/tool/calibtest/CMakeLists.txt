@@ -12,4 +12,6 @@ if (LIBDC1394_FOUND)
   include_directories (${GLUT_INCLUDE_DIRS} ${OPENGL_INCLUDE_DIRS})
   add_executable (calibtest calibtest.cpp glwindow.cpp cv3d.cpp globj.cpp capture.cpp)
   target_link_libraries (calibtest capture openvgr_misc ${OpenCV_LIBS} ${LIBDC1394_LIBRARIES} ${GLUT_LIBRARIES} ${OPENGL_LIBRARIES})
+
+  install (TARGETS calibtest RUNTIME DESTINATION bin)
 endif (LIBDC1394_FOUND)

@@ -55,3 +55,5 @@ add_dependencies (${RTC_NAME}Comp ${RTC_NAME}-static)
 target_link_libraries (${RTC_NAME}Comp ${RTC_NAME}-static)
 target_link_libraries (${RTC_NAME}Comp ${OpenCV_LIBS})
 target_link_libraries (${RTC_NAME}Comp ${LIBRARIES})
+
+install (TARGETS ${RTC_NAME}Comp RUNTIME DESTINATION bin)
