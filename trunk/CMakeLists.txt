@@ -5,8 +5,9 @@ set (OpenVGR_VERSION_MAJOR 0)
 set (OpenVGR_VERSION_MINOR 9)
 set (OpenVGR_VERSION_PATCH 1)
 set (OpenVGR_VERSION "${OpenVGR_VERSION_MAJOR}.${OpenVGR_VERSION_MINOR}.${OpenVGR_VERSION_PATCH}")
+set (OpenVGR_FULLNAME "${PROJECT_NAME}-${OpenVGR_VERSION}")
 
-message (STATUS "Package: OpenVGR-${OpenVGR_VERSION}")
+message (STATUS "Package: ${OpenVGR_FULLNAME}")
 
 # set a default build type
 if (NOT CMAKE_BUILD_TYPE)
@@ -189,4 +190,8 @@ add_subdirectory (src)
 
 if (OpenRTM_FOUND)
   add_subdirectory (example)
+
+  install (FILES build/rtc.conf DESTINATION "share/doc/${OpenVGR_FULLNAME}")
+  install (DIRECTORY doc/ DESTINATION "share/doc/${OpenVGR_FULLNAME}"
+           PATTERN ".svn" EXCLUDE)
 endif (OpenRTM_FOUND)

@@ -23,8 +23,17 @@ if (LIBDC1394_FOUND)
   # reset_bus
   add_executable (reset_bus reset_bus.c)
   target_link_libraries (reset_bus ${LIBDC1394_LIBRARIES})
+
+  # for instlation
+  install (TARGETS ichimatsu genconf reset_bus
+           RUNTIME DESTINATION bin)
+
+  install (FILES chessboard_8x8_20mm.svg ieee1394board.0 test.xcdata
+           DESTINATION "share/doc/${OpenVGR_FULLNAME}")
+
 endif (LIBDC1394_FOUND)
 
 # multicalib
 add_executable (multicalib multicalib.cpp calib_proc.cpp calib_data.c camera_param.c quaternion.c optimizer.cpp)
 target_link_libraries (multicalib ${OpenCV_LIBS})
+install (TARGETS multicalib RUNTIME DESTINATION bin)
